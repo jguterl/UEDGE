@@ -10,11 +10,7 @@ import site
 from Forthon.compilers import FCompiler
 import getopt
 
-<<<<<<< HEAD
-version='8.beta'
-=======
 version='7.0.8.4.14'
->>>>>>> upstream/master
 
 try:
     os.environ['PATH'] += os.pathsep + site.USER_BASE + '/bin'
@@ -29,7 +25,6 @@ except:
     raise SystemExit("Distutils problem")
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
-print(optlist)
 machine = sys.platform
 debug = 0
 fcomp = None
@@ -89,7 +84,7 @@ class uedgeClean(build):
                 call(['make', '-f', 'Makefile.PETSc', 'clean'])
         else:
             if petsc == 0:
-                call(['make', '-f', '-j 16', 'Makefile.Forthon3', 'clean'])
+                call(['make', '-f', 'Makefile.Forthon3', 'clean'])
             else:
                 call(['make', '-f', 'Makefile.PETSc3', 'clean'])
 
@@ -197,13 +192,8 @@ setup(name="uedge",
       scripts=['pyscripts/pdb2hdf5', 'pyscripts/bas2py', 'pyscripts/hdf52pdb'],
       ext_modules=[Extension('uedge.uedgeC',
                              ['uedgeC_Forthon.c',
-<<<<<<< HEAD
-                              'build/Forthon.c',
-                              'com/handlers.c', 'com/vector.c'],
-=======
                               os.path.join(builddir, 'Forthon.c'),
                               'com/handlers.c', 'com/vector.c','bbb/exmain.c'],
->>>>>>> upstream/master
                              include_dirs=[builddir, numpy.get_include()],
                              library_dirs=library_dirs,
                              libraries=libraries,
