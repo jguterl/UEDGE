@@ -2825,7 +2825,8 @@ mhdgeo         integer  /-1/  #flag for grid geometry
                               #mhdgeo =  0 ==> cylindrical geometry
                               #mhdgeo = -1 ==> cartesian geometry
                               #mhdgeo = -2 ==> mag mirror (FRC-annulus)
-gengrid        integer   /1/  #flag to generate grid, else read from file gridue
+gengrid        integer   /1/  #flag to generate grid, else read from file given by GridFileName
+GridFileName   character*200 /"gridue"/ # name of Grid file to be read 
 isgindx        integer   /1/  #=1 for interpolating grid based on indices
 nfmax          integer   /10/
 restart        integer   /0/  #flag for restart from previous case(yes=1)

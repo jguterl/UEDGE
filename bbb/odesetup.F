@@ -1,10 +1,10 @@
 c-----------------------------------------------------------------------
 c $Id: odesetup.m,v 7.17 2019/12/02 17:29:13 meyer8 Exp $
 c
-c!include "bbb.h"
-c!include "../com/com.h"
-c!include "../mppl.h"
-c!include "../sptodp.h"
+#include "bbb.h"
+#include "../com/com.h"
+#include "../mppl.h"
+#include "../sptodp.h"
 c-----------------------------------------------------------------------
       subroutine allocate
 
@@ -12,49 +12,49 @@ c-----------------------------------------------------------------------
 *     case that the code hits an unrecoverable error that force it to
 *     exit with a fatal error status.
 
-      implicit none
-
-      Use(Dim)      # nx,ny,nxm,nhsp,nzsp,nzspt,nusp,ngsp
-      Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,
-                               # iysptrx1,iysptrx2,iysptrx
-      Use(Math_problem_size)   # neqmx,numvar,numvarbwpad
-      Use(Cdv)      # ifexmain, iallcall
-      Use(Share)    # nycore,nysol,nxleg,nxcore,nxomit,igrid,isgrdsym,
-                    # nyomitmx,geometry
-      Use(UEpar)    # svrpkg,,isnion,isupon,isupgon,isteon,
-                    # istion,isngon,isphion
-  Use(UEint)    # minu,ziin,newgeo,mhdgeo,isallloc,GridFileName
-      Use(Lsode)    # neq,jacflg,jpre,ipar,ismmaxuc,mmaxu
-      Use(Solver_work_arrays)   # liw,lrw,iwork
-      Use(Grid)     # inewton
-      Use(Interp)   # nxold,nyold
-      Use(Decomp)   # ubw,lbw
-      Use(Jacobian)     # neqp1,nnzmx
-      Use(Jacreorder)   # ireorder
-      Use(Preconditioning)     # premeth,lenpfac,lenplufac,lenplumx
-      Use(Nonzero_diagonals)   # ndiagmx
-      Use(Model_choice)        # iondenseqn
-      Use(Jacobian_part)       # nnz1mx
-      Use(Jacobian_full)       # isjacmap, jacfull
-      Use(Opt_input)           # inopt,iworkin(8),iworkin(24)
-      Use(Constraints)
-      Use(Time_dep_nwt)        # nufak
-      Use(Comtra)              # kyet
-      Use(Imprad)              # isimpon
-      Use(Reduced_ion_interface)   # misotope,natomic,nchstate
-      Use(Ynorm)               # iscolnorm
-      Use(Aux)                 # igsp
-      Use(Selec)               # xlinc,xrinc,yinc
-      Use(Bcond)               # nwsor,igspsori
-      Use(Parallv)             # nxg,nyg
-      Use(Jac_work_arrays)     # lwp,liwp
-      Use(Indices_domain_dcg)  # isddcon
-      Use(Indices_domain_dcl)  # vrsendl,visendl,ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
-      Use(Indices_loc_glob_map)# ivcum,ivloc2sdg,ivloc2mdg,ivl2gstnl
-      Use(Coefeq)              # cngmom
+            use Dim       ! nx,ny,nxm,nhsp,nzsp,nzspt,nusp,ngsp
+            use Xpoint_indices       ! ixlb,ixpt1,ixpt2,ixrb,
+                               ! iysptrx1,iysptrx2,iysptrx
+            use Math_problem_size    ! neqmx,numvar,numvarbwpad
+            use Cdv       ! ifexmain, iallcall
+            use Share     ! nycore,nysol,nxleg,nxcore,nxomit,igrid,isgrdsym,
+                    ! nyomitmx,geometry
+            use UEpar     ! svrpkg,,isnion,isupon,isupgon,isteon,
+                    ! istion,isngon,isphion
+        use UEint     ! minu,ziin,newgeo,mhdgeo,isallloc,GridFileName
+            use Lsode     ! neq,jacflg,jpre,ipar,ismmaxuc,mmaxu
+            use Solver_work_arrays    ! liw,lrw,iwork
+            use Grid      ! inewton
+            use Interp    ! nxold,nyold
+            use Decomp    ! ubw,lbw
+            use Jacobian      ! neqp1,nnzmx
+            use Jacreorder    ! ireorder
+            use Preconditioning      ! premeth,lenpfac,lenplufac,lenplumx
+            use Nonzero_diagonals    ! ndiagmx
+            use Model_choice         ! iondenseqn
+            use Jacobian_part        ! nnz1mx
+            use Jacobian_full        ! isjacmap, jacfull
+            use Opt_input            ! inopt,iworkin 8 ,iworkin 24 
+            use Constraints 
+            use Time_dep_nwt         ! nufak
+            use Comtra               ! kyet
+            use Imprad               ! isimpon
+            use Reduced_ion_interface    ! misotope,natomic,nchstate
+            use Ynorm                ! iscolnorm
+            use Aux                  ! igsp
+            use Selec                ! xlinc,xrinc,yinc
+            use Bcond                ! nwsor,igspsori
+            use Parallv              ! nxg,nyg
+            use Jac_work_arrays      ! lwp,liwp
+            use Indices_domain_dcg   ! isddcon
+            use Indices_domain_dcl   ! vrsendl,visendl,ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
+            use Indices_loc_glob_map ! ivcum,ivloc2sdg,ivloc2mdg,ivl2gstnl
+            use Coefeq               ! cngmom
 cc      Use(Rccoef)
-      Use(MCN_dim)             # MCN dimensions
-      Use(PNC_data)			   # PNC data storage
+            use MCN_dim              ! MCN dimensions
+            use PNC_data 			   ! PNC data storage
+
+      implicit none
 
 * --  local variables
       integer lda, lenk, ngspon, nispon, nuspon, ntgspon, ifld, isor, id
@@ -80,17 +80,17 @@ c...  Be sure nufak and dtreal are large if this is time-dependent run
       endif
 
 c ... Set mesh dimensions and x-point parameters
-      if (isallloc .eq. 0) then       # skip if allocating local proc
-      nxg = nx                        # only if global allocation
+      if (isallloc .eq. 0) then       ! skip if allocating local proc
+      nxg = nx                        ! only if global allocation
       nyg = ny
-      if (newgeo .ne. 0) then         # skip if geometry is unchanged
-      if (gengrid==1) then            # compute from flx and grd input
+      if (newgeo .ne. 0) then         ! skip if geometry is unchanged
+      if (gengrid==1) then            ! compute from flx and grd input
          call com_set_dims
          call gchange("Xpoint_indices",0)
 c----------------------------------------------------------------------c
-         if (mhdgeo == 1) then   #toroidal geo from MHD equilibrium
+         if (mhdgeo == 1) then   !toroidal geo from MHD equilibrium
 c----------------------------------------------------------------------c
-            if (geometry=="dnull") then #snowflake external
+            if (geometry=="dnull") then !snowflake external
                call set_dnull_indices
             elseif (geometry=="isoleg") then
                call set_isoleg_indices
@@ -108,13 +108,13 @@ c----------------------------------------------------------------------c
                   ixpt2(1) = ixpt2(1) - nxomit
                   ixrb(1) = ixrb(1) - nxomit
                endif
-               if (nyomitmx >= nysol(igrid)) then  # special case for core only
+               if (nyomitmx >= nysol(igrid)) then  ! special case for core only
                   ixmnbcl = 0
                   ixmxbcl = 0
                endif
             endif
 c----------------------------------------------------------------------c
-         elseif (mhdgeo == 2) then   #toroidal geo with circular cross-sec
+         elseif (mhdgeo == 2) then   !toroidal geo with circular cross-sec
 c----------------------------------------------------------------------c
             iysptrx1(1) = nycore(igrid)
             iysptrx2(1) = nycore(igrid)
@@ -127,7 +127,7 @@ c----------------------------------------------------------------------c
             ixmnbcl = 0
             ixmxbcl = 0
 c----------------------------------------------------------------------c
-	 else	# cases mhdgeo=0 (cyl), mhdgeo=-1 (slab), mhdgeo=-2 (mirror)
+	 else	! cases mhdgeo=0 (cyl), mhdgeo=-1 (slab), mhdgeo=-2 (mirror)
 c----------------------------------------------------------------------c
             iysptrx1(1) = nycore(igrid)
             iysptrx2(1) = nycore(igrid)
@@ -141,16 +141,16 @@ c----------------------------------------------------------------------c
                ixpt2(1) = (nxm + ixpt2(1))/2
             endif
 c----------------------------------------------------------------------c
-         endif	# end if-test on mhdgeo
+         endif	! end if-test on mhdgeo
 c----------------------------------------------------------------------c
-      elseif (gengrid==0) then        # read from gridue file
+      elseif (gengrid==0) then        ! read from gridue file
          if (geometry=="dnull" .or. geometry(1:9)=="snowflake" .or.
      .       geometry=="dnXtarget" .or. geometry=="isoleg") then
             nxpt=2
          else
             nxpt=1
-            call gchange("Xpoint_indices",0)  #needed to allocate ixrb
-	    if (ixrb(1) == 0) then  #calc indices if not in gridue file
+            call gchange("Xpoint_indices",0)  !needed to allocate ixrb
+	    if (ixrb(1) == 0) then  !calc indices if not in gridue file
                iysptrx1(1) = nycore(igrid)
                iysptrx2(1) = nycore(igrid)
                iysptrx = nycore(igrid)
@@ -164,19 +164,19 @@ c----------------------------------------------------------------------c
                   ixpt2(1) = ixpt2(1) - nxomit
                   ixrb(1) = ixrb(1) - nxomit
                endif
-               if (nyomitmx >= nysol(igrid)) then  # special case for core only
+               if (nyomitmx >= nysol(igrid)) then  ! special case for core only
                   ixmnbcl = 0
                   ixmxbcl = 0
                endif
             endif
          endif
          call gchange("Xpoint_indices",0)
-         call readgridpars(GridFileName,runid)  #define/redefine iysptrx1 etc
+         call readgridpars(GridFileName,runid)  !define/redefine iysptrx1 etc
          nx = nxm - abs(nxomit)
          ny = nym - nyomitmx
-      endif	# end if-test on gengrid
-      endif	# end if-test on newgeo
-      endif	# end if-test on isallloc
+      endif	! end if-test on gengrid
+      endif	! end if-test on newgeo
+      endif	! end if-test on isallloc
 
 
 c ... Check that number neutral gas species is not larger than ngspmx
@@ -304,32 +304,32 @@ c ... Calculate variables related to size of the problem.
       enddo
       numvar = isteon + istion + nispon + nuspon
      .                         + ngspon + ntgspon + isphion
-      numvarl = numvar   # for parallel mpi version
+      numvarl = numvar   ! for parallel mpi version
       
 c...  Allocate arrays isnionxy, isuponxy, etc in prep. for neq calc
-      call gchange("UEpar",0)    # allocates isnionxy,isnioffxy,etc
+      call gchange("UEpar",0)    ! allocates isnionxy,isnioffxy,etc
 
 cmer  The following calculations must be done in a separate subroutine
 cmer  after the UEpar arrays have been allocated.
 c...  Compute which equations are actually evolved from input parameters
 c...  Calculate actual number of equations (some may be turned-off)
-      call setonxy   #sets neq = acutal number eqns; neqmx adds 2 - usually
+      call setonxy   !sets neq = acutal number eqns; neqmx adds 2 - usually
 
       if (svrpkg .eq. "cvode" .or. svrpkg .eq. "kinsol") then
-        neqmx = neq      #cvode, kinsol allow no extra storage for yl
+        neqmx = neq      !cvode, kinsol allow no extra storage for yl
       else
-        neqmx = neq + 2  #1st extra flag for Jac. calc; 2nd nufak=/1psuedo dt
+        neqmx = neq + 2  !1st extra flag for Jac. calc; 2nd nufak=/1psuedo dt
       endif
 
       if (svrpkg .eq. "cvode" .or. svrpkg .eq. "kinsol") neqmx = neq
-                                  #cvode, kinsol allow no extra storage
+                                  !cvode, kinsol allow no extra storage
       neqp1 = neq + 1
       ipar(1) = neq
       ubw = (numvar+numvarbwpad)*(nx+ixpt2(nxpt)-max(0,ixpt1(1))+4)
       lbw = (numvar+numvarbwpad)*(nx+ixpt2(nxpt)-max(0,ixpt1(1))+4)
       if (xlinc.gt.20 .and. xrinc.gt.20 .and. yinc.gt.20) then
-         ubw = neq       # use full matrix & search full range for Jacobian
-         lbw = neq       # use full matrix & search full range for Jacobian
+         ubw = neq       ! use full matrix & search full range for Jacobian
+         lbw = neq       ! use full matrix & search full range for Jacobian
       endif
       lda = 2*lbw + ubw + 1
       if (jpre+jacflg+inewton(igrid) .eq. 0) lda = 1
@@ -362,9 +362,9 @@ c     if necessary.
         nnzmx = lenpfac*neq
       endif
       if (premeth .eq. 'ilut') then
-         lwp = nnzmx + lenplufac*neq   # extra space for fill in
+         lwp = nnzmx + lenplufac*neq   ! extra space for fill in
          lenplumx = lwp
-         liwp = max(lwp+neq, nnzmx+neq+1)   # see jac_lu_decomp
+         liwp = max(lwp+neq, nnzmx+neq+1)   ! see jac_lu_decomp
 c save preconditioner reordering info for icntnunk=1 case.
          if(ireorder .eq. 1) call gchange("Jacreorder",0)
       elseif (premeth .eq. 'banded') then
@@ -391,17 +391,17 @@ c ... Set lengths of work arrays for desired solver option.
          endif
          liw = 35 + liwp
       elseif (svrpkg.eq.'cvode') then
-         # nothing to do for cvode, but this validates cvode as solver
+         ! nothing to do for cvode, but this validates cvode as solver
       elseif (svrpkg.eq.'daspk') then
          if (iscolnorm .ne. 0) then
             call xerrab('**** Set iscolnorm=0 for DASPK, then restart *')
          endif
-         if (info(12).eq.0) then   # direct solution method with
-                                   # banded Jacobian supplied in jacd1
+         if (info(12).eq.0) then   ! direct solution method with
+                                   ! banded Jacobian supplied in jacd1
             lrw = 50+(2*lbw+ubw+10)*neq
             if (info(5).eq.0) lrw = lrw + 2*(neq/(lbw+ubw+1)+1)
             liw = 40+neq
-         else                      # Krylov method
+         else                      ! Krylov method
             lrw = 18*neq+91+lwp
             if (info(13) .eq. 1) then
                lrw = lrw + (neq + iwork(24))*(iwork(24) + 3) -
@@ -464,23 +464,23 @@ cc      call gallot("Rccoef",0)
          call gallot("Turbulence_diagnostics",0)
       endif
       call gchange("Poten",0)
-      call gchange("Lsode",0)   # changed from gallot to switch jpre,.
+      call gchange("Lsode",0)   ! changed from gallot to switch jpre,.
       call gallot("Constraints",0)
       call gallot("Time_dep_nwt",0)
-      call gchange("Ynorm",0) # preserves sfscal values for icntnunk=1
-      call gchange("Selec",0) # preserves ixm1 & ixp1 values for newgeo=0
+      call gchange("Ynorm",0) ! preserves sfscal values for icntnunk=1
+      call gchange("Selec",0) ! preserves ixm1 & ixp1 values for newgeo=0
       call gallot("Indexes",0)
       call gchange("Oldpla",0)
       call gallot("Rhsides",0)
       call gchange("MCN_sources",0)
       call gallot("Save_terms",0)
-      call gchange("Conduc",0)   # preserves nuiz, eeli, etc for icnuiz=2
+      call gchange("Conduc",0)   ! preserves nuiz, eeli, etc for icnuiz=2
       call gallot("Locflux",0)
       call gallot("Gradients",0)
       call gallot("Condition_number",0)
-      call gchange("Jacobian",0) # preserves Jacobian values for icntnunk=1
-      call gchange("Jacobian_csc",0) # preserves Jacobian values for icntnunk=1
-      call gchange("Jacaux",0) # preserves preconditioner data for icntnunk=1
+      call gchange("Jacobian",0) ! preserves Jacobian values for icntnunk=1
+      call gchange("Jacobian_csc",0) ! preserves Jacobian values for icntnunk=1
+      call gchange("Jacaux",0) ! preserves preconditioner data for icntnunk=1
       call gallot("Newtaux",0)
       call gallot("Wkspace",0)
       call gallot("Postproc",0)
@@ -520,7 +520,7 @@ cc      endif
 c	  Allocate PNC_data group
       call gchange("PNC_data",0)
 
-      iallcall = 1 # indicates allocate called at least once; nis allocated
+      iallcall = 1 ! indicates allocate called at least once; nis allocated
       return
       end
 ******* end of subroutine allocate ****
@@ -532,15 +532,15 @@ c----------------------------------------------------------------------c
 c...  Compute which equations are evolved based on input vars isnionffxy etc.
 c...  Then calculate total-number-of-eqns = neq (as some may be turned-off)
 
-      implicit none
+            use Dim       ! nx,ny,nisp,ngsp
+            use UEpar     ! isnion,isupon,isngon,isteon,istion,isphion
+                    ! isnionxy,isuponxy,isngonxy,isteonxy,istionxy,isphionxy
+                    ! isnioffxy,isupoffxy,isngoffxy,isteoffxy,istioffxy,isphioffxy
+            use Math_problem_size    ! neqmx
+            use Lsode     ! neq
+            use Indices_domain_dcl   ! ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
 
-      Use(Dim)      # nx,ny,nisp,ngsp
-      Use(UEpar)    # isnion,isupon,isngon,isteon,istion,isphion
-                    # isnionxy,isuponxy,isngonxy,isteonxy,istionxy,isphionxy
-                    # isnioffxy,isupoffxy,isngoffxy,isteoffxy,istioffxy,isphioffxy
-      Use(Math_problem_size)   # neqmx
-      Use(Lsode)    # neq
-      Use(Indices_domain_dcl)  # ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
+      implicit none
 
       integer ix,iy,ifld,igsp
 
@@ -569,8 +569,8 @@ c...  Then calculate total-number-of-eqns = neq (as some may be turned-off)
       enddo
 
       neq = 0
-      do iy = 1-iymnbcl, ny+iymxbcl   #iymb,xbcl =1(0) if guard cell(no)
-	do ix = 1-ixmnbcl, nx+ixmxbcl #ixmb,xbcl =1(0) if guard cell(no)
+      do iy = 1-iymnbcl, ny+iymxbcl   !iymb,xbcl =1(0) if guard cell(no)
+	do ix = 1-ixmnbcl, nx+ixmxbcl !ixmb,xbcl =1(0) if guard cell(no)
 	  do ifld = 1, nisp
 	    neq = neq + isnionxy(ix,iy,ifld)
           enddo
@@ -592,14 +592,14 @@ c----------------------------------------------------------------------c
       subroutine set_dnull_indices
 c     Define characteristic indices for a full double-null configuration.
 
-      implicit none
-
-      Use(Dim)            # nxpt
-      Use(Xpoint_indices) # ixlb,ixpt1,ixmdp,ixpt2,ixrb,
-                          # iysptrx1,iysptrx2,iysptrx
-      Use(Share)          # nycore,nxleg,nxcore,nxxpt
+            use Dim             ! nxpt
+            use Xpoint_indices  ! ixlb,ixpt1,ixmdp,ixpt2,ixrb,
+                          ! iysptrx1,iysptrx2,iysptrx
+            use Share           ! nycore,nxleg,nxcore,nxxpt
 
 c     For up/down symmetric double-null:
+      implicit none
+
       iysptrx1(1) = nycore(igrid)
       iysptrx2(1) = nycore(igrid)
       iysptrx = nycore(igrid)
@@ -629,12 +629,10 @@ c----------------------------------------------------------------------c
       subroutine set_isoleg_indices
 c     Define characteristic indices for a full double-null configuration.
 
-      implicit none
-
-      Use(Dim)            # nxpt
-      Use(Xpoint_indices) # ixlb,ixpt1,ixmdp,ixpt2,ixrb,
-                          # iysptrx1,iysptrx2,iysptrx
-      Use(Share)          # nycore,nxleg,nxcore,nxxpt
+            use Dim             ! nxpt
+            use Xpoint_indices  ! ixlb,ixpt1,ixmdp,ixpt2,ixrb,
+                          ! iysptrx1,iysptrx2,iysptrx
+            use Share           ! nycore,nxleg,nxcore,nxxpt
 
 c     For mimicing an isolated X-pt:
 
@@ -643,6 +641,8 @@ cc      nxpt = 2
 cc      call gchange("Xpoint_indices",0)
 cc      write(*,*) "After gchange; iysptrx1=", iysptrx1
 c...  Set indices
+      implicit none
+
       iysptrx1(1) = nycore(igrid)
       iysptrx2(1) = nycore(igrid)
       iysptrx = nycore(igrid)
@@ -667,62 +667,62 @@ c-----------------------------------------------------------------------
 *     UEINIT defines the geometry, initializes the state of the
 *     plasma, and defines miscellaneous other fields.
 
+            use Dim       ! nx,ny,nhsp,nusp,nzspt,nisp,ngsp,nxpt
+            use Share     ! nxomit,igrid,geometry,isnonog,nyomitmx
+                    ! nzdf,mcfilename,coronalimpfname
+            use Multicharge   ! rtnt,rtnn,rtnsd
+            use Comgeo    ! vol,gx,gy,dx,dy,xnrm,xvnrm,ynrm,yvnrm,sx,sy,rr,
+                    ! xcs,xfs,xcwi,xcwo,yyc,yyf
+            use Xpoint_indices       ! ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
+            use Math_problem_size    ! neqmx,numvar
+            use Aux       ! ix,iy,igsp,tv
+            use UEint     ! newgeo,newaph,restart,initsol,ttbeg,
+                    ! tinit,tscal,ngscal,xgscal,minu,ziin,ixgb
+            use Grid      ! ig
+            use Compla    ! mi,zi,mg,znucl
+            use Comflo    ! fqp,fq2,fqx,fqy
+            use Cfric     ! frice,frici
+            use Selec     ! ixm1,ixp1,stretcx
+            use Phyvar    ! mp,ev
+            use Comtra    ! kyet
+            use Turbulence    ! isturbcons,diffusrange,diffuslimit,diffuswgts
+            use Interp    ! isnintp,nxold,nyold,
+                    ! ixlbo,ixpt1o,ixpt2o,ixrbo,
+                    ! xnrmo,xvnrmo,xnrmox,xvnrmox,
+                    ! ynrmo,yvnrmo,ynrmox,yvnrmox,ixmg,iyomg,ixvmg,
+                    ! iyvomg,ix2g,iy2g,ixv2g,iyv2g,
+                    ! nis,tes,tis,phis,ups,ngs,afracs,isimesh
+            use UEpar     ! ngbackg,,isnion,isupon,isteon,istion,isngon,isphion
+                    ! isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy
+                    ! svrpkg,isphiofft,methg
+            use Coefeq    ! cngtgx,cngtgy,sxgpr,xstscal
+            use Lsode     ! neq,ires,ipar,rpar,yl,yldot,srtolpk,rtolv,icntnunk
+            use Ynorm     ! iscolnorm,norm_cons,floor_cons,var_scale_floor,
+                    ! n0,temp0,nnorm,ennorm,sigbar0,vpnorm,fnorm,
+                    ! suscal,sfscal
+            use Poten     ! sigma1,cfsigm
+            use Indexes   ! isvarup
+            use Bfield    ! b0,b0old,btot,rbfbt,rbfbt2
+            use Bcond     ! tewalli,tiwalli,tewallo,tiwallo,tedge,isfixlb
+                    ! matt,matp,cion,cizb,crmb
+            use Parallv   ! nxg,nyg
+            use Imprad    ! isimpon,ismctab
+            use Impurity_source_flux    ! fnzysi,fnzyso
+            use Variable_perturbation   ! del
+            use Time_dep_nwt            ! nufak,inufaknk
+            use Indices_domain_dcg      ! ndomain
+            use Indices_domain_dcl      ! ndomain
+            use Conduc    ! nuvl
+            use Locflux   ! fgtdx, fgtdy
+            use Jacobian  ! isjacstnlon
+            use Rccoef    ! feixextlb,rb;feiyexti,o
+            use Rhsides   ! psorc, psorxr, msor, msorxr
+            use Save_terms  ! psorcold, etc
+            use Cut_indices 	! ixcut1,iycut1,ixcut2,iycut2,ixcut3,iycut3
+                        ! ixcut4,iycut4
+
+
       implicit none
-
-      Use(Dim)      # nx,ny,nhsp,nusp,nzspt,nisp,ngsp,nxpt
-      Use(Share)    # nxomit,igrid,geometry,isnonog,nyomitmx
-                    # nzdf,mcfilename,coronalimpfname
-      Use(Multicharge)  # rtnt,rtnn,rtnsd
-      Use(Comgeo)   # vol,gx,gy,dx,dy,xnrm,xvnrm,ynrm,yvnrm,sx,sy,rr,
-                    # xcs,xfs,xcwi,xcwo,yyc,yyf
-      Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
-      Use(Math_problem_size)   # neqmx,numvar
-      Use(Aux)      # ix,iy,igsp,tv
-      Use(UEint)    # newgeo,newaph,restart,initsol,ttbeg,
-                    # tinit,tscal,ngscal,xgscal,minu,ziin,ixgb
-      Use(Grid)     # ig
-      Use(Compla)   # mi,zi,mg,znucl
-      Use(Comflo)   # fqp,fq2,fqx,fqy
-      Use(Cfric)    # frice,frici
-      Use(Selec)    # ixm1,ixp1,stretcx
-      Use(Phyvar)   # mp,ev
-      Use(Comtra)   # kyet
-      Use(Turbulence)   # isturbcons,diffusrange,diffuslimit,diffuswgts
-      Use(Interp)   # isnintp,nxold,nyold,
-                    # ixlbo,ixpt1o,ixpt2o,ixrbo,
-                    # xnrmo,xvnrmo,xnrmox,xvnrmox,
-                    # ynrmo,yvnrmo,ynrmox,yvnrmox,ixmg,iyomg,ixvmg,
-                    # iyvomg,ix2g,iy2g,ixv2g,iyv2g,
-                    # nis,tes,tis,phis,ups,ngs,afracs,isimesh
-      Use(UEpar)    # ngbackg,,isnion,isupon,isteon,istion,isngon,isphion
-                    # isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy
-                    # svrpkg,isphiofft,methg
-      Use(Coefeq)   # cngtgx,cngtgy,sxgpr,xstscal
-      Use(Lsode)    # neq,ires,ipar,rpar,yl,yldot,srtolpk,rtolv,icntnunk
-      Use(Ynorm)    # iscolnorm,norm_cons,floor_cons,var_scale_floor,
-                    # n0,temp0,nnorm,ennorm,sigbar0,vpnorm,fnorm,
-                    # suscal,sfscal
-      Use(Poten)    # sigma1,cfsigm
-      Use(Indexes)  # isvarup
-      Use(Bfield)   # b0,b0old,btot,rbfbt,rbfbt2
-      Use(Bcond)    # tewalli,tiwalli,tewallo,tiwallo,tedge,isfixlb
-                    # matt,matp,cion,cizb,crmb
-      Use(Parallv)  # nxg,nyg
-      Use(Imprad)   # isimpon,ismctab
-      Use(Impurity_source_flux)   # fnzysi,fnzyso
-      Use(Variable_perturbation)  # del
-      Use(Time_dep_nwt)           # nufak,inufaknk
-      Use(Indices_domain_dcg)     # ndomain
-      Use(Indices_domain_dcl)     # ndomain
-      Use(Conduc)   # nuvl
-      Use(Locflux)  # fgtdx, fgtdy
-      Use(Jacobian) # isjacstnlon
-      Use(Rccoef)   # feixextlb,rb;feiyexti,o
-      Use(Rhsides)  # psorc, psorxr, msor, msorxr
-      Use(Save_terms) # psorcold, etc
-      Use(Cut_indices)	# ixcut1,iycut1,ixcut2,iycut2,ixcut3,iycut3
-                        # ixcut4,iycut4
-
 
 *  -- external routines --
       real ssmin, s2min
@@ -783,9 +783,9 @@ ccc      endif
 c ... Set flag carried in yl(neq+1) to -1. meaning no pseudo time-step
 c ... in the equations. Gets reset to 1.for Jac. calc. to use pseudo nufak
 c ... The inverse pseudo time-step, nufak, is stored in yl(neq+2)
-      if (svrpkg.ne.'cvode'.and.svrpkg.ne.'kinsol') then #not allowed for cvode
+      if (svrpkg.ne.'cvode'.and.svrpkg.ne.'kinsol') then !not allowed for cvode
          yl(neq+1) = -1.
-         if (inufaknk .eq. 1) then   # deter. if nufak is used in Krylov step
+         if (inufaknk .eq. 1) then   ! deter. if nufak is used in Krylov step
             yl(neq+2) = nufak
          else
             yl(neq+2) = 0.
@@ -819,7 +819,7 @@ c     call sscal (nisp, mp, mi, 1)
       zn_last = 0.
       igsp = 1
       iigsp = 1
-      do 1 ifld = 1, nhsp    # determine mi, zi, iigsp, and mg for hydrogen
+      do 1 ifld = 1, nhsp    ! determine mi, zi, iigsp, and mg for hydrogen
 	 mi(ifld) = minu(ifld)*mp
          zi(ifld) = ziin(ifld)
          znucl(ifld) = znuclin(ifld)
@@ -837,15 +837,15 @@ c ------------- New lines for parallel neutral momentum eq.
             igsp = igsp + 1
          endif
          zn_last = znucl(ifld)
-         if (ifld.eq.1 .and. ishymol.eq.1) then   # for hydrogen molecules
+         if (ifld.eq.1 .and. ishymol.eq.1) then   ! for hydrogen molecules
             mg(2) = 2*mi(1)
          endif
     1 continue
 
       ifld_lcs = nhsp
       igsp_lcs = nhgsp
-      do jz = 1, ngspmx-1    # determine mi, zi, and mg for impurities
-         if (nzsp(jz)==0) break
+      do jz = 1, ngspmx-1    ! determine mi, zi, and mg for impurities
+         if (nzsp(jz)==0) exit
          ifld_fcs = ifld_lcs + 1
          ifld_lcs = ifld_fcs + nzsp(jz) - 1
          do ifld = ifld_fcs, ifld_lcs
@@ -853,7 +853,7 @@ c ------------- New lines for parallel neutral momentum eq.
             zi(ifld) = ziin(ifld)
             znucl(ifld) = znuclin(ifld)
          enddo
-         if (ngsp .gt. nhgsp) then  # impurity gas is present
+         if (ngsp .gt. nhgsp) then  ! impurity gas is present
             igsp_lcs = igsp_lcs + 1
             mg(igsp_lcs) = mi(ifld_lcs)
             if (igsp_lcs.gt.ngsp) call xerrab ('uenit:faulty input mg:z')
@@ -896,7 +896,7 @@ c     temporary (see next 2 occurrences of iscolnorm).
   117 continue
       ennorm = 1.5*n0(1)*temp0*ev
       if (iscolnorm.eq.1 .or. iscolnorm.eq.2) then
-         if (isflxvar .ne. 1) then   # ennorm,fnorm used to build floor_cons
+         if (isflxvar .ne. 1) then   ! ennorm,fnorm used to build floor_cons
             if (isflxvar .eq. 0) ennorm = ennorm / n0(1)
             do ifld = 1, nusp
                fnorm(ifld) = fnorm(ifld) / n0(ifld)
@@ -955,7 +955,7 @@ c ... Set floor constants.
          floor_cons(i) = var_scale_floor * norm_cons(i)
          if (isvarup(i) .eq. 1) floor_cons(i) = vsf_up*norm_cons(i)
          if (isvarphi(i) .eq. 1) floor_cons(i) = vsf_phi*norm_cons(i)
-                        # up velocity variables use full norm_cons
+                        ! up velocity variables use full norm_cons
       enddo
 
 c ... For implicit variable scaling, set some normalization constants
@@ -1033,45 +1033,45 @@ c ... Initialize Multicharge rate table dimensions
 c ... Set up tables for hydrogenic atomic-physics processes.
       if (newaph == 1) call aphread
 c ... Set up tables for impurity atomic-physics processes.
-      if (isimpon .eq. 1) then		# obsolete option
+      if (isimpon .eq. 1) then		! obsolete option
          call xerrab ('ueinit -- option isimpon=1 is obsolete; use 2')
-      elseif (isimpon .eq. 2) then	# data supplied by D. Post 1993
+      elseif (isimpon .eq. 2) then	! data supplied by D. Post 1993
          call readpost(coronalimpfname)
          call splinem
          call remark('*** For isimpon=2, set afracs, not afrac ***')
-      elseif ((isimpon .eq. 3) .and. (nzspt .gt. 0)) then    # avg-ion
+      elseif ((isimpon .eq. 3) .and. (nzspt .gt. 0)) then    ! avg-ion
          impflag = 1
          crni = 1.
          ctemp = 1.
          call inelinput (impflag, crni, ctemp, zi(nhsp+1), nzspt)
       elseif ((isimpon .ge. 4) .and. (isimpon .le. 6)
-     .                         .and. (nzspt .gt. 0)) then    # multi-charge
-         if (ismctab .eq. 1) then        # use INEL multi-charge tables
+     .                         .and. (nzspt .gt. 0)) then    ! multi-charge
+         if (ismctab .eq. 1) then        ! use INEL multi-charge tables
             impflag = 2
             crni = 1.
             ctemp = 1.
             call inelinput (impflag, crni, ctemp, zi(nhsp+1), nzspt)
-         elseif (ismctab .eq. 2) then    # use Braams multi-charge tables
+         elseif (ismctab .eq. 2) then    ! use Braams multi-charge tables
             if (newapi == 1) call readmc(nzdf,mcfilename)
          endif
-      elseif (isimpon .eq. 7) then      # read both Post and Braams tables
+      elseif (isimpon .eq. 7) then      ! read both Post and Braams tables
 c.....First the Post table(s):
          call readpost(coronalimpfname)
          call splinem
          call remark('*** For isimpon=7, set afracs, not afrac ***')
 c.....Then the Braams table(s):
-         if (ismctab .eq. 1) then        # use INEL multi-charge tables
+         if (ismctab .eq. 1) then        ! use INEL multi-charge tables
             impflag = 2
             crni = 1.
             ctemp = 1.
             call inelinput (impflag, crni, ctemp, zi(nhsp+1), nzspt)
-         elseif (ismctab .eq. 2) then    # use Braams multi-charge tables
+         elseif (ismctab .eq. 2) then    ! use Braams multi-charge tables
             if (newapi == 1) call readmc(nzdf,mcfilename)
          endif
       endif
 
 c ... If isimpon > 0 and isph_sput = 1, init. DIVIMP data for physical sputt.
-      do igsp = 1, ngsp    # note only one species should have isph_sput=1
+      do igsp = 1, ngsp    ! note only one species should have isph_sput=1
          if (isimpon.gt.0 .and. isph_sput(igsp).ge.1) then
             call syld96(matt,matp,cion,cizb,crmb)
          endif
@@ -1093,15 +1093,15 @@ c...  flux thru cut
             enddo
          endif
 c...  Calculate parallel connection length along B
-         do iy = 0, ny+1  # Initialize lconi,e to large number
+         do iy = 0, ny+1  ! Initialize lconi,e to large number
            do ix = 0, nx+1
              lconi(ix,iy) = 1e50
              lcone(ix,iy) = 1e50
            enddo
          enddo
          if (iysptrx >= 1 .and. nxleg(1,1)+nxleg(1,2) > 0) then 
-                                          # need sep for this calc of lconi,e
-           if(ndomain <=1) call conlen    #if parall, compute only at setup
+                                          ! need sep for this calc of lconi,e
+           if(ndomain <=1) call conlen    !if parall, compute only at setup
          endif
       endif
 
@@ -1114,7 +1114,7 @@ c...  rescale magnetic field quantities with b0
       call s2scal (nx+2, ny+2, abs(b0old/b0), curvrb2, 1, nx+2)
       call s2scal (nx+2, ny+2, b0old/b0, gradby, 1, nx+2)
       call s2scal (nx+2, ny+2, abs(b0old/b0), gradb2, 1, nx+2)
-         # v2cb sign change comes from rbfbt in forming uu
+         ! v2cb sign change comes from rbfbt in forming uu
       b0old = b0
 
 *  -- test vol, gx, gy, sx, sy, rr --
@@ -1148,7 +1148,7 @@ c     diffusivity, if needed.
          ixmp4 = ixpt1(1) + nxomit + 3*(ixpt2(1)-ixpt1(1))/4
 c        This is the approximate poloidal location of the outboard midplane
 c        for a single-null magnetic configuration.
-         if (nxpt==2) ixmp4 = ixmdp(2) # outboard midplane of "dnull" config
+         if (nxpt==2) ixmp4 = ixmdp(2) ! outboard midplane of "dnull" config
          diffuslimit = min(9,
      .                 nint(0.5 * diffusrange / dy(ixmp4,iysptrx+1)))
          do jy = diffuslimit+1, 9
@@ -1158,7 +1158,7 @@ c        for a single-null magnetic configuration.
          diffuswgts(0) = 1.
          diffustotal = diffuswgts(0)
          do jy = 1, diffuslimit
-           diffuswgts(jy) = float(diffuslimit + 1 - jy) /
+           diffuswgts(jy) = real(diffuslimit + 1 - jy) /
      .                           (diffuslimit + 1)
            diffuswgts(-jy) = diffuswgts(jy)
            diffustotal = diffustotal + 2. * diffuswgts(jy)
@@ -1172,7 +1172,7 @@ c...  set arrays to possibly zero out the neutral diffusive velocity
 c     arising from grad Ti
       call sfill(nx+2, 1., fgtdx(0), 1)
       call sfill(ny+2, 1., fgtdy(0), 1)
-      do jx = 1, nxpt # gradT can cause BC prob.;only flux matters
+      do jx = 1, nxpt ! gradT can cause BC prob.;only flux matters
          if (ixmnbcl==1) fgtdx(ixlb(jx)) = gcfacgtx
 	 if (ixmxbcl==1) fgtdx(ixrb(jx)) = gcfacgtx
       enddo
@@ -1195,14 +1195,14 @@ c...  set flux-limit arrays and account for turning-off at boundaries
 ccc      call sfill(nx+2, flalftgxy, flalftgxya(0), 1)
       call sfill(ny+2, flalftgy, flalftgya(0), 1)
 
-      do jx = 1, nxpt  #loop over x-points
+      do jx = 1, nxpt  !loop over x-points
         if (isplflxl==0) then
           flalfea(ixlb(jx)) = 1.e20
           flalfia(ixlb(jx)) = 1.e20
           flalfea(ixrb(jx)) = 1.e20
           flalfia(ixrb(jx)) = 1.e20
         endif
-        if (isplflxlv==0) then   # stagger mesh ==> ixlb+1 is bndry visc
+        if (isplflxlv==0) then   ! stagger mesh ==> ixlb+1 is bndry visc
           flalfva(ixlb(jx)+1) = 1.e20
           flalfva(ixrb(jx)+1) = 1.e20
         endif
@@ -1226,7 +1226,7 @@ ccc      call sfill(nx+2, flalftgxy, flalftgxya(0), 1)
           flalftgxa(ixrb(jx)) = 1.e20    
           flalftgxya(ixrb(jx)) = 1.e20    
         endif
-      enddo  # end of loop over x-point indices (ixpt)
+      enddo  ! end of loop over x-point indices (ixpt)
 
 c...  Now set sidewall flux limit factors
       if (iswflxlgy==0) then
@@ -1291,7 +1291,7 @@ c ... Initialize molecular thermal equilibration array in case not computed
             ne(ix,iy) = 0.0
             nit(ix,iy) = 0.0
             nm(ix,iy,1) = 0.0
-            do 140 ifld = 1, nisp  # here init. gas only for diff. model
+            do 140 ifld = 1, nisp  ! here init. gas only for diff. model
                ng(ix,iy,1) = ngscal(igsp)*nibeg(1)*( exp(-xcs(ix)/xgscal)
      .                            + exp(-(xcs(nx+1)-xcs(ix))/xgscal) )
      .                      + ngbackg(1)
@@ -1346,13 +1346,13 @@ c ... Give some shape to these initial values
          do iy = 0, ny+1
             do ix = 0, nx+1
                if (isfixlb(1) .gt. 0) then
-                 proffacx = float(nx+3-ix)/float(nx+3)
-                 proffacy = float(ny+3-iy)/float(ny+3)
+                 proffacx = real(nx+3-ix)/real(nx+3)
+                 proffacy = real(ny+3-iy)/real(ny+3)
                  proffacv = proffacx
                else
-                 proffacx = cos(float(ix-nx/2)*(pi-1.)/float(nx))
-                 proffacy = float(ny+3-iy)/float(ny+3)
-                 proffacv = sin(float(ix-nx/2)*(pi-1.)/float(nx))
+                 proffacx = cos(real(ix-nx/2)*(pi-1.)/real(nx))
+                 proffacy = real(ny+3-iy)/real(ny+3)
+                 proffacv = sin(real(ix-nx/2)*(pi-1.)/real(nx))
                endif
                te(ix,iy) = ttbeg*proffacx*proffacy
                ti(ix,iy) = tscal*ttbeg*proffacx*proffacy
@@ -1441,7 +1441,7 @@ c...  method chosen.
 	       if(isphionxy(ix,iy)==1) yldot(idxphi(ix,iy)) = 0.
   703        continue
   702    continue
-       endif   #ends if(svrpkg.eq.'daspk')
+       endif   !ends if(svrpkg.eq.'daspk')
 *---  bbbbbbbb ifloop b else  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
       else
 *---  bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
@@ -1472,7 +1472,7 @@ c...  method chosen.
 *     interpolate plasma state to the larger grid; either same or double
 *     ------------------------------------------------------------------
 
-      if(isnintp.eq.0 .or. isimesh.eq.1) then  # Use old interp or copy
+      if(isnintp.eq.0 .or. isimesh.eq.1) then  ! Use old interp or copy
          if (nis(nxold+1,nyold+1,1) .eq. 0.) then
             call xerrab ('variable nis=0, no saved solution for interp')
          endif
@@ -1531,13 +1531,13 @@ c.... If the grid does not change, but restart from saved variables
      .                          setting afracs = 1.e-20; 0 is illegal')
                   endif
                 endif
-                if (phis(nxold-1,nyold-1) .eq. 0) phi(ix,iy) = 40.  #avoid phi=0.
+                if (phis(nxold-1,nyold-1) .eq. 0) phi(ix,iy) = 40.  !avoid phi=0.
              enddo
           enddo
 
        endif
 
-      else          # New interpolator section for isnintp=1
+      else          ! New interpolator section for isnintp=1
 
 c...  Calculate y-interpolated norm. poloidal grid pts, and put in xnrmox
 c...  for density, etc, and in xvnrmox for poloidal velocity
@@ -1548,42 +1548,42 @@ c...  Order ixstart/end of poloidal regions from new ixcut & ixlb,rb
 c...  Previous values of ixsto and ixendo computed in subr gridseq
       ixst(1) = ixlb(1)
       ixend(1) = ixcut1
-      if (ixlb(1) == 0 .and. ixcut1 == 0) then  # no inner leg
+      if (ixlb(1) == 0 .and. ixcut1 == 0) then  ! no inner leg
         ixst(2) = 0
       else
         ixst(2) = max(ixlb(1), ixcut1+1)
       endif
       ixend(2) = ixcut2
-      if (nyomitmx >= nysol(1)) then   # no inner/outer leg region
+      if (nyomitmx >= nysol(1)) then   ! no inner/outer leg region
          ixst(2) = 0
          ixend(2) = nx+1
       endif
-      if (nx == 1) then  #special case: 1D in radial direction
+      if (nx == 1) then  !special case: 1D in radial direction
          ixend(2) = 2
       endif
 c..   Now need to check if ixrb is > or < ixcut3
       ixst(3) = ixcut2+1
-      if (ixcut3 > ixrb(1) .or. nxpt==1) then  #3 regions in first domain
+      if (ixcut3 > ixrb(1) .or. nxpt==1) then  !3 regions in first domain
         ixend(3) = ixrb(1)+1
-      else    # 4 regions in 1st domain, end on ixcut3
+      else    ! 4 regions in 1st domain, end on ixcut3
         ixend(3) = ixcut3
       endif
 
 c..   Continue ordering if double null or snowflake
       if (nxpt == 2) then
-        if (ixcut3 > ixrb(1)) then  # do 3-region 2nd domain
+        if (ixcut3 > ixrb(1)) then  ! do 3-region 2nd domain
           ixst(4) = ixlb(2)
           ixend(4) = ixcut3
           ixst(5) = ixcut3+1
-        else # 4 regions in 1st domain, compl & do 2-region 2nd domain
+        else ! 4 regions in 1st domain, compl & do 2-region 2nd domain
           ixst(4) = ixcut3+1
           ixend(4) = ixrb(1)+1
           ixst(5) = ixlb(2) 
-        endif  # remain indices are the same
+        endif  ! remain indices are the same
           ixend(5) = ixcut4
           ixst(6) = ixcut4+1
           ixend(6) = ixrb(2)+1
-      endif  # if-test on nxpt
+      endif  ! if-test on nxpt
 
 c...  Construct first intermediate density grid, (xnrmox,ynrmox)
       call gchange("Interp",0)
@@ -1671,8 +1671,8 @@ c...  Reset gas density to minimum if too small or negative
            enddo
          enddo
 
-      endif          # end of very-large 2-branch-if: (1), same mesh size
-                     # or (2), index-based interp with isnintp=1 
+      endif          ! end of very-large 2-branch-if: (1), same mesh size
+                     ! or (2), index-based interp with isnintp=1 
 
 c...  Check if any ion density is zero
       do ifld = 1, nisp
@@ -1710,7 +1710,7 @@ c...  Check if any ion density is zero
          call s2fill (nx+2, ny+2, 0., nueli(0,0,ifld), 1, nx+2)
       enddo
 
-      do ifld = 1, nisp   # test that s2fill does the right thing
+      do ifld = 1, nisp   ! test that s2fill does the right thing
         psorold(ifld) = 0.
         psorxrold(ifld) = 0.
         msorold(ifld) = 0.
@@ -1744,7 +1744,7 @@ ccc      write(*,*)  'Just initialized psorc, etc.in ueinit; nisp = ',nisp
                if (zi(ifld).ne.0.) then
                   ne(ix,iy) = ne(ix,iy) + zi(ifld)*ni(ix,iy,ifld)
                   nit(ix,iy) = nit(ix,iy) + ni(ix,iy,ifld)
-		  if (isimpon>=5 .and. nusp_imp==0) #note nm(ix,iy,1) initlly=0
+		  if (isimpon>=5 .and. nusp_imp==0) !note nm(ix,iy,1) initlly=0
      .                  nm(ix,iy,1)=nm(ix,iy,1)+ni(ix,iy,ifld)*mi(ifld)
                endif
                nm(ix,iy,ifld) = ni(ix,iy,ifld)*mi(ifld)
@@ -1838,7 +1838,7 @@ cccMER NOTE: only use sxgsol beyond outermost separatrix
 
 c ... Enable Jac stencil comp if not parallel
       if (isjacstnlon == 1) then
-        call domain_dc   # comp Jacobian stencil ivl2gstnl
+        call domain_dc   ! comp Jacobian stencil ivl2gstnl
       endif
 
       return
@@ -1849,23 +1849,23 @@ c----------------------------------------------------------------------c
 
       subroutine set_indirect_address(isglobal)
 c     Set indirect addressing arrays for x-direction
+      use Dim                 ! nx,ny
+      use Share               ! geometry,nyomitmx
+      use Xpoint_indices      ! ixpt1,ixpt2,iysptrx1,iysptrx2
+      use Cut_indices 	! ixcut1,iycut1,ixcut2,iycut2,ixcut3,iycut3
+                        ! ixcut4,iycut4
+      use Selec               ! ixm1,ixp1
+      use Bcond               ! isfixlb,isfixrb
+      use Parallv             ! nxg,nyg
+      use Indices_domain_dcg  ! ndomain,isddcon
+      use Npes_mpi            ! mype
+c     local variables --
       implicit none
 
 c..   Input variables
 
-      integer isglobal  #=1, global mesh; =0, serial case or par domains
+      integer isglobal  !=1, global mesh; =0, serial case or par domains
 
-Use(Dim)                # nx,ny
-Use(Share)              # geometry,nyomitmx
-Use(Xpoint_indices)     # ixpt1,ixpt2,iysptrx1,iysptrx2
-Use(Cut_indices)	# ixcut1,iycut1,ixcut2,iycut2,ixcut3,iycut3
-                        # ixcut4,iycut4
-Use(Selec)              # ixm1,ixp1
-Use(Bcond)              # isfixlb,isfixrb
-Use(Parallv)            # nxg,nyg
-Use(Indices_domain_dcg) # ndomain,isddcon
-Use(Npes_mpi)           # mype
-c     local variables --
       integer ix,iy
 
 c...  Set cut indices (duplicative for now, but used for snowflake)
@@ -1884,7 +1884,7 @@ c...  Set cut indices (duplicative for now, but used for snowflake)
          ixm1(0,iy) = 0
          ixp1(0,iy) = 1
          if (ndomain==1 .or. isddcon==2 .or. isglobal==1) then
-                                             # no x-domain decomposition
+                                             ! no x-domain decomposition
             iym1a(0,iy) = max(0,iy-1)
             iyp1a(0,iy) = min(ny+1,iy+1)
             iym1a(nx+1,iy) = max(0,iy-1)
@@ -1910,7 +1910,7 @@ c ...  First case is the default geometry=snull
                   ixm1(ix,iy) = ix-1
                   ixp1(ix,iy) = ix+1
                endif
-               if (geometry=="dnull") then  #3 conditions for 1-cell cases
+               if (geometry=="dnull") then  !3 conditions for 1-cell cases
                  if (ixpt2(1)==ixpt1(1)+1.or.ixpt2(2)==ixpt1(2)+1) then
                   call xerrab("***Error: Single pol cell not supported")
                  endif
@@ -1944,7 +1944,7 @@ c ...  First case is the default geometry=snull
                   endif
                endif
 
-               if (geometry=="snowflake15") then	# MER 20 Apr 2014
+               if (geometry=="snowflake15") then	! MER 20 Apr 2014
                   if ((iy .le. iycut1) .and. (ix .eq. ixcut1)) then
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ixcut4+1
@@ -1973,11 +1973,11 @@ c ...  First case is the default geometry=snull
                   elseif ((iy .le. iycut4) .and. (ix .eq. ixcut4+1)) then
                      ixm1(ix,iy) = ixcut1
                      ixp1(ix,iy) = ix+1
-                  else	# when cuts do not interfere
+                  else	! when cuts do not interfere
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ix+1
                   endif
-               endif	# end of geometry=="snowflake15"
+               endif	! end of geometry=="snowflake15"
 
                if (geometry=="snowflake45" .or. geometry=="dnXtarget") then
                   if ((iy .le. iycut1) .and. (ix .eq. ixcut1)) then
@@ -2008,13 +2008,13 @@ c ...  First case is the default geometry=snull
                   elseif ((iy .le. iycut4) .and. (ix .eq. ixcut4+1)) then
                      ixm1(ix,iy) = ixcut3
                      ixp1(ix,iy) = ix+1
-                  else	# when cuts do not interfere
+                  else	! when cuts do not interfere
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ix+1
                   endif
-               endif	# end of geometry=="snowflake45"
+               endif	! end of geometry=="snowflake45"
 
-               if (geometry=="snowflake75") then	# MER 16 Sep 2014
+               if (geometry=="snowflake75") then	! MER 16 Sep 2014
                   if ((iy .le. iycut1) .and. (ix .eq. ixcut1)) then
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ixcut2+1
@@ -2043,13 +2043,13 @@ c ...  First case is the default geometry=snull
                   elseif ((iy .le. iycut4) .and. (ix .eq. ixcut4+1)) then
                      ixm1(ix,iy) = ixcut3
                      ixp1(ix,iy) = ix+1
-                  else	# when cuts do not interfere
+                  else	! when cuts do not interfere
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ix+1
                   endif
-               endif	# end of geometry=="snowflake75"
+               endif	! end of geometry=="snowflake75"
 			   
-			   if (geometry=="snowflake105") then	# AK 10 DEC 2018
+			   if (geometry=="snowflake105") then	! AK 10 DEC 2018
                   if ((iy .le. iycut1) .and. (ix .eq. ixcut1)) then
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ixcut4+1
@@ -2079,13 +2079,13 @@ c ...  First case is the default geometry=snull
                   elseif ((iy .le. iycut4) .and. (ix .eq. ixcut4+1)) then
                      ixm1(ix,iy) = ixcut1
                      ixp1(ix,iy) = ix+1
-                  else	# when cuts do not interfere
+                  else	! when cuts do not interfere
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ix+1
                   endif
-               endif	# end of geometry=="snowflake105"
+               endif	! end of geometry=="snowflake105"
 
-               if (geometry=="isoleg") then	# TDR 03 Dec 2014
+               if (geometry=="isoleg") then	! TDR 03 Dec 2014
                   if ((iy .le. iycut1) .and. (ix .eq. ixcut1)) then
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ixcut4+1
@@ -2097,9 +2097,9 @@ c ...  First case is the default geometry=snull
                      ixp1(ix,iy) = ix+1
                   elseif ((iy .le. iycut2) .and. (ix .eq. ixcut2+1)) then
                      ixm1(ix,iy) = ix-1
-		     ixp1(ix,iy) = ix+1  #mod
+		     ixp1(ix,iy) = ix+1  !mod
                   elseif ((iy .le. iycut3) .and. (ix .eq. ixcut3)) then
-                     ixm1(ix,iy) = ix-1  #mod
+                     ixm1(ix,iy) = ix-1  !mod
                      ixp1(ix,iy) = ix+1
                   elseif ((iy .le. iycut3) .and. (ix .eq. ixcut3+1)) then
                      ixm1(ix,iy) = ix-1
@@ -2114,27 +2114,27 @@ c ...  First case is the default geometry=snull
                   elseif ((iy .le. iycut4) .and. (ix .eq. ixcut4+1)) then
                      ixm1(ix,iy) = ixcut1
                      ixp1(ix,iy) = ix+1
-                  else	# when cuts do not interfere
+                  else	! when cuts do not interfere
                      ixm1(ix,iy) = ix-1
                      ixp1(ix,iy) = ix+1
                   endif
-               endif	# end of geometry=="isoleg"
+               endif	! end of geometry=="isoleg"
 
                if (isfixlb(1)==2.or.isfixrb(1)==2.or.iysptrx1(1)==0) then
-                                         # no multiple-connections here
+                                         ! no multiple-connections here
                   ixm1(ix,iy) = ix-1
                   ixp1(ix,iy) = ix+1
-               elseif (mype<=0.and.iysptrx1(1)==0) then #phys bndry at sep
+               elseif (mype<=0.and.iysptrx1(1)==0) then !phys bndry at sep
                   ixm1(ix,iy) = ix-1
                   ixp1(ix,iy) = ix+1
                endif
-            enddo  # first end do-loop over ix
-         elseif (ndomain > 1) then    # all cells are local
+            enddo  ! first end do-loop over ix
+         elseif (ndomain > 1) then    ! all cells are local
            if (isddcon == 1) then			 
              do ix = 1, nx
                 ixm1(ix,iy) = ix-1
                 ixp1(ix,iy) = ix+1
-             enddo  #second loop over ix
+             enddo  !second loop over ix
            elseif (isddcon == 2) then
              do ix = 1, nx
                if (iy <= iysptrxg(mype+1) .and. ix==ixpt1(1)) then
@@ -2153,12 +2153,12 @@ c ...  First case is the default geometry=snull
                   ixm1(ix,iy) = ix-1
                   ixp1(ix,iy) = ix+1
                endif
-             enddo  # 3rd loop over ix
+             enddo  ! 3rd loop over ix
            endif
          endif
          ixm1(nx+1,iy) = nx
          ixp1(nx+1,iy) = nx+1
-      enddo  # end do-loop over iy
+      enddo  ! end do-loop over iy
 
 c...  Special fix for core-only cases
       if (nyomitmx >= nysol(1)) then
@@ -2167,7 +2167,7 @@ c...  Special fix for core-only cases
       endif
 
       return
-      end  # end of subroutine set_indirect_address
+      end  ! end of subroutine set_indirect_address
 
 c----------------------------------------------------------------------c
 c----------------------------------------------------------------------c
@@ -2177,15 +2177,15 @@ c----------------------------------------------------------------------c
 c ... subroutine to transfer initial plasma and gas variables to
 c ... the global arrays nisg, upsg, etc. to domain decomposition
 
-      implicit none
-
-      Use(Dim)           # nx,ny,nhsp,nusp,nzspt,nisp,ngsp
-      Use(Compla)        # ni,up,te,ti,ng
-      Use(Interp)        # nxold,nyold,afracs
-      Use(Global_vars)   # nisg,upsg,tesg,tisg,ngsg,afracsg
-      Use(Imprad)        # isimpon
+            use Dim            ! nx,ny,nhsp,nusp,nzspt,nisp,ngsp
+            use Compla         ! ni,up,te,ti,ng
+            use Interp         ! nxold,nyold,afracs
+            use Global_vars    ! nisg,upsg,tesg,tisg,ngsg,afracsg
+            use Imprad         ! isimpon
 
 c **  local variables
+      implicit none
+
       integer ifld, iy, ix, igsp
 
           do ifld = 1, nisp
@@ -2208,7 +2208,7 @@ c **  local variables
                   if (afracs(1,1)+afracs(nx,ny).gt.1.e-20)
      .                                    afracsg(ix,iy) = afrac(ix,iy)
                 endif
-                if (phi(nx-1,ny-1) .eq. 0) phisg(ix,iy) = 40.  #avoid phi=0.
+                if (phi(nx-1,ny-1) .eq. 0) phisg(ix,iy) = 40.  !avoid phi=0.
              enddo
           enddo
 
@@ -2232,17 +2232,17 @@ c                followed by local scaling by each yl
 
 c ... Input arguments:
       integer job
-      integer neq     # total number of equations (and variables)
-      integer nvars   # number of variables in each grid cell
-      real yl(neq)    # variables used with solver packages
-      real norm_cons(nvars)    # normalization constants
-      real floor_cons(nvars)   # floor constants
+      integer neq     ! total number of equations (and variables)
+      integer nvars   ! number of variables in each grid cell
+      real yl(neq)    ! variables used with solver packages
+      real norm_cons(nvars)    ! normalization constants
+      real floor_cons(nvars)   ! floor constants
 
 c ... Output argument:
-      real su(neq)    # array of variable normalizations
+      real su(neq)    ! array of variable normalizations
 
 c ... Local variables:
-      integer ncells     # number of grid cells
+      integer ncells     ! number of grid cells
       integer iv, i, j
 
       ncells = neq / nvars
@@ -2280,22 +2280,22 @@ c --------------------------------------------------------------------c
 
 c ... Calculates indices and arrays needed for domain decomposition
 
-      implicit none
-
-      Use(Indices_domain_dcg) 	#ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g,isddcon
-                                #ixpt1g,ixpt2g,iysptrxg,idxpt
-      Use(Parallv)              #nxg,nyg,neqg
-      Use(Lsode)                #neq
-      Use(Share)  		#nxleg,nxcore,nycore,nysol,isgrdsym
-      Use(Dim)                  #nx,ny
-      Use(Xpoint_indices)       #ixpt1,ixpt2,iysptrx
-      Use(Math_problem_size)    #neqmx,numvar
-      Use(Indices_loc_glob_map) #ivl2gstnl(allocated)
+            use Indices_domain_dcg  	!ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g,isddcon
+                                !ixpt1g,ixpt2g,iysptrxg,idxpt
+            use Parallv               !nxg,nyg,neqg
+            use Lsode                 !neq
+            use Share   		!nxleg,nxcore,nycore,nysol,isgrdsym
+            use Dim                   !nx,ny
+            use Xpoint_indices        !ixpt1,ixpt2,iysptrx
+            use Math_problem_size     !neqmx,numvar
+            use Indices_loc_glob_map  !ivl2gstnl allocated 
 
 c ... Local variables
+      implicit none
+
       integer idx,idy,idt,nysd,nysd1,nysd2,nxsd1,nxsd2,nxsd3,id,iycum,
      .        nxsd,ixcum,iv,invar,ix,iy
 
@@ -2319,7 +2319,7 @@ c ... If isddcon=0, few variables & Jac stencil comp; no domain decomp
          iysptrxg(1) = iysptrx1(1)
          ndomain = 1
          ispwrbc(1) = 1
-         neq_locgmx = neq   # to dimension ivl2gstnl
+         neq_locgmx = neq   ! to dimension ivl2gstnl
 c ...    Allocate and compute Jacobian stencil
          call allocjacstnl
          return
@@ -2327,12 +2327,12 @@ c ...    Allocate and compute Jacobian stencil
 
 c ... Set values
       if (isddcon == 1) then
-        ndxt = ndleg(1,1)+ndleg(1,2)+ndxcore(1)   # number of domains in x
+        ndxt = ndleg(1,1)+ndleg(1,2)+ndxcore(1)   ! number of domains in x
       else
-        ndxt = 1                          # only 1 x-domain if issdcon=2
+        ndxt = 1                          ! only 1 x-domain if issdcon=2
       endif
-      ndyt = ndycore(1) + ndysol(1)       # number of domains in y
-      ndomain = ndxt*ndyt                 # total number of domains
+      ndyt = ndycore(1) + ndysol(1)       ! number of domains in y
+      ndomain = ndxt*ndyt                 ! total number of domains
       if (ndomain > ndomainmx) then
         call xerrab("*** Exiting because ndomain > ndomainmx ***")
       endif
@@ -2343,27 +2343,27 @@ c ... Initialize bndry conditions to be of the interior type (domain-domain)
 	 ixmxbcg(id) = 0
 	 iymnbcg(id) = 0
 	 iymxbcg(id) = 0
-         ispwrbc(id) = 0      #flag for identifying domain with core ixpt2
+         ispwrbc(id) = 0      !flag for identifying domain with core ixpt2
       enddo
 
 c ... Number of indices (including guard cells) in each region (left leg,
 c ... core, and right leg)
       if (isgrdsym .eq. 0) then
-        nxsd1 =int(float(nxleg(1,1)+1)/(ndleg(1,1)+.00001) + 0.999999 )
-        nxsd2 =int(float(nxcore(1,1)+nxcore(1,2))/(ndxcore(1)+.00001)+
+        nxsd1 =int(real(nxleg(1,1)+1)/(ndleg(1,1)+.00001) + 0.999999 )
+        nxsd2 =int(real(nxcore(1,1)+nxcore(1,2))/(ndxcore(1)+.00001)+
      .             0.999999 )
-        if (nxleg(1,1).eq.0 .or. nxleg(1,2).eq.0) nxsd2 = int( float(
+        if (nxleg(1,1).eq.0 .or. nxleg(1,2).eq.0) nxsd2 = int( real(
      .       nxcore(1,1)+nxcore(1,2)+1)/(ndxcore(1)+.00001)+0.999999 )
-        nxsd3 =int(float(nxleg(1,2)+1)/(ndleg(1,2)+.00001) + 0.999999 )
+        nxsd3 =int(real(nxleg(1,2)+1)/(ndleg(1,2)+.00001) + 0.999999 )
       elseif (isgrdsym .eq. 1) then
-        nxsd1 =int(float(nxleg(1,2)/2+1)/(ndleg(1,1)+.00001) + 0.999999 )
-        nxsd2 =int(float(nxcore(1,2))/(ndxcore(1)+.00001) + 0.999999 )
-        nxsd3 =int(float(nxleg(1,2)/2+1)/(ndleg(1,2)+.00001) + 0.999999 )
+        nxsd1 =int(real(nxleg(1,2)/2+1)/(ndleg(1,1)+.00001) + 0.999999 )
+        nxsd2 =int(real(nxcore(1,2))/(ndxcore(1)+.00001) + 0.999999 )
+        nxsd3 =int(real(nxleg(1,2)/2+1)/(ndleg(1,2)+.00001) + 0.999999 )
       endif
-      nysd1 = int(float(nycore(1)+1)/(ndycore(1)+.00001) + 0.99999 )
-      nysd2 = int(float(nysol(1)+1)/(ndysol(1)+.00001) + 0.99999 )
+      nysd1 = int(real(nycore(1)+1)/(ndycore(1)+.00001) + 0.99999 )
+      nysd2 = int(real(nysol(1)+1)/(ndysol(1)+.00001) + 0.99999 )
       if (nycore(1) .eq. 0) then
-        nysd2 = int(float(nysol(1)+2)/(ndysol(1)+.00001) + 0.99999 )
+        nysd2 = int(real(nysol(1)+2)/(ndysol(1)+.00001) + 0.99999 )
       endif
 
 c ... Do a special case if isddcon=2: only divides into domains in y-direction
@@ -2397,8 +2397,8 @@ ccc              nysd = min(nysd1, iysptrx1(1)-iycum)
                iymin(idy) = iycum + 1 - nysd
                iymax(idy) = iycum
             endif
-            if (ixmin(idy) .eq. 1 ) ixmnbcg(idy) = 1    #true boundary
-            if (ixmax(idy) .eq. nx) ixmxbcg(idy) = 1	#true boundary
+            if (ixmin(idy) .eq. 1 ) ixmnbcg(idy) = 1    !true boundary
+            if (ixmax(idy) .eq. nx) ixmxbcg(idy) = 1	!true boundary
             ixpt1g(idy) = ixpt1(1)
             ixpt2g(idy) = ixpt2(1)
             iysptrxg(idy) = iysptrx1(1) - (iymin(idy)-1)
@@ -2407,7 +2407,7 @@ ccc              nysd = min(nysd1, iysptrx1(1)-iycum)
             idxm1g(idy) = 0
             idxp1g(idy) = nx+1
          enddo
-         ispwrbc(1) = 1   #for 1D radial decomp, core bdry always id=1
+         ispwrbc(1) = 1   !for 1D radial decomp, core bdry always id=1
 c ...    Allocate and compute Jacobian stencil
          call allocjacstnl
          return
@@ -2461,10 +2461,10 @@ c ..       Next do the iy indices
             endif
 ccc            iymin(idt) = iycum + 1 - nysd
 ccc            iymax(idt) = iycum
-ccc            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 #true boundary
-ccc            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	#true boundary
-ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	#true boundary
-ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	#true boundary
+ccc            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 !true boundary
+ccc            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	!true boundary
+ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	!true boundary
+ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	!true boundary
          enddo
       enddo
 
@@ -2492,7 +2492,7 @@ c ..       First do the ix indices
                if (ndleg(1,2).eq.0) ixmxbcg(idt) = 1
                ixmin(idt) = ixcum + 1 - nxsd
                ixmax(idt) = ixpt2(1)
-               if(idy==1) ispwrbc(idt) = 1  #ident idt for core pwr BC
+               if(idy==1) ispwrbc(idt) = 1  !ident idt for core pwr BC
             else
                ixmin(idt) = ixcum + 1 - nxsd
                ixmax(idt) = ixcum
@@ -2515,10 +2515,10 @@ c ..       Next do the iy indices
             endif
 ccc            iymin(idt) = iycum + 1 - nysd
 ccc            iymax(idt) = iycum
-ccc            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 #true boundary
-ccc            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	#true boundary
-ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	#true boundary
-ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	#true boundary
+ccc            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 !true boundary
+ccc            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	!true boundary
+ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	!true boundary
+ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	!true boundary
          enddo
       enddo
 
@@ -2571,10 +2571,10 @@ ccc            ixmax(idt) = min(ixpt2(1)+nxsd3*idx, nx)
             endif
 ccc            iymin(idt) = iycum + 1 - nysd
 ccc            iymax(idt) = iycum
-            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 	#true boundary
-            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	#true boundary
-ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	#true boundary
-ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	#true boundary
+            if (ixmin(idt) .eq. 1 ) ixmnbcg(idt) = 1 	!true boundary
+            if (ixmax(idt) .eq. nx) ixmxbcg(idt) = 1	!true boundary
+ccc            if (iymin(idt) .eq. 1 ) iymnbcg(idt) = 1	!true boundary
+ccc            if (iymax(idt) .eq. ny) iymxbcg(idt) = 1	!true boundary
          enddo
       enddo
 
@@ -2615,7 +2615,7 @@ c...  Do the inner leg region (ix <= ixpt1)
             idcorng(idt,2) = max(0, idxp1g(idt)-ndxt)
             idcorng(idt,4) = min(ndomain+1, idxp1g(idt)+ndxt)
          enddo
-	 if (idy.eq.ndycore(1) .and. ndleg(1,1).gt.0) then #insures 1,4 reciprocity
+	 if (idy.eq.ndycore(1) .and. ndleg(1,1).gt.0) then !insures 1,4 reciprocity
            idcorng(idt,4) = min(ndomain+1, idt+1+ndxt)     
          endif
       enddo
@@ -2629,7 +2629,7 @@ c...  Do the core region (ixpt1 < ix <= ixpt2)
             idxm1g(idt) = max(0, idt-1)
             if (idx.eq.1 .and. ndleg(1,1).eq.0) then
               idxm1g(idt) = 0
-            elseif (idx.eq.1 .and. idy.le.ndycore(1))
+            elseif (idx.eq.1 .and. idy.le.ndycore(1)) then
               idxm1g(idt) = idt-1+ndxcore(1)
             endif
             if (idx.lt.ndxcore(1)) then
@@ -2658,7 +2658,7 @@ c...  Do the core region (ixpt1 < ix <= ixpt2)
               idcorng(idt,3) = min(ndomain+1, idt-1+ndxt)
             endif
          enddo
-	 if (idy.eq.ndycore(1)) then  # Insures reciprocity 1 <--> 4 passing
+	 if (idy.eq.ndycore(1)) then  ! Insures reciprocity 1 <--> 4 passing
            idcorng(idt,4) = min(ndomain+1, idt+1+ndxt)
          endif
          if (ndleg(1,2).eq.0) idxp1g(idt) = ndomain + 1
@@ -2729,14 +2729,14 @@ c ... Compute local domain neq_locg(id), find its maximum, and
 c ... allocate space for ivl2gstnl Jac stencil for routine map_var_jac
 c ... (must allocate outside of routine map_var_jac)
 
-      implicit none
-
-      Use(Indices_domain_dcg) 	#ndomain,neq_locg,iymin,iymax,iymnbcg,
-                                #iymxbcg,neq_locgmx,isddcon
-      Use(Math_problem_size)    #neqmx,numvar
-      Use(Indices_loc_glob_map) #ivl2gstnl(allocated)
+            use Indices_domain_dcg  	!ndomain,neq_locg,iymin,iymax,iymnbcg,
+                                !iymxbcg,neq_locgmx,isddcon
+            use Math_problem_size     !neqmx,numvar
+            use Indices_loc_glob_map  !ivl2gstnl allocated 
 
 c ... Local variables
+      implicit none
+
       integer iv,id,ix,iy,invar
 
       do id = 1, ndomain
@@ -2778,22 +2778,22 @@ c ... Specifically, computes ivloc2sdg (global eqn indices for single
 c ... domain ordering), ivloc2mdg (global eqn indices for looping over
 c ... each of the multiple domains in order)
 
-      implicit none
-
-      Use(Indices_domain_dcg) 	#ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g,isddcon
-                                #ixpt1g,ixpt2g,iysptrxg,idxpt,neq_locg
-      Use(Parallv)              #nxg,nyg,neqg
-      Use(Lsode)                #neq
-      Use(Share)  		#nxleg,nxcore,nycore,nysol,isgrdsym
-      Use(Dim)                  #nx,ny
-      Use(Xpoint_indices)       #ixpt1,ixpt2,iysptrx
-      Use(Indices_loc_glob_map) #ivloc2sdg,ivloc2mdg,ivl2gstnl
-      Use(Math_problem_size)    #neqmx,numvar
+            use Indices_domain_dcg  	!ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g,isddcon
+                                !ixpt1g,ixpt2g,iysptrxg,idxpt,neq_locg
+            use Parallv               !nxg,nyg,neqg
+            use Lsode                 !neq
+            use Share   		!nxleg,nxcore,nycore,nysol,isgrdsym
+            use Dim                   !nx,ny
+            use Xpoint_indices        !ixpt1,ixpt2,iysptrx
+            use Indices_loc_glob_map  !ivloc2sdg,ivloc2mdg,ivl2gstnl
+            use Math_problem_size     !neqmx,numvar
 
 c ... Local variables
+      implicit none
+
       integer id,iycum,nxsd,ixcum,iv,ivglobal,invar,ix,iy,ivgstart,
      .        ivgstartl,iy0,nxlu,nylu,nx2u,ii,iv1,iv2,iv3,iv4,iv5,iv6,
      .        iv7,iv8,iv9,iel,idonor,nxdu,nydu,nxl2u,nyl2u,nxd2u,nyd2u,
@@ -2832,7 +2832,7 @@ c ... and for multiple domain ordering(ivloc2mdg)
 	        ivloc2mdg(iv,id) = iv + ivcum(id-1)
 	        ivcum(id) = ivcum(id-1) + iv
 	      endif
-              iellast(iv,id) = 0   # just initialize counter array for below
+              iellast(iv,id) = 0   ! just initialize counter array for below
 	    enddo
           enddo
 c ...     record last ivglobal value on bottom row of domain
@@ -2841,25 +2841,25 @@ c ...     record last ivglobal value on bottom row of domain
       enddo
 
 c ... Set stencil indices (ivl2gstnl) for Jacobian
-      do id = 1, ndomain  #First do case for internal donor cells: id=idonor
+      do id = 1, ndomain  !First do case for internal donor cells: id=idonor
         idonor = id
         iv = 0
 	ivsxy = 1-numvar
-        nxlu = ixmax(id) - ixmin(id) + 1    # local nx
+        nxlu = ixmax(id) - ixmin(id) + 1    ! local nx
         nxl2u = nxlu + ixmnbcg(id) + ixmxbcg(id)
         nxd2u = nxl2u
-        nylu = iymax(id) - iymin(id) + 1    # local ny
+        nylu = iymax(id) - iymin(id) + 1    ! local ny
         do iy = 1-iymnbcg(id), nylu+iymxbcg(id)
           do ix = 1-ixmnbcg(id), nxlu+ixmxbcg(id)
-            ivsxy = ivsxy + numvar #1st ivc new xy cell
- 	    do invar = 1, numvar #loop over local variables
+            ivsxy = ivsxy + numvar !1st ivc new xy cell
+ 	    do invar = 1, numvar !loop over local variables
               iv = iv + 1
               iel = 0
-              do ivc = 1, numvar #loop over donor variables
+              do ivc = 1, numvar !loop over donor variables
 		ivcu = ivsxy + ivc - 1
                 iv1 = ivcu - (nxd2u+1)*numvar
-                if (iy > 0) then  # else iy=0 cells have no -iy stencil comp
-                  if(ix>1-ixmnbcg(id) .and. iv1>0) then  # ix=0 done later 
+                if (iy > 0) then  ! else iy=0 cells have no -iy stencil comp
+                  if(ix>1-ixmnbcg(id) .and. iv1>0) then  ! ix=0 done later 
                     iel = iel + 1
                     ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,id)
                   endif
@@ -2882,7 +2882,7 @@ c ... Set stencil indices (ivl2gstnl) for Jacobian
 		  iel = iel + 1
                   ivl2gstnl(iv,iel,id)=ivloc2mdg(iv4,id)
                 endif
-                iv5 = ivcu  #no if-test needed
+                iv5 = ivcu  !no if-test needed
                   iel = iel + 1 
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv5,id)
                 iv6 = ivcu + numvar
@@ -2890,7 +2890,7 @@ c ... Set stencil indices (ivl2gstnl) for Jacobian
                   iel = iel + 1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv6,id)
                 endif
-                if (iy < nylu+iymxbcg(id)) then  # iy=ny+1 cells no iy+ sten compon
+                if (iy < nylu+iymxbcg(id)) then  ! iy=ny+1 cells no iy+ sten compon
                   iv7 = ivcu + (nxd2u-1)*numvar
                   if(ix>1-ixmnbcg(id) .and. iv7<=neq_locg(idonor)) then
                     iel = iel + 1
@@ -2918,31 +2918,31 @@ c ... Now fill in boundary cell components from other domains in the
 c ... order of local eqn indices iy=0, iy=ny+1, ix=0, ix=nx+1
 
       do id = 1, ndomain
-        nylu = iymax(id) - iymin(id) + 1                 #local ny
-        nyl2u = nylu + iymnbcg(id) + iymxbcg(id)         #local eff. ny+2
-        nxlu = ixmax(id) - ixmin(id) + 1                 #local nx
-        nxl2u = nxlu + ixmnbcg(id) + ixmxbcg(id)         #local eff. nx+2
+        nylu = iymax(id) - iymin(id) + 1                 !local ny
+        nyl2u = nylu + iymnbcg(id) + iymxbcg(id)         !local eff. ny+2
+        nxlu = ixmax(id) - ixmin(id) + 1                 !local nx
+        nxl2u = nxlu + ixmnbcg(id) + ixmxbcg(id)         !local eff. nx+2
 
 c ..    First do iy=0 eqn contrib to Jacobian from donor iy=ny+1 vars
         idonor = idym1g(id)
         if (idonor > 0) then 
-          nydu = iymax(idonor) - iymin(idonor) + 1         #donor ny
-          nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) #donor eff. ny+2
-          nxdu = ixmax(idonor) - ixmin(idonor) + 1         #donor nx
-          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) #donor eff. nx+2
-          iv = 0                                           #local eqn number
-          ivsxy = nxd2u*(nydu+iymnbcg(idonor)-1)*numvar-numvar+1 #donor left
-          iv2 = iv1 + numvar                                   #donor center
-          iv3 = iv2 + numvar                                   #donor right
+          nydu = iymax(idonor) - iymin(idonor) + 1         !donor ny
+          nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) !donor eff. ny+2
+          nxdu = ixmax(idonor) - ixmin(idonor) + 1         !donor nx
+          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) !donor eff. nx+2
+          iv = 0                                           !local eqn number
+          ivsxy = nxd2u*(nydu+iymnbcg(idonor)-1)*numvar-numvar+1 !donor left
+          iv2 = iv1 + numvar                                   !donor center
+          iv3 = iv2 + numvar                                   !donor right
           do ix = 1-ixmnbcg(id), nxlu+ixmxbcg(id)
-            do invar = 1, numvar #loop over local variables
+            do invar = 1, numvar !loop over local variables
               iv = iv + 1
               iel = iellast(iv,id)
-              do ivc = 1, numvar #loop over donor variables
+              do ivc = 1, numvar !loop over donor variables
                 iv1 = ivsxy + ivc - 1
                 iv2 = iv1 + numvar
                 iv3 = iv2 + numvar
-                if (ix>1-ixmnbcg(id) .and. iv1<=neq_locg(id)) then  #corn later
+                if (ix>1-ixmnbcg(id) .and. iv1<=neq_locg(id)) then  !corn later
                   iel = iel+1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
                 endif
@@ -2950,7 +2950,7 @@ c ..    First do iy=0 eqn contrib to Jacobian from donor iy=ny+1 vars
                   iel = iel+1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv2,idonor)
                 endif
-                if (ix<nxlu+ixmxbcg(id) .and. iv3<=neq_locg(id)) then #corn later
+                if (ix<nxlu+ixmxbcg(id) .and. iv3<=neq_locg(id)) then !corn later
                   iel = iel+1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv3,idonor)
                 endif
@@ -2964,26 +2964,26 @@ c ..    First do iy=0 eqn contrib to Jacobian from donor iy=ny+1 vars
 c ..    Second do iy=ny+1 eqn contrib to Jacobian from donor iy=0 vars
         idonor = idyp1g(id)
         if (idonor <= ndomain) then
-          ivsxy = -numvar+1 #start donor left
-          iv1 = -numvar     #donor left; not used until incr by numvar below
-          iv2 = 0           #donor center
-          iv3 = numvar      #donor right
+          ivsxy = -numvar+1 !start donor left
+          iv1 = -numvar     !donor left; not used until incr by numvar below
+          iv2 = 0           !donor center
+          iv3 = numvar      !donor right
           iv = nxl2u*(nylu+iymnbcg(id)-1)*numvar
           do ix = 1-ixmnbcg(id), nxlu+ixmxbcg(id)
-            do invar = 1, numvar #loop over local variables
+            do invar = 1, numvar !loop over local variables
               iv = iv + 1
               iel = iellast(iv,id)
-              do ivc = 1, numvar #loop over donor variables
+              do ivc = 1, numvar !loop over donor variables
                 iv1 = ivsxy + ivc - 1
                 iv2 = iv1 + numvar
                 iv3 = iv2 + numvar
-                if (ix > 0 .and. iv1 > 0) then  #corner cell done later
+                if (ix > 0 .and. iv1 > 0) then  !corner cell done later
                   iel = iel+1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
                 endif
                 iel = iel+1
                 ivl2gstnl(iv,iel,id) = ivloc2mdg(iv2,idonor)
-                if (ix < nxlu+ixmxbcg(id)) then #corner cell done later
+                if (ix < nxlu+ixmxbcg(id)) then !corner cell done later
                   iel = iel+1
                   ivl2gstnl(iv,iel,id) = ivloc2mdg(iv3,idonor)
                 endif
@@ -2997,19 +2997,19 @@ c ..    Second do iy=ny+1 eqn contrib to Jacobian from donor iy=0 vars
 c ..    Third do ix=0 eqn contrib to Jacobian from donor ix=nx+1 vars
         idonor = idxm1g(id)
         if (idonor > 0) then
-          nxdu = ixmax(idonor) - ixmin(idonor) + 1         #donor nx
-          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) #donor eff. nx+2
+          nxdu = ixmax(idonor) - ixmin(idonor) + 1         !donor nx
+          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) !donor eff. nx+2
           do iy = 1-iymnbcg(id), nylu+iymxbcg(id)
-            ivsxy = (iy+iymnbcg(idonor)-1)*nxd2u*numvar-numvar+1 #start donor below
-            iv = (iy+iymnbcg(id)-1)*nxl2u*numvar               #init iv (-1)
-            do invar = 1, numvar #loop over local variables
+            ivsxy = (iy+iymnbcg(idonor)-1)*nxd2u*numvar-numvar+1 !start donor below
+            iv = (iy+iymnbcg(id)-1)*nxl2u*numvar               !init iv (-1)
+            do invar = 1, numvar !loop over local variables
               iv = iv + 1
               iel = iellast(iv,id)
-              do ivc = 1, numvar #loop over donor variables
+              do ivc = 1, numvar !loop over donor variables
                 iv1 = ivsxy + ivc - 1
-                iv2 = iv1 + nxd2u*numvar                       #donor ctr
-                iv3 = iv2 + nxd2u*numvar                       #donor above
-                if(iy>1-iymnbcg(id) .and. iv1<=neq_locg(id)) then #corner later
+                iv2 = iv1 + nxd2u*numvar                       !donor ctr
+                iv3 = iv2 + nxd2u*numvar                       !donor above
+                if(iy>1-iymnbcg(id) .and. iv1<=neq_locg(id)) then !corner later
 		  iel = iel + 1
 		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
                 endif
@@ -3017,7 +3017,7 @@ c ..    Third do ix=0 eqn contrib to Jacobian from donor ix=nx+1 vars
                   iel = iel + 1
 	          ivl2gstnl(iv,iel,id) = ivloc2mdg(iv2,idonor)
                 endif
-		if (iy<ny+iymxbcg(id) .and. iv3<=neq_locg(id)) then #corn later
+		if (iy<ny+iymxbcg(id) .and. iv3<=neq_locg(id)) then !corn later
                   iel = iel + 1
 		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv3,idonor)
                 endif
@@ -3030,40 +3030,40 @@ c ..    Third do ix=0 eqn contrib to Jacobian from donor ix=nx+1 vars
 c ...   Fourth do ix=nx+1 eqn contrib to Jacobian from donor ix=0 vars
         idonor = idxp1g(id)
         if (idonor <= ndomain) then
-          nxdu = ixmax(idonor) - ixmin(idonor) + 1         #donor nx
-          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) #donor eff. nx+2
+          nxdu = ixmax(idonor) - ixmin(idonor) + 1         !donor nx
+          nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) !donor eff. nx+2
           do iy = 1-iymnbcg(id), nylu+iymxbcg(id)
-            ivsxy = (iy+iymnbcg(idonor)-2)*nxd2u*numvar+1  #start donor below
-	    iv = (iy+iymnbcg(id))*nxl2u*numvar - numvar    #init iv (-nv-1)
-            do invar = 1, numvar #loop over local variables
+            ivsxy = (iy+iymnbcg(idonor)-2)*nxd2u*numvar+1  !start donor below
+	    iv = (iy+iymnbcg(id))*nxl2u*numvar - numvar    !init iv (-nv-1)
+            do invar = 1, numvar !loop over local variables
               iv = iv + 1
               iel = iellast(iv,id)
-              do ivc = 1, numvar #loop over donor variables
+              do ivc = 1, numvar !loop over donor variables
                 iv1 = ivsxy + ivc - 1
-                iv2 = iv1 + nxd2u*numvar                   #donor ctr
-                iv3 = iv2 + nxd2u*numvar                   #donor above
-                if(iy>1-iymnbcg(id) .and. iv1>0) then  # no corn cell iy-1,ix+1
+                iv2 = iv1 + nxd2u*numvar                   !donor ctr
+                iv3 = iv2 + nxd2u*numvar                   !donor above
+                if(iy>1-iymnbcg(id) .and. iv1>0) then  ! no corn cell iy-1,ix+1
   	          iel = iel + 1
-  		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor) #use 1000?
+  		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor) !use 1000?
 		endif
 		if (iv2 > 0) then
 	          iel = iel + 1
-		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv2,idonor) #use 1000?
+		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv2,idonor) !use 1000?
                 endif
-		if (iy<nylu+iymxbcg(id) .and. iv3>0) then  # corn later
+		if (iy<nylu+iymxbcg(id) .and. iv3>0) then  ! corn later
                   iel = iel + 1
-		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv3,idonor) #use 1000?
+		  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv3,idonor) !use 1000?
                 endif
               enddo
               iellast(iv,id) = iel
             enddo
           enddo
-        elseif (idonor == ndomain+1)  then  # signifies a physical bdry;self donor
+        elseif (idonor == ndomain+1)  then  ! signifies a physical bdry;self donor
           do iy = 1-iymnbcg(id), nylu+iymxbcg(id)
-	    iv = (iy+iymnbcg(id))*nxl2u*numvar - numvar    #init iv (-nv-1)
-            do invar = 1, numvar  #loop over local variables
+	    iv = (iy+iymnbcg(id))*nxl2u*numvar - numvar    !init iv (-nv-1)
+            do invar = 1, numvar  !loop over local variables
               iv = iv + 1
-              do iel = 1, 9*numvar  # give bdry cell full stencil of prev cell
+              do iel = 1, 9*numvar  ! give bdry cell full stencil of prev cell
                 ivl2gstnl(iv,iel,id) = ivl2gstnl(iv-numvar,iel,id)
               enddo
             enddo
@@ -3073,16 +3073,16 @@ c ...   Fourth do ix=nx+1 eqn contrib to Jacobian from donor ix=0 vars
 c ...   Lastly, do the corner cell contributions to Jacobian from donors
 	  if (iymnbcg(id) == 0 .and. ixmnbcg(id) == 0) then
 	     idonor = idcorng(id,1)
-             nydu = iymax(idonor) - iymin(idonor) + 1         #donor ny
-             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) #donor eff. ny+2
-             nxdu = ixmax(idonor) - ixmin(idonor) + 1         #donor nx
-             nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) #donor eff. nx+2
+             nydu = iymax(idonor) - iymin(idonor) + 1         !donor ny
+             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) !donor eff. ny+2
+             nxdu = ixmax(idonor) - ixmin(idonor) + 1         !donor nx
+             nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) !donor eff. nx+2
              iv1 = nyd2u*nxd2u*numvar - numvar
 	     iv = 0
-             do invar = 1, numvar  #loop over local variables
+             do invar = 1, numvar  !loop over local variables
 	       iv = iv + 1
                iel = iellast(iv,id)
-               do ivc = 1, numvar  #loop over donor variables
+               do ivc = 1, numvar  !loop over donor variables
                  iv1 = iv1 + 1
                  iel = iel + 1
                  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
@@ -3092,16 +3092,16 @@ c ...   Lastly, do the corner cell contributions to Jacobian from donors
           endif
           if (iymnbcg(id) == 0 .and. ixmxbcg(id) == 0) then
 	     idonor = idcorng(id,2)
-             nydu = iymax(idonor) - iymin(idonor) + 1         #donor ny
-             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) #donor eff. ny+2
-             nxdu = ixmax(idonor) - ixmin(idonor) + 1         #donor nx
-             nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) #donor eff. nx+2
+             nydu = iymax(idonor) - iymin(idonor) + 1         !donor ny
+             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) !donor eff. ny+2
+             nxdu = ixmax(idonor) - ixmin(idonor) + 1         !donor nx
+             nxd2u = nxdu + ixmnbcg(idonor) + ixmxbcg(idonor) !donor eff. nx+2
              iv1 = (nyd2u-1)*nxd2u*numvar
 	     iv = (nxl2u-1)*numvar
-             do invar = 1, numvar  #loop over local variables
+             do invar = 1, numvar  !loop over local variables
 	       iv = iv + 1
                iel = iellast(iv,id)
-               do ivc = 1, numvar  #loop over donor variables
+               do ivc = 1, numvar  !loop over donor variables
                  iv1 = iv1 + 1
                  iel = iel + 1
                  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
@@ -3111,14 +3111,14 @@ c ...   Lastly, do the corner cell contributions to Jacobian from donors
           endif
           if (iymxbcg(id) == 0 .and. ixmnbcg(id) == 0) then
 	     idonor = idcorng(id,3)
-             nydu = iymax(idonor) - iymin(idonor) + 1         #donor ny
-             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) #donor eff. ny+2
+             nydu = iymax(idonor) - iymin(idonor) + 1         !donor ny
+             nyd2u = nydu + iymnbcg(idonor) + iymxbcg(idonor) !donor eff. ny+2
              iv1 = (nxd2u-1)*numvar
 	     iv = (nyl2u-1)*nxl2u*numvar
-             do invar = 1, numvar  #loop over local variables
+             do invar = 1, numvar  !loop over local variables
 	       iv = iv + 1
                iel = iellast(iv,id)
-               do ivc = 1, numvar  #loop over donor variables
+               do ivc = 1, numvar  !loop over donor variables
                  iv1 = iv1 + 1
                  iel = iel + 1
                  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
@@ -3130,10 +3130,10 @@ c ...   Lastly, do the corner cell contributions to Jacobian from donors
 	     idonor = idcorng(id,4)
              iv1 = 0
 	     iv = nyl2u*nxl2u*numvar - numvar
-             do invar = 1, numvar  #loop over local variables
+             do invar = 1, numvar  !loop over local variables
 	       iv = iv + 1
                iel = iellast(iv,id)
-               do ivc = 1, numvar  #loop over donor variables
+               do ivc = 1, numvar  !loop over donor variables
                  iv1 = iv1 + 1
                  iel = iel + 1
                  ivl2gstnl(iv,iel,id) = ivloc2mdg(iv1,idonor)
@@ -3142,7 +3142,7 @@ c ...   Lastly, do the corner cell contributions to Jacobian from donors
              enddo
            endif
 
-      enddo   # large do-loop over id
+      enddo   ! large do-loop over id
 
       return
       end
@@ -3156,25 +3156,25 @@ c ... Specifically, computes ivloc2sdg (global eqn indices for single
 c ... domain ordering), ivloc2mdg (global eqn indices for looping over
 c ... each of the multiple domains in order)
 
-      implicit none
-
-      Use(Indices_domain_dcg) 	#ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g,isddcon
-                                #ixpt1g,ixpt2g,iysptrxg,idxpt,neq_locg,
-                                #neq_locgmx
-      Use(Parallv)              #nxg,nyg,neqg
-      Use(Lsode)                #neq
-      Use(Share)  		#nxleg,nxcore,nycore,nysol,isgrdsym
-      Use(Dim)                  #nx,ny
-      Use(Xpoint_indices)       #ixpt1,ixpt2,iysptrx
-      Use(Indices_loc_glob_map) #ivloc2sdg,ivloc2mdg,ivl2gstnl
-      Use(Math_problem_size)    #neqmx,numvar
-      Use(Selec)                #ixp1,ixm1
-      Use(Indexes)              #ivfirst
+            use Indices_domain_dcg  	!ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g,isddcon
+                                !ixpt1g,ixpt2g,iysptrxg,idxpt,neq_locg,
+                                !neq_locgmx
+            use Parallv               !nxg,nyg,neqg
+            use Lsode                 !neq
+            use Share   		!nxleg,nxcore,nycore,nysol,isgrdsym
+            use Dim                   !nx,ny
+            use Xpoint_indices        !ixpt1,ixpt2,iysptrx
+            use Indices_loc_glob_map  !ivloc2sdg,ivloc2mdg,ivl2gstnl
+            use Math_problem_size     !neqmx,numvar
+            use Selec                 !ixp1,ixm1
+            use Indexes               !ivfirst
 
 c ... Local variables
+      implicit none
+
       integer id,iycum,nxsd,ixcum,iv,ivglobal,invar,ix,iy,ivgstart,
      .        ivgstartl,iy0,nxlu,nylu,nx2u,ii,iv1,iv2,iv3,iv4,iv5,iv6,
      .        iv7,iv8,iv9,iel,idonor,nxdu,nydu,nxl2u,nyl2u,nxd2u,nyd2u,
@@ -3224,15 +3224,15 @@ c ...     record last ivglobal value on bottom row of domain
 
 c ... Set stencil indices (ivl2gstnl) for Jacobian
       iyglastid = 0
-      do id = 1, ndomain  #First do all iy & internal ix donor cells
+      do id = 1, ndomain  !First do all iy & internal ix donor cells
         idonor = id
-        iv = -numvar   # not 0 as first ix=1 then starts iv=numvar+1
+        iv = -numvar   ! not 0 as first ix=1 then starts iv=numvar+1
 	ivsxy = 1-numvar
-        nxlu = nx              # local nx
+        nxlu = nx              ! local nx
         nxl2u = nx+2
         nxd2u = nx+2
         if (isddcon == 2) then
-          nylu = iymax(id) - iymin(id) + 1    # local ny
+          nylu = iymax(id) - iymin(id) + 1    ! local ny
           iystart = 1-iymnbcg(id)
           iyend = nylu+iymxbcg(id)
         else
@@ -3240,11 +3240,11 @@ c ... Set stencil indices (ivl2gstnl) for Jacobian
           iystart = 0
           iyend = ny+1
         endif
-        do iy = iystart, iyend    # iy is local
+        do iy = iystart, iyend    ! iy is local
           iyg = iy + iyglastid
           iv = iv + 2*numvar
-	  do ix = 1, nx           # ix is local/global;ix=0,nx+1 below
-            ivsxy = ivsxy + numvar          # first ivc of new xy cell
+	  do ix = 1, nx           ! ix is local/global;ix=0,nx+1 below
+            ivsxy = ivsxy + numvar          ! first ivc of new xy cell
             if (iyg > 0) then
               ivdonor(1) = ivfirst(ixm1(ix,iyg-1),iyg-1)
               ivdonor(2) = ivfirst(ix,            iyg-1)
@@ -3258,11 +3258,11 @@ c ... Set stencil indices (ivl2gstnl) for Jacobian
               ivdonor(8) = ivfirst(ix,            iyg+1)
               ivdonor(9) = ivfirst(ixp1(ix,iyg+1),iyg+1)
             endif
-	    do invar = 1, numvar #loop over local variables
+	    do invar = 1, numvar !loop over local variables
               iv = iv + 1
               ielem = 0
-              do idon = 1, 9  #loop over donor cells (not variables)
-                do ivc = 1, numvar #loop over donor variables
+              do idon = 1, 9  !loop over donor cells (not variables)
+                do ivc = 1, numvar !loop over donor variables
  		  if (iyg > 0 .and. idon <= 3) then
                     ielem = ielem + 1
                     ivl2gstnl(iv,ielem,id) = ivdonor(idon) + ivc-1
@@ -3273,25 +3273,25 @@ c ... Set stencil indices (ivl2gstnl) for Jacobian
                     ielem = ielem + 1
                     ivl2gstnl(iv,ielem,id) = ivdonor(idon) + ivc-1
                   endif
-                enddo   # ivc loop
-              enddo     # idon loop
-	    enddo       # invar loop
-          enddo         # ix loop
-        enddo           # iy loop
+                enddo   ! ivc loop
+              enddo     ! idon loop
+	    enddo       ! invar loop
+          enddo         ! ix loop
+        enddo           ! iy loop
       iyglastid = iyg
-      enddo             # id loop
+      enddo             ! id loop
 
 c ... Now do ix=0 boundary cells
       iyglastid = 0
-      do id = 1, ndomain  #First do case for internal donor cells: id=idonor
+      do id = 1, ndomain  !First do case for internal donor cells: id=idonor
         idonor = id
         iv = -(nx+1)*numvar
 	ivsxy = 1-numvar
-        nxlu = nx              # local nx
+        nxlu = nx              ! local nx
         nxl2u = nx+2
         nxd2u = nx+2
         if (isddcon == 2) then
-          nylu = iymax(id) - iymin(id) + 1    # local ny
+          nylu = iymax(id) - iymin(id) + 1    ! local ny
           iystart = 1-iymnbcg(id)
           iyend = nylu+iymxbcg(id)
         else
@@ -3299,11 +3299,11 @@ c ... Now do ix=0 boundary cells
           iystart = 0
           iyend = ny+1
         endif
-        do iy = iystart, iyend    # iy is local
+        do iy = iystart, iyend    ! iy is local
           iv = iv + (nx+1)*numvar
           iyg = iy + iyglastid
 	  ix = 0
-            ivsxy = ivsxy + numvar          # first ivc of new xy cell
+            ivsxy = ivsxy + numvar          ! first ivc of new xy cell
             if (iyg > 0) then
               ivdonor(2) = ivfirst(ix,            iyg-1)
               ivdonor(3) = ivfirst(ixp1(ix,iyg-1),iyg-1)
@@ -3314,11 +3314,11 @@ c ... Now do ix=0 boundary cells
               ivdonor(8) = ivfirst(ix,            iyg+1)
               ivdonor(9) = ivfirst(ixp1(ix,iyg+1),iyg+1)
             endif
-	    do invar = 1, numvar #loop over local ix=0 variables
+	    do invar = 1, numvar !loop over local ix=0 variables
               iv = iv + 1 
               ielem = 0
-              do idon = 1, 9  #loop over donor cells (not variables)
-                do ivc = 1, numvar #loop over donor variables
+              do idon = 1, 9  !loop over donor cells (not variables)
+                do ivc = 1, numvar !loop over donor variables
  		  if (iyg > 0 .and. idon > 1 .and. idon <= 3) then
                     ielem = ielem + 1
                     ivl2gstnl(iv,ielem,id) = ivdonor(idon) + ivc-1
@@ -3342,11 +3342,11 @@ c ... Now do ix=nx+1 boundary cells
         idonor = id
         iv = 0
 	ivsxy = 1-numvar
-        nxlu = nx              # local nx
+        nxlu = nx              ! local nx
         nxl2u = nx+2
         nxd2u = nx+2
         if (isddcon == 2) then
-          nylu = iymax(id) - iymin(id) + 1    # local ny
+          nylu = iymax(id) - iymin(id) + 1    ! local ny
           iystart = 1-iymnbcg(id)
           iyend = nylu+iymxbcg(id)
         else
@@ -3354,11 +3354,11 @@ c ... Now do ix=nx+1 boundary cells
           iystart = 0
           iyend = ny+1
         endif
-        do iy = iystart, iyend    # iy is local
+        do iy = iystart, iyend    ! iy is local
           iv = iv + (nx+1)*numvar
           iyg = iy + iyglastid
 	  ix = nx+1
-            ivsxy = ivsxy + numvar          # first ivc of new xy cell
+            ivsxy = ivsxy + numvar          ! first ivc of new xy cell
             if (iyg > 0) then
               ivdonor(1) = ivfirst(ixm1(ix-1,iyg-1),iyg-1)
               ivdonor(2) = ivfirst(ixm1(ix,  iyg-1),iyg-1)
@@ -3372,11 +3372,11 @@ c ... Now do ix=nx+1 boundary cells
               ivdonor(8) = ivfirst(ixm1(ix,  iyg+1),iyg+1)
               ivdonor(9) = ivfirst(ix,              iyg+1)
             endif
-	    do invar = 1, numvar #loop over local variables
+	    do invar = 1, numvar !loop over local variables
               iv = iv + 1
               ielem = 0
-              do idon = 1, 9  #loop over donor cells (not variables)
-                do ivc = 1, numvar #loop over donor variables
+              do idon = 1, 9  !loop over donor cells (not variables)
+                do ivc = 1, numvar !loop over donor variables
  		  if (iyg > 0 .and. idon <= 3) then
                     ielem = ielem + 1
                     ivl2gstnl(iv,ielem,id) = ivdonor(idon) + ivc-1
@@ -3401,6 +3401,14 @@ c-----------------------------------------------------------------------
 
       subroutine jacstnlout
 
+c ... Common blocks:
+            use Math_problem_size    ! neqmx,numvar
+            use Lsode            ! neq
+            use Jacobian_full    ! jacfull
+            use Indices_domain_dcg   !neq_locgmx
+            use Indices_loc_glob_map  !ivloc2sdg,ivloc2mdg,ivl2gstnl
+
+c ... Local variables:
       implicit none
 c_mpi      include 'mpif.h'
 
@@ -3409,14 +3417,6 @@ c ... Output a map of the Jacobian stensil fro  map_var_jac1d
 c ... All information is passed through common for convenience in
 c     calling this routine from the UEDGE> prompt.
 
-c ... Common blocks:
-      Use(Math_problem_size)   # neqmx,numvar
-      Use(Lsode)           # neq
-      Use(Jacobian_full)   # jacfull
-      Use(Indices_domain_dcg)  #neq_locgmx
-      Use(Indices_loc_glob_map) #ivloc2sdg,ivloc2mdg,ivl2gstnl
-
-c ... Local variables:
       integer ierr
       integer us,iv,ielem
 c_mpi      integer my_pe
@@ -3461,15 +3461,15 @@ c-----------------------------------------------------------------------
 
 *     Computes iv_toti(), num. of elem. in visend to be used by send_dc_ind()
 
-      implicit none
-
-      Use(Indices_domain_dcg) 	# ndomain,ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g
-                                #vrsend,visend
+            use Indices_domain_dcg  	! ndomain,ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g
+                                !vrsend,visend
 
 c ... output variables
-      integer iv_toti(128)  #number of elem. in visend sent to proc(id-1)
+      implicit none
+
+      integer iv_toti(128)  !number of elem. in visend sent to proc(id-1)
 
 c ... local variables
       integer id
@@ -3495,21 +3495,21 @@ c ---------------------------------------------------------------------c
 *     This subroutine packs and sends the indice data to different processesor for
 *     domain decomposition
 
+            use Indices_domain_dcg  	! ndomain,ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g
+                                !vrsend,visend,neq_locg
+            use Npes_mpi 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	# ndomain,ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g
-                                #vrsend,visend,neq_locg
-      Use(Npes_mpi)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typeind, ierr
 c_mpi      data typeind/1/
 
 c ... output variables
-      integer iv_toti(128)          #number of elem. in visend sent to proc(id-1)
+      integer iv_toti(128)          !number of elem. in visend sent to proc(id-1)
       integer visendl_mype(nvisend)
 
 c ... local variables
@@ -3518,9 +3518,9 @@ c ... local variables
 c ... send indices for domain decomposition to each processor
       do id = 1, ndomain
         iv = 1
-        visend(iv) = ixmax(id) - ixmin(id) + 1   # local nx
+        visend(iv) = ixmax(id) - ixmin(id) + 1   ! local nx
         iv = iv + 1
-        visend(iv) = iymax(id) - iymin(id) + 1   # local ny
+        visend(iv) = iymax(id) - iymin(id) + 1   ! local ny
 
         iv = iv + 1
         visend(iv) = ixmnbcg(id)
@@ -3569,20 +3569,20 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the index data on different processor for
 *     domain decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
+            use Npes_mpi              !npes,mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
-      Use(Npes_mpi)             #npes,mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer ierr, typeind, status(MPI_STATUS_SIZE)
 c_mpi      data typeind/1/
 
 c ... input variables
-      integer id, iv_toti(128)  #domain number (my_pe+1), number elems. 
-                                #in visend sent to this process
+      integer id, iv_toti(128)  !domain number (my_pe+1), number elems. 
+                                !in visend sent to this process
 c      integer visendl_mype(nvisendl)
 C     Above works because we compile with no promotion flags
 c     To be certain, do
@@ -3637,19 +3637,19 @@ c ---------------------------------------------------------------------c
 *     This subroutine packs and sends the indice data to different processesor for
 *     domain decomposition
 
+            use Indices_domain_dcg  	! ndomain,ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g
+                                !vrsend,visend,ivlocsdg,ivlocmdg,neq_locg
+            use Indices_loc_glob_map  !ivloc2sdg,ivloc2mdg,ivl2gstnl
+            use Math_problem_size     !neqmx,numvar
+            use Indices_domain_dcl  	!ivlocsdgl,ivlocmdgl,neq_locl	
+            use Npes_mpi 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	# ndomain,ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g
-                                #vrsend,visend,ivlocsdg,ivlocmdg,neq_locg
-      Use(Indices_loc_glob_map) #ivloc2sdg,ivloc2mdg,ivl2gstnl
-      Use(Math_problem_size)    #neqmx,numvar
-      Use(Indices_domain_dcl) 	#ivlocsdgl,ivlocmdgl,neq_locl	
-      Use(Npes_mpi)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typeylind, ierr
 c_mpi      data typeylind/4/
 
@@ -3672,7 +3672,7 @@ cdb_ylmap         write(6,*) "[",mype,"] MPI_SEND yl_map to ",id-1
 cdb_ylmap         call flush(6)
 c_mpi          call MPI_SEND(visend, 2*neq_locg(id), MPI_UE_INT, id-1, typeylind,
 c_mpi     .                   uedgeComm, ierr)
-c_mpi        else   #Set PE0 arrays not easily passed via mpi_send
+c_mpi        else   !Set PE0 arrays not easily passed via mpi_send
 c_mpi          neq_locl = neq_locg(1)
 c_mpi          do iv = 1, neq_locl
 c_mpi	         ivloc2sdgl(iv) = ivloc2sdg(iv,1)
@@ -3691,15 +3691,15 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the index data on different processor for
 *     domain decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl,
+                                !ivlocsdgl,ivlocmdgl,neq_locl	
+            use Npes_mpi              !npes,mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl,
-                                #ivlocsdgl,ivlocmdgl,neq_locl	
-      Use(Npes_mpi)             #npes,mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer ierr, typeylind, status(MPI_STATUS_SIZE)
 c_mpi      data typeylind/4/
 
@@ -3731,23 +3731,23 @@ c ---------------------------------------------------------------------c
 *     domain decomposition
 *     Prosessor[rank>0] receives the indice data
 
+            use Indices_domain_dcg  	! ndomain,ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g
+                                !vrsend,visend
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
+            use Npes_mpi 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	# ndomain,ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g
-                                #vrsend,visend
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
-      Use(Npes_mpi)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typeind, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typeind/1/
 
 c ... output variables
-      integer iv_toti(128)  #number of elem. in visendl sent to proc(id-1)
+      integer iv_toti(128)  !number of elem. in visendl sent to proc(id-1)
 
 c ... local variables
       integer id, iv, ic
@@ -3756,9 +3756,9 @@ c ... send indices for domain decomposition to each processor
       if (mype .le. 0) then
         do id = ndomain,1,-1
         iv = 1
-        visendl(iv) = ixmax(id) - ixmin(id) + 1   # local nx
+        visendl(iv) = ixmax(id) - ixmin(id) + 1   ! local nx
         iv = iv + 1
-        visendl(iv) = iymax(id) - iymin(id) + 1   # local ny
+        visendl(iv) = iymax(id) - iymin(id) + 1   ! local ny
 
         iv = iv + 1
         visendl(iv) = ixmnbcg(id)
@@ -3833,28 +3833,28 @@ c ---------------------------------------------------------------------c
 *     domain decomposition Prosessor[rank>0] receives the indice data
 *     This is done with a nonblocking send and receive.
 
+            use Indices_domain_dcg  	! ndomain,ixmin,ixmax,iymin,iymax
+                                !ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
+                                !idxp1g,idxm1g,idyp1g,idym1g
+                                !vrsend,visend
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
+            use Npes_mpi 
+            use Dim                   !nx
+            use Bcond                 !matwallo,matwalli
+            use Parallv               !nxg,nyg
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+    
       implicit none
 
-      Use(Indices_domain_dcg) 	# ndomain,ixmin,ixmax,iymin,iymax
-                                #ixmnbcg,ixmxbcg,iymnbcg,iymxbcg
-                                #idxp1g,idxm1g,idyp1g,idym1g
-                                #vrsend,visend
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,visendl
-      Use(Npes_mpi)
-      Use(Dim)                  #nx
-      Use(Bcond)                #matwallo,matwalli
-      Use(Parallv)              #nxg,nyg
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-    
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 CC c_mpi      integer typeind,ierr,status(MPI_STATUS_SIZE),req
 c_mpi      integer typeind
 c_mpi      integer(int4) :: ierr, status(MPI_STATUS_SIZE), req
 c_mpi      data typeind/1/
            
 c ... output variables
-      integer iv_toti(128)  #number of elem. in visendl sent to proc(id-1)
+      integer iv_toti(128)  !number of elem. in visendl sent to proc(id-1)
 
 c ... local variables
       integer id, iv, ic, ixu
@@ -3869,9 +3869,9 @@ c ... Proc[0] sends indices for domain decomposition to each processor
       if (mype .eq. 0) then
         do id = ndomain,1,-1
             iv = 1
-            visendl(iv) = ixmax(id) - ixmin(id) + 1   # local nx
+            visendl(iv) = ixmax(id) - ixmin(id) + 1   ! local nx
             iv = iv + 1
-            visendl(iv) = iymax(id) - iymin(id) + 1   # local ny
+            visendl(iv) = iymax(id) - iymin(id) + 1   ! local ny
 
             iv = iv + 1
             visendl(iv) = ixmnbcg(id)
@@ -3966,28 +3966,28 @@ c ---------------------------------------------------------------------c
 *     Pack iv_totv, iv_totrz, number of the global data to different processesor for
 *     domain decomposition
 
+            use Indices_domain_dcg    !ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !vrsend,visend
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Interp                !nxold,nyold
+            use RZ_grid_global        !rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
+            use Global_vars           !nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
+            use Selec                 !ixm1,ixp1
+            use Xpoint_indices        !iysptrx
+            use Npes_mpi 
+            use Comgeo_g              !lcong,lconeg,lconig
+            use Bcond                 !matwallog,matwallig
+            use Parallv               !nxg,nyg
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg)   #ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #vrsend,visend
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Interp)               #nxold,nyold
-      Use(RZ_grid_global)       #rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
-      Use(Global_vars)          #nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
-      Use(Selec)                #ixm1,ixp1
-      Use(Xpoint_indices)       #iysptrx
-      Use(Npes_mpi)
-      Use(Comgeo_g)             #lcong,lconeg,lconig
-      Use(Bcond)                #matwallog,matwallig
-      Use(Parallv)              #nxg,nyg
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr
 c_mpi      data typev/2/, typerz/3/
 
-c ... output variables    #number of elems. in vrsend for vars & rz mesh
+c ... output variables    !number of elems. in vrsend for vars & rz mesh
       integer iv_totv(128), iv_totrz(128)
       real    vrsendlv_mype(nvrsend),vrsendlz_mype(nvrsend)
 
@@ -4113,28 +4113,28 @@ c ---------------------------------------------------------------------c
 *     This subroutine sends the global data to different processesor for
 *     domain decomposition
 
+            use Indices_domain_dcg  	!ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !vrsend,visend
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Interp                !nxold,nyold
+            use RZ_grid_global        !rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
+            use Global_vars           !nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
+            use Selec                 !ixm1,ixp1
+            use Xpoint_indices        !iysptrx
+            use Npes_mpi 
+            use Comgeo_g              !lcong,lconeg,lconig
+            use Bcond                 !matwallog,matwallig
+            use Parallv               !nxg,nyg
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	#ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #vrsend,visend
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Interp)               #nxold,nyold
-      Use(RZ_grid_global)       #rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
-      Use(Global_vars)          #nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
-      Use(Selec)                #ixm1,ixp1
-      Use(Xpoint_indices)       #iysptrx
-      Use(Npes_mpi)
-      Use(Comgeo_g)             #lcong,lconeg,lconig
-      Use(Bcond)                #matwallog,matwallig
-      Use(Parallv)              #nxg,nyg
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr
 c_mpi      data typev/2/, typerz/3/
 
-c ... output variables    #number of elems. in vrsend for vars & rz mesh
+c ... output variables    !number of elems. in vrsend for vars & rz mesh
       integer iv_totv(128), iv_totrz(128)
       real    vrsendlv_mype(nvrsend),vrsendlz_mype(nvrsend)
 
@@ -4261,26 +4261,26 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the global data on different processor for
 *     domaini decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Interp                !nis,ups,tes,tis,ngs,phis,afracs,nxold,nyold
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Npes_mpi              !npes,mype
+            use Comgeo                !lcon,lcone,lconi
+            use Bcond                 !matwallo,matwalli
+            use Parallv               !nxg,nyg
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Interp)               #nis,ups,tes,tis,ngs,phis,afracs,nxold,nyold
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Npes_mpi)             #npes,mype
-      Use(Comgeo)               #lcon,lcone,lconi
-      Use(Bcond)                #matwallo,matwalli
-      Use(Parallv)              #nxg,nyg
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typev/2/, typerz/3/
 
 c ... input variables
-      integer id                          #domain number (my_pe+1)
-      integer iv_totv(128), iv_totrz(128) # elems. in vrsend (for mpi)
+      integer id                          !domain number (my_pe+1)
+      integer iv_totv(128), iv_totrz(128) ! elems. in vrsend (for mpi)
       real    vrsendlv_mype(nvrsendl),vrsendlz_mype(nvrsendl)
 
 c ... local variables
@@ -4376,26 +4376,26 @@ c ---------------------------------------------------------------------c
 *     This subroutine sends the global data to different processesor for
 *     domain decomposition
 
+            use Indices_domain_dcg  	!ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
+                                !ixmin,ixmax,iymin,iymax
+                                !vrsend,visend
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Interp                !nxold,nyold
+            use RZ_grid_global        !rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
+            use Global_vars           !nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
+            use Selec                 !ixm1,ixp1
+            use Xpoint_indices        !iysptrx
+            use Npes_mpi 
+            use Comgeo_g              !lcong,lconeg,lconig
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	#ndleg,ndxcore,ndycore,ndysol,ndxt,ndyt,ndomain
-                                #ixmin,ixmax,iymin,iymax
-                                #vrsend,visend
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Interp)               #nxold,nyold
-      Use(RZ_grid_global)       #rmg,zmg,psig,brg,bzg,bpolg,bphig,bg
-      Use(Global_vars)          #nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
-      Use(Selec)                #ixm1,ixp1
-      Use(Xpoint_indices)       #iysptrx
-      Use(Npes_mpi)
-      Use(Comgeo_g)             #lcong,lconeg,lconig
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr
 c_mpi      data typev/2/, typerz/3/
 
-c ... output variables    #number of elems. in vrsend for vars & rz mesh
+c ... output variables    !number of elems. in vrsend for vars & rz mesh
       integer iv_totv(128), iv_totrz(128)
       real    vrsendlv_mype(nvrsend),vrsendlz_mype(nvrsend)
 
@@ -4404,9 +4404,9 @@ c ... local variables
 
 c ... Pack and send global plasma variables to different processor
       do idu = 1, 2
-        id = idxpt(idu)     #gives X-pt domain being sent to
+        id = idxpt(idu)     !gives X-pt domain being sent to
         iv = 0
-        iy = iysptrx + 1   #global ix,iy sent to id up-right corner
+        iy = iysptrx + 1   !global ix,iy sent to id up-right corner
         if (idu == 1) then
           ix = ixpt2(1) + 1
         else
@@ -4454,9 +4454,9 @@ cpetsc      endif
 
 c ... Pack and send geometry and magnetic values
       do idu = 1, 2
-        id = idxpt(idu)     #gives X-pt domain being sent to
+        id = idxpt(idu)     !gives X-pt domain being sent to
         iv = 0
-        iy = iysptrx + 1   #global ix,iy sent to id up-right corner
+        iy = iysptrx + 1   !global ix,iy sent to id up-right corner
         if (idu == 1) then
           ix = ixpt2(1) + 1
         else
@@ -4515,24 +4515,24 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the global data on different processor for
 *     domain decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Interp                !nis,ups,tes,tis,ngs,phis,afracs,nxold,nyold
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Npes_mpi              !npes,mype
+            use Comgeo                !lcon,lcone,lconi
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Interp)               #nis,ups,tes,tis,ngs,phis,afracs,nxold,nyold
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Npes_mpi)             #npes,mype
-      Use(Comgeo)               #lcon,lcone,lconi
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typev/2/, typerz/3/
 
 c ... input variables
-      integer id          #receiving domain number
-      integer iv_totv(128), iv_totrz(128) # elems. in vrsend (for mpi)
+      integer id          !receiving domain number
+      integer iv_totv(128), iv_totrz(128) ! elems. in vrsend (for mpi)
       real    vrsendlv_mype(nvrsendl),vrsendlz_mype(nvrsendl)
 
 c ... local variables
@@ -4544,7 +4544,7 @@ c_mpi         call MPI_RECV(vrsendl, iv_totv(id), MPI_DOUBLE_PRECISION, 0,
 c_mpi     .                typev, uedgeComm, status, ierr)
 cdb_sendglobal_xpt         write(6,*) " [",mype,"] recvglobal_xpt MPI_RECV() from [",0,"] typev ",typev
 cdb_sendglobal_xpt         call flush(6)
-c_mpi      else    # PE0 cannot send to itself; vrsendlv_mpye holds data
+c_mpi      else    ! PE0 cannot send to itself; vrsendlv_mpye holds data
 c_mpi        do ic = 1,iv_totv(id)
 c_mpi          vrsendl(ic) = vrsendlv_mype(ic)
 c_mpi        enddo
@@ -4585,7 +4585,7 @@ c_mpi         call MPI_RECV(vrsendl, iv_totrz(id), MPI_DOUBLE_PRECISION, 0,
 c_mpi     .                typerz, uedgeComm, status, ierr)
 cdb_sendglobal_xpt         write(6,*) " [",mype,"] recvglobal_xpt MPI_RECV() from [",0,"] typerz ",typerz
 cdb_sendglobal_xpt         call flush(6)
-c_mpi      else    # PE0 cannot send to itself; vrsendlz_mpye holds data
+c_mpi      else    ! PE0 cannot send to itself; vrsendlz_mpye holds data
 c_mpi        do ic = 1,iv_totrz(id)
 c_mpi          vrsendl(ic) = vrsendlz_mype(ic)
 c_mpi        enddo
@@ -4632,34 +4632,34 @@ c ---------------------------------------------------------------------c
 *     This subroutine sends local corner data for two X-pt processesors
 *     domain decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl,
+                                !typebdy,typecn,iv_totbdy
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Compla                !ni,up,te,ti,ng,phi
+            use Imprad                !afrac
+            use Npes_mpi 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl,
-                                #typebdy,typecn,iv_totbdy
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Imprad)               #afrac
-      Use(Npes_mpi)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr
 c_mpi      data typev/2/, typerz/3/
 
 c ... input variables
-      integer pedestin      #destination processor (domain-1)
+      integer pedestin      !destination processor (domain-1)
 
-c ... output variables    #number of elems. in vrsend for vars & rz mesh
+c ... output variables    !number of elems. in vrsend for vars & rz mesh
       integer iv_totv(128)
-      integer iv_totvxpt  #number plasma variables sent in mpi message
+      integer iv_totvxpt  !number plasma variables sent in mpi message
 
 c ... local variables
       integer ix, iy, iv, ifld, igsp
 
 c ... Pack and send global plasma variables to processor ids
         iv = 0
-        iy = 1             #local ix,iy sent to id up-right corner
+        iy = 1             !local ix,iy sent to id up-right corner
         ix = 1
 
         do ifld = 1, nisp
@@ -4704,24 +4704,24 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the global data on different processor for
 *     domaini decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use Compla                !ni,up,te,ti,ng,phi
+            use Imprad                !afrac
+            use Npes_mpi              !npes,mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Imprad)               #afrac
-      Use(Npes_mpi)             #npes,mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev, typerz, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typev/2/, typerz/3/
 
 c ... input variables
-      integer pedonor      #donor processor (domain-1)
-      integer iv_totv(128), iv_totrz(128) # elems. in vrsend (for mpi)
-      integer iv_totvxpt  #number plasma variables sent in mpi message
+      integer pedonor      !donor processor (domain-1)
+      integer iv_totv(128), iv_totrz(128) ! elems. in vrsend (for mpi)
+      integer iv_totvxpt  !number plasma variables sent in mpi message
 
 c ... local variables
       integer ix, iy, iv, ifld, igsp
@@ -4768,24 +4768,24 @@ c ---------------------------------------------------------------------c
 
 *     This subroutine sends boundary data from one processor to another
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl,
+                                !typebdy,typecn,iv_totbdy
+            use Indices_domain_dcg  	!idym1g,idyp1g,idxm1g,idxp1g,idcorng
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Compla                !ni,up,te,ti,ng,phi
+            use Npes_mpi              !mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl,
-                                #typebdy,typecn,iv_totbdy
-      Use(Indices_domain_dcg) 	#idym1g,idyp1g,idxm1g,idxp1g,idcorng
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Npes_mpi)             #mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer ierr
 
 c ... input variables
-      integer id                #domain number (my_pe+1)
-C$$$      real    vrsendl_mype(nvrsendl) #rm later!
+      integer id                !domain number (my_pe+1)
+C$$$      real    vrsendl_mype(nvrsendl) !rm later!
 
       REAL, ALLOCATABLE :: vrsendl_mype(:)
 
@@ -4794,8 +4794,8 @@ c ... local variables
 
 c ... Pack and send plasma boundary variables along x-direction
       do iy = 1, ny, ny-1
-        if (iy.eq.1  .and. iymnbcl.eq.1) goto 10   #bndry is exter bndry, skip
-        if (iy.eq.ny .and. iymxbcl.eq.1) goto 10   #bndry is exter bndry, skip
+        if (iy.eq.1  .and. iymnbcl.eq.1) goto 10   !bndry is exter bndry, skip
+        if (iy.eq.ny .and. iymxbcl.eq.1) goto 10   !bndry is exter bndry, skip
         iv = 0
         do ix = 1-ixmnbcl, nx+ixmxbcl
           do ifld = 1, nisp
@@ -4856,8 +4856,8 @@ c_mpi        endif
 
 c ... Pack and send plasma boundary variables along y-direction
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 20   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 20   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 20   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 20   !bndry is exter bndry, skip
         iv = 0
         do iy = 1-iymnbcl, ny+iymxbcl
           do ifld = 1, nisp
@@ -4917,12 +4917,12 @@ c_mpi        endif
 
 c ... Pack and send corner data (ix=nx, iy=ny)
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 40   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 40   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 40   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 40   !bndry is exter bndry, skip
         do iy = 1, ny, ny-1
           iv = 0
-          if (iy.eq.1  .and. iymnbcl.eq.1) goto 30 #bndry is exter bndry, skip
-          if (iy.eq.ny .and. iymxbcl.eq.1) goto 30 #bndry is exter bndry, skip
+          if (iy.eq.1  .and. iymnbcl.eq.1) goto 30 !bndry is exter bndry, skip
+          if (iy.eq.ny .and. iymxbcl.eq.1) goto 30 !bndry is exter bndry, skip
           do ifld = 1, nisp
           iv = iv+1
           vrsendl(iv) = ni(ix,iy,ifld)
@@ -4988,24 +4988,24 @@ c-----------------------------------------------------------------------
 *     This subroutine receives the global data on different processor for
 *     domain decomposition
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
+                                !typebdy,typecn,iv_totbdy
+            use Indices_domain_dcg  	!idym1g,idyp1g,idxm1g,idxp1g,idcorng
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Compla                !ni,up,te,ti,ng,phi
+            use Npes_mpi              !mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
-                                #typebdy,typecn,iv_totbdy
-      Use(Indices_domain_dcg) 	#idym1g,idyp1g,idxm1g,idxp1g,idcorng
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Npes_mpi)             #mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer status(MPI_STATUS_SIZE)
 c_mpi      integer(int4) ierr
 
 c ... input variables
       integer id
-C$$$      real    vrsendl_mype(nvrsendl) #rm later!
+C$$$      real    vrsendl_mype(nvrsendl) !rm later!
 
       REAL, ALLOCATABLE :: vrsendl_mype(:)
 
@@ -5014,8 +5014,8 @@ c ... local variables
 
 c ... Receive and unpack plasma boundary variables along x-direction
       do iy = 0, ny+1, ny+1
-        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   #bndry is exter bndry, skip
-        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 #bndry is exter bndry, skip
+        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   !bndry is exter bndry, skip
+        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 !bndry is exter bndry, skip
 
 c_mpi        if (iy.eq.0) then
 cdb_sendbdry           write(6,*) " [",mype,"] recv from idym1-1 [",idym1-1,"] in recvbdry()"
@@ -5073,8 +5073,8 @@ c_mpi        endif
 
 c ... Receive and unpack plasma boundary variables along y-direction
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 !bndry is exter bndry, skip
 
 c_mpi        if (ix.eq.0) then
 cdb_sendbdry           write(6,*) " [",mype,"] recv from idxm1-1 [",idxm1-1,"] in recvbdry()"
@@ -5130,35 +5130,35 @@ c_mpi        endif
 
 c ... Receive and unpack corner data (ix=nx, iy=ny)
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 !bndry is exter bndry, skip
         do iy = 0, ny+1, ny+1
           iv = 0
-          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  #bndry is exter bndry, skip
-          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30#bndry is exter bndry, skip
+          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  !bndry is exter bndry, skip
+          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30!bndry is exter bndry, skip
 
           if (ix.eq.0) then
             if(iy.eq.0) then
-              iir = 1          # note for passing  4 <--> 1
+              iir = 1          ! note for passing  4 <--> 1
               iis = 4
-ccc              iir = 4          # note for passing  4 <--> 1
+ccc              iir = 4          ! note for passing  4 <--> 1
 ccc              iis = 1
             else
-              iir = 3          # note for passing  2 <--> 3
+              iir = 3          ! note for passing  2 <--> 3
               iis = 2
-ccc              iir = 2          # note for passing  2 <--> 3
+ccc              iir = 2          ! note for passing  2 <--> 3
 ccc              iis = 3
             endif
           else
             if (iy.eq.0) then
-              iir = 2          # note for passing  3 <--> 2
+              iir = 2          ! note for passing  3 <--> 2
               iis = 3
-ccc              iir = 3          # note for passing  3 <--> 2
+ccc              iir = 3          ! note for passing  3 <--> 2
 ccc              iis = 2
             else
-              iir = 4          # note for passing  1 <--> 4
+              iir = 4          ! note for passing  1 <--> 4
               iis = 1
-ccc              iir = 1          # note for passing  1 <--> 4
+ccc              iir = 1          ! note for passing  1 <--> 4
 ccc              iis = 4
             endif
           endif
@@ -5215,24 +5215,24 @@ c ---------------------------------------------------------------------c
 *     vrsendl used by sendbdry; a nonzero value indicates a message will
 *     be sent
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
+                                !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
+                                !typebdyi,typecni,iv_totbdy
+            use Indices_domain_dcg  	!idym1g,idyp1g,idxm1g,idxp1g,idcorng
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Compla                !ni,up,te,ti,ng,phi
+            use Npes_mpi              !mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,
-                                #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl,vrsendl
-                                #typebdyi,typecni,iv_totbdy
-      Use(Indices_domain_dcg) 	#idym1g,idyp1g,idxm1g,idxp1g,idcorng
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Npes_mpi)             #mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer ierr,req
 
 c ... input variables
-      integer id                #domain number (my_pe+1)
-      integer myiv              #iv previously sent to mype
+      integer id                !domain number (my_pe+1)
+      integer myiv              !iv previously sent to mype
 
 c ... local variables
       integer ix, iy, iv, ifld, igsp, ii
@@ -5245,8 +5245,8 @@ c_mpi      endif
 c_mpi      myiv = -1
 
       do iy = 1, ny, ny-1
-        if (iy.eq.1  .and. iymnbcl.eq.1) goto 10   #bndry is exter bndry, skip
-        if (iy.eq.ny .and. iymxbcl.eq.1) goto 10   #bndry is exter bndry, skip
+        if (iy.eq.1  .and. iymnbcl.eq.1) goto 10   !bndry is exter bndry, skip
+        if (iy.eq.ny .and. iymxbcl.eq.1) goto 10   !bndry is exter bndry, skip
         iv = 0
         do ix = 1-ixmnbcl, nx+ixmxbcl
           do ifld = 1, nisp
@@ -5310,8 +5310,8 @@ c_mpi        write(6,*) '**** ERROR: only one ix-cell for PE =', mype
 c_mpi        call flush(6)
 c_mpi      endif
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 20   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 20   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 20   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 20   !bndry is exter bndry, skip
         iv = 0
         do iy = 1-iymnbcl, ny+iymxbcl
           do ifld = 1, nisp
@@ -5367,12 +5367,12 @@ c_mpi        endif
 
 c ... Pack and send corner data (ix=nx, iy=ny)
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 40   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 40   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 40   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 40   !bndry is exter bndry, skip
         do iy = 1, ny, ny-1
           iv = 0
-          if (iy.eq.1  .and. iymnbcl.eq.1) goto 30 #bndry is exter bndry, skip
-          if (iy.eq.ny .and. iymxbcl.eq.1) goto 30 #bndry is exter bndry, skip
+          if (iy.eq.1  .and. iymnbcl.eq.1) goto 30 !bndry is exter bndry, skip
+          if (iy.eq.ny .and. iymxbcl.eq.1) goto 30 !bndry is exter bndry, skip
           do ifld = 1, nisp
           iv = iv+1
 ccc          vrsendl(iv) = ni(ix,iy,ifld)
@@ -5434,18 +5434,18 @@ c-----------------------------------------------------------------------
 *     This subroutine receives the array iv_totbdy on the proper processor
 *     so that recvbdry knows how many data values will be coming on each
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
+                                !typebdyi,typecni,iv_totbdy
+            use Indices_domain_dcg        !idym1g,idyp1g,idxm1g,idxp1g,idcorng
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Compla                !ni,up,te,ti,ng,phi
+            use Npes_mpi              !mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
-                                #typebdyi,typecni,iv_totbdy
-      Use(Indices_domain_dcg)       #idym1g,idyp1g,idxm1g,idxp1g,idcorng
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Npes_mpi)             #mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer ierr, status(MPI_STATUS_SIZE),req
 
 c ... input varibles
@@ -5457,8 +5457,8 @@ c ... local variables
 
 c ... Receive and unpack array sizes along x-direction (fixed iy = 0 or ny+1)
       do iy = 0, ny+1, ny+1
-        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   #bndry is exter bndry, skip
-        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 #bndry is exter bndry, skip
+        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   !bndry is exter bndry, skip
+        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 !bndry is exter bndry, skip
 
 c_mpi        if (iy.eq.0) then
 c_mpi           if (mype .eq. idym1-1) then
@@ -5488,8 +5488,8 @@ c_mpi        endif
 
 c ... Receive and unpack array sizes along y-direction (fixed ix = 0 or nx+1)
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 !bndry is exter bndry, skip
 
 c_mpi        if (ix.eq.0) then
 c_mpi           if (mype .eq. idxm1-1) then
@@ -5518,35 +5518,35 @@ c_mpi        endif
 
 c ... Receive and unpack corner data (ix=nx, iy=ny)
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 !bndry is exter bndry, skip
         do iy = 0, ny+1, ny+1
           iv = 0
-          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  #bndry is exter bndry, skip
-          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30#bndry is exter bndry, skip
+          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  !bndry is exter bndry, skip
+          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30!bndry is exter bndry, skip
 
           if (ix.eq.0) then
             if(iy.eq.0) then
-              iir = 1          # note for passing  4 <--> 1
+              iir = 1          ! note for passing  4 <--> 1
               iis = 4
-ccc              iir = 4          # note for passing  4 <--> 1
+ccc              iir = 4          ! note for passing  4 <--> 1
 ccc              iis = 1
             else
-              iir = 3          # note for passing  2 <--> 3
+              iir = 3          ! note for passing  2 <--> 3
               iis = 2
-ccc              iir = 2          # note for passing  2 <--> 3
+ccc              iir = 2          ! note for passing  2 <--> 3
 ccc              iis = 3
             endif
           else
             if (iy.eq.0) then
-              iir = 2          # note for passing  3 <--> 2
+              iir = 2          ! note for passing  3 <--> 2
               iis = 3
-ccc              iir = 3          # note for passing  3 <--> 2
+ccc              iir = 3          ! note for passing  3 <--> 2
 ccc              iis = 2
             else
-              iir = 4          # note for passing  1 <--> 4
+              iir = 4          ! note for passing  1 <--> 4
               iis = 1
-ccc              iir = 1          # note for passing  1 <--> 4
+ccc              iir = 1          ! note for passing  1 <--> 4
 ccc              iis = 4
             endif
           endif
@@ -5572,27 +5572,27 @@ c-----------------------------------------------------------------------
 *     be sent.  Then it receives the array iv_totbdy on the proper processor
 *     so that recvbdry knows how many data values will be coming on each
 
+            use Indices_domain_dcl  	!nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
+                                !typebdyi,typecni,iv_totbdy
+            use Indices_domain_dcg  	!idym1g,idyp1g,idxm1g,idxp1g,idcorng
+            use Dim                   !nx,ny,nxm,nisp,nusp,ngsp
+            use RZ_grid_info          !rm,zm,psi,br,bz,bpol,bphi,b
+            use Compla                !ni,up,te,ti,ng,phi
+            use Npes_mpi              !mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#nx_loc,ny_loc,idxp1,idxm1,idyp1,idcorn,vrsendl
-                                #typebdyi,typecni,iv_totbdy
-      Use(Indices_domain_dcg) 	#idym1g,idyp1g,idxm1g,idxp1g,idcorng
-      Use(Dim)                  #nx,ny,nxm,nisp,nusp,ngsp
-      Use(RZ_grid_info)         #rm,zm,psi,br,bz,bpol,bphi,b
-      Use(Compla)               #ni,up,te,ti,ng,phi
-      Use(Npes_mpi)             #mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 CC c_mpi      integer ierr,status(MPI_STATUS_SIZE),req(8),reqSEND,to_recv(8)
 c_mpi      integer(int4) :: ierr, status(MPI_STATUS_SIZE),req(8),
 c_mpi     .  reqSEND, to_recv(8), foo
 
 c ... input varibles
-      integer id                #domain number (my_pe+1)
-      integer myiv              #iv previously sent to mype
-      integer :: a_sz(8), b_sz(8)           #space for the nonblocking sends and recvs
-ccc      integer(mpiue) :: a_sz(8), b_sz(8)           #space for the nonblocking sends and recvs
+      integer id                !domain number (my_pe+1)
+      integer myiv              !iv previously sent to mype
+      integer :: a_sz(8), b_sz(8)           !space for the nonblocking sends and recvs
+ccc      integer(mpiue) :: a_sz(8), b_sz(8)           !space for the nonblocking sends and recvs
 
 c ... local variables
       integer ix, iy, iv, ifld, igsp, ii, iis, iir
@@ -5609,8 +5609,8 @@ c_mpi      endif
 c_mpi      myiv = -1
 
       do iy = 1, ny, ny-1
-        if (iy.eq.1  .and. iymnbcl.eq.1) goto 11   #bndry is exter bndry, skip
-        if (iy.eq.ny .and. iymxbcl.eq.1) goto 11   #bndry is exter bndry, skip
+        if (iy.eq.1  .and. iymnbcl.eq.1) goto 11   !bndry is exter bndry, skip
+        if (iy.eq.ny .and. iymxbcl.eq.1) goto 11   !bndry is exter bndry, skip
         iv = 0
         do ix = 1-ixmnbcl, nx+ixmxbcl
           do ifld = 1, nisp
@@ -5674,8 +5674,8 @@ c_mpi        write(6,*) '**** ERROR: only one ix-cell for PE =', mype
 c_mpi        call flush(6)
 c_mpi      endif
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 21   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 21   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 21   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 21   !bndry is exter bndry, skip
         iv = 0
         do iy = 1-iymnbcl, ny+iymxbcl
           do ifld = 1, nisp
@@ -5735,12 +5735,12 @@ c_mpi        endif
 
 c ... Pack and send corner data (ix=nx, iy=ny)
       do ix = 1, nx, nx-1
-        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 41   #bndry is exter bndry, skip
-        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 41   #bndry is exter bndry, skip
+        if (ix.eq.1  .and. ixmnbcl.eq.1) goto 41   !bndry is exter bndry, skip
+        if (ix.eq.nx .and. ixmxbcl.eq.1) goto 41   !bndry is exter bndry, skip
         do iy = 1, ny, ny-1
           iv = 0
-          if (iy.eq.1  .and. iymnbcl.eq.1) goto 31 #bndry is exter bndry, skip
-          if (iy.eq.ny .and. iymxbcl.eq.1) goto 31 #bndry is exter bndry, skip
+          if (iy.eq.1  .and. iymnbcl.eq.1) goto 31 !bndry is exter bndry, skip
+          if (iy.eq.ny .and. iymxbcl.eq.1) goto 31 !bndry is exter bndry, skip
           do ifld = 1, nisp
           iv = iv+1
 ccc          vrsendl(iv) = ni(ix,iy,ifld)
@@ -5799,8 +5799,8 @@ cc_mpi      call MPI_BARRIER(uedgeComm,ierr)
 
 c ... Receive and unpack array sizes along x-direction (fixed iy = 0 or ny+1)
       do iy = 0, ny+1, ny+1
-        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   #bndry is exter bndry, skip
-        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 #bndry is exter bndry, skip
+        if (iy.eq.0  .and. iymnbcl.eq.1) goto 10   !bndry is exter bndry, skip
+        if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 10 !bndry is exter bndry, skip
 
 c_mpi        if (iy.eq.0) then
 c_mpi           if (mype .eq. idym1-1) then
@@ -5830,8 +5830,8 @@ c_mpi        endif
       
 c ... Receive and unpack array sizes along y-direction (fixed ix = 0 or nx+1)
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 20   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 20 !bndry is exter bndry, skip
 
 c_mpi        if (ix.eq.0) then
 c_mpi           if (mype .eq. idxm1-1) then
@@ -5861,35 +5861,35 @@ c_mpi        endif
 
 c ... Receive and unpack corner data (ix=nx, iy=ny)
       do ix = 0, nx+1, nx+1
-        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   #bndry is exter bndry, skip
-        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 #bndry is exter bndry, skip
+        if (ix.eq.0  .and. ixmnbcl.eq.1) goto 40   !bndry is exter bndry, skip
+        if (ix.eq.nx+1 .and. ixmxbcl.eq.1) goto 40 !bndry is exter bndry, skip
         do iy = 0, ny+1, ny+1
           iv = 0
-          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  #bndry is exter bndry, skip
-          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30#bndry is exter bndry, skip
+          if (iy.eq.0  .and. iymnbcl.eq.1) goto 30  !bndry is exter bndry, skip
+          if (iy.eq.ny+1 .and. iymxbcl.eq.1) goto 30!bndry is exter bndry, skip
 
           if (ix.eq.0) then
             if(iy.eq.0) then
-              iir = 1          # note for passing  4 <--> 1
+              iir = 1          ! note for passing  4 <--> 1
               iis = 4
-ccc              iir = 4          # note for passing  4 <--> 1
+ccc              iir = 4          ! note for passing  4 <--> 1
 ccc              iis = 1
             else
-              iir = 3          # note for passing  2 <--> 3
+              iir = 3          ! note for passing  2 <--> 3
               iis = 2
-ccc              iir = 2          # note for passing  2 <--> 3
+ccc              iir = 2          ! note for passing  2 <--> 3
 ccc              iis = 3
             endif
           else
             if (iy.eq.0) then
-              iir = 2          # note for passing  3 <--> 2
+              iir = 2          ! note for passing  3 <--> 2
               iis = 3
-ccc              iir = 3          # note for passing  3 <--> 2
+ccc              iir = 3          ! note for passing  3 <--> 2
 ccc              iis = 2
             else
-              iir = 4          # note for passing  1 <--> 4
+              iir = 4          ! note for passing  1 <--> 4
               iis = 1
-ccc              iir = 1          # note for passing  1 <--> 4
+ccc              iir = 1          ! note for passing  1 <--> 4
 ccc              iis = 4
             endif
           endif
@@ -5923,20 +5923,20 @@ c-----------------------------------------------------------------------
 *     This subroutine sends the local data to the master processor (PE0)
 *     in order to construct the global solution
 
+            use Indices_domain_dcl  	!ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
+            use Dim                   !nisp,nusp,ngsp
+            use Interp                !nxoldg,nyoldg,afracs
+            use Compla                !ni,up,te,ti,ng,phi,afracs
+            use Indices_domain_dcg        !vrsend
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcl) 	#ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
-      Use(Dim)                  #nisp,nusp,ngsp
-      Use(Interp)               #nxoldg,nyoldg,afracs
-      Use(Compla)               #ni,up,te,ti,ng,phi,afracs
-      Use(Indices_domain_dcg)       #vrsend
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev2, typeiv2, typev2_start, typeiv2_start, ierr
-c_mpi      data typev2_start/10/, typeiv2_start/138/  #here 138=128+10; 128 max proc
+c_mpi      data typev2_start/10/, typeiv2_start/138/  !here 138=128+10; 128 max proc
 
-c ... input/output variables    # domain number id (= mype+1)
+c ... input/output variables    ! domain number id (= mype+1)
       integer id
 
 c ... local variables
@@ -5976,7 +5976,7 @@ c ... Pack and send global plasma variables to different processor
       if (ivmx > nvrsendl) then
       call xerrab('**ERROR sendloc_glob: iv_totc>nvrsendl; reset nvrsendl')
       endif
-c_mpi      if (id > 1) then #if id=1, no send/recv to self; put in vrsend
+c_mpi      if (id > 1) then !if id=1, no send/recv to self; put in vrsend
 c_mpi         call MPI_SEND(ivmx, 1, MPI_UE_INT,
 c_mpi     .             0, typeiv2_start+id, uedgeComm, ierr)
 
@@ -5997,28 +5997,28 @@ c ---------------------------------------------------------------------c
 *     This subroutine receives the local data from different processor
 *     to construct the global solution
 
+            use Indices_domain_dcg  	!ixmnbcg,ixmxbcg,iymnbcg,iymxbcg,
+                                !ixmin,ixmax,iymin,iymax
+                                !vrsend,visend
+            use Dim                   !nisp,nusp,ngsp
+            use Interp                !nxoldg,nyoldg
+            use Global_vars           !nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Indices_domain_dcg) 	#ixmnbcg,ixmxbcg,iymnbcg,iymxbcg,
-                                #ixmin,ixmax,iymin,iymax
-                                #vrsend,visend
-      Use(Dim)                  #nisp,nusp,ngsp
-      Use(Interp)               #nxoldg,nyoldg
-      Use(Global_vars)          #nisg,upsg,tesg,tisg,ngsg,phisg,afracsg
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 c_mpi      integer typev2, typeiv2, typev2_start, typeiv2_start, ierr,
 c_mpi     . status(MPI_STATUS_SIZE)
-c_mpi      data typev2_start/10/, typeiv2_start/138/  #here 138=128+10; 128 max proc
+c_mpi      data typev2_start/10/, typeiv2_start/138/  !here 138=128+10; 128 max proc
 
 c ... input variables
-      integer id                          #domain number (my_pe+1)
+      integer id                          !domain number (my_pe+1)
 
 c ... local variables
       integer ix, iy, iv, ifld, igsp, iv_totv(128)
 
-c_mpi      if (id > 1) then #if id = 1, no mpi send/recv to self; in vrsend
+c_mpi      if (id > 1) then !if id = 1, no mpi send/recv to self; in vrsend
 c ... Receive iv_totv, the length of vrsend
 c_mpi         call MPI_RECV(iv_totv(id), 1, MPI_UE_INT, id-1,
 c_mpi     .               typeiv2_start+id, uedgeComm, status, ierr)
@@ -6068,26 +6068,26 @@ c **- This rountine sets up the mesh and passes necessary information
 c     to the various processors when UEDGE is run on a parallel machine
 c     with MPI
 
+            use Dim 
+            use Xpoint_indices 
+            use Indices_domain_dcg 
+            use Share 
+            use Indices_domain_dcl 
+            use Grid 
+            use Interp 
+            use Cdv 
+            use Npes_mpi 
+            use UEint 
+ccc      Use(PETSc_lib)
+            use Comgeo             !area_core
+            use Bcond              !fngysog,fngysig,albedoog,mawallog,...
+            use Parallv            !nxg,nyg
+            use Comgeo_g           !lcong,lconeg,lconig
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Dim)
-      Use(Xpoint_indices)
-      Use(Indices_domain_dcg)
-      Use(Share)
-      Use(Indices_domain_dcl)
-      Use(Grid)
-      Use(Interp)
-      Use(Cdv)
-      Use(Npes_mpi)
-      Use(UEint)
-ccc      Use(PETSc_lib)
-      Use(Comgeo)            #area_core
-      Use(Bcond)             #fngysog,fngysig,albedoog,mawallog,...
-      Use(Parallv)           #nxg,nyg
-      Use(Comgeo_g)          #lcong,lconeg,lconig
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
 
       integer a_sz(8),igl,ixu,iyu
 c_mpi      integer id,iv
@@ -6159,7 +6159,7 @@ ctdr            call flush(6)
 
 c_mpi         call PackSend_dc_ind(iv_toti)
 c_mpi         call PackSendglobal(iv_totv, iv_totrz,vrsendlv_mype,vrsendlz_mype)
-      endif  # end of ifloop for mype .le. 0
+      endif  ! end of ifloop for mype .le. 0
 
        call gchange("Indices_domain_dcl",0)
 
@@ -6225,7 +6225,7 @@ c         endif
          nx = nx_loc
          nxm = nx
          ny = ny_loc
-	 ixlb(1) = 0    #limited to single null geometry
+	 ixlb(1) = 0    !limited to single null geometry
 	 ixrb(1) = nx
          isallloc = 1
 
@@ -6236,8 +6236,8 @@ c_mpi      endif
 
 c ... Copy portion of global wall sources to local arrays; all guard cell
 c ... values are left empty
-      if (isddcon > 0) then  # only needed if isddcon=1, but do anyway
-cc        do ixu = 1, nx  #scopy doesnt work for static build - integer issue?
+      if (isddcon > 0) then  ! only needed if isddcon=1, but do anyway
+cc        do ixu = 1, nx  !scopy doesnt work for static build - integer issue?
 cc          matwallo(ixu) = matwallog(ixmin(mype+1)-1+ixu)
 cc          matwalli(ixu) = matwallig(ixmin(mype+1)-1+ixu)
 cc        enddo
@@ -6277,7 +6277,7 @@ c_mpi       endif
 
        iysptrx1(1) = max(iysptrxg(mype+1),0)
        iysptrx1(1) = min(iysptrx1(1), ny+1)
-       iysptrx2(1) = iysptrx1(1)   #LIKELY ONLY GOOD FOR SINGLE NULL
+       iysptrx2(1) = iysptrx1(1)   !LIKELY ONLY GOOD FOR SINGLE NULL
        iysptrx = iysptrx1(1)
        ixpt1(1) = max(0, ixpt1g(mype+1))
        ixpt1(1) = min(ixpt1(1), nx)
@@ -6316,14 +6316,14 @@ c **- This rountine for parallel cases builds the R,Z global mesh on
 c     PE0 and then sends the resulting core area (com.area_core) to the
 c     other processors
 
-      implicit none
-
-      Use(Dim)            # nx,ny
-      Use(Comgeo)         # area_com
-      Use(Npes_mpi)       # mype
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+            use Dim             ! nx,ny
+            use Comgeo          ! area_com
+            use Npes_mpi        ! mype
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
        
 c_mpi      integer(int4) :: ierr
+
+      implicit none
 
       if (mype == 0) then
         call globalmesh
@@ -6389,31 +6389,31 @@ c ---------------------------------------------------------------------c
 *
 ******************************************************************************
 
+            use Err_msg_out    ! errmsgflag,errunit
+            use Cdv       ! ifexmain
+            use Dim       ! nx,ny
+            use Xpoint_indices       ! ixpt1,ixpt2,iysptrx
+            use Math_problem_size    ! neqmx for arrays not used here 
+            use UEpar     ! cnurn,cnuru,cnure,cnuri,cnurg,cnurp,
+                    ! nurlxn,nurlxu,nurlxe,nurlxi,nurlxg,nurlxp,
+                    ! label,svrpkg
+            use Ident_vars           ! uedge_ver
+            use Lsode     ! iterm
+            use Grid      ! ngrid,inewton,imeth,nurlx,ijac,ijactot
+            use Decomp    ! ubw,lbw
+            use Share     ! igrid
+            use Interp    ! isnintp,nxold,nyold
+            use RZ_grid_info   ! rm,zm
+            use Indices_domain_dcl   ! nx_loc,ny_loc
+            use Indices_domain_dcg   ! ndomain
+            use Npes_mpi             ! npes,mype,ispmion
+            use UEint                ! isallloc
+            use Rccoef               ! isoutwall
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
       implicit none
 
-      Use(Err_msg_out)   # errmsgflag,errunit
-      Use(Cdv)      # ifexmain
-      Use(Dim)      # nx,ny
-      Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx
-      Use(Math_problem_size)   # neqmx(for arrays not used here)
-      Use(UEpar)    # cnurn,cnuru,cnure,cnuri,cnurg,cnurp,
-                    # nurlxn,nurlxu,nurlxe,nurlxi,nurlxg,nurlxp,
-                    # label,svrpkg
-      Use(Ident_vars)          # uedge_ver
-      Use(Lsode)    # iterm
-      Use(Grid)     # ngrid,inewton,imeth,nurlx,ijac,ijactot
-      Use(Decomp)   # ubw,lbw
-      Use(Share)    # igrid
-      Use(Interp)   # isnintp,nxold,nyold
-      Use(RZ_grid_info)  # rm,zm
-      Use(Indices_domain_dcl)  # nx_loc,ny_loc
-      Use(Indices_domain_dcg)  # ndomain
-      Use(Npes_mpi)            # npes,mype,ispmion
-      Use(UEint)               # isallloc
-      Use(Rccoef)              # isoutwall
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+      integer ifake  !forces Forthon scripts to put implicit none above here
       integer my_pe, n_pes, ixx, icall
 CC c_mpi      integer ierr, ireturn
 c_mpi      integer ireturn
@@ -6431,7 +6431,7 @@ c_mpi         call MPI_BARRIER(uedgeComm, ierr)
 *     -- allocate memory for arrays --
 *     -- set ifexmain=1 so that allocate knows exmain is the calling
 *     -- routine.  This is necessary for grid sequencing coding.
-         if (ismpion.eq.0) then   # MPI parallel version from serial version
+         if (ismpion.eq.0) then   ! MPI parallel version from serial version
            ifexmain = 1
            call allocate
            ifexmain = 0
@@ -6476,7 +6476,7 @@ c ...    If a parallel run, send and gather data to PE0 first
            call gridseq
          endif
 
-         #fill bndry flux arrays for export 
+         !fill bndry flux arrays for export 
          if (ismpion==0 .and. isoutwall==1) call outwallflux  
 
          if (isnintp .eq. 0 .and. mype <= 0) then
@@ -6485,7 +6485,7 @@ c ...    If a parallel run, send and gather data to PE0 first
             call gchange("Interp",0)
             if (((svrpkg .ne. 'nksol') .and. (svrpkg.ne."petsc")).or. iterm .eq. 1) then
                call gridseq
-               call comp_vertex_vals  # gen plasma/neut values at rm,zm(,,4)
+               call comp_vertex_vals  ! gen plasma/neut values at rm,zm(,,4)
             endif
          elseif (isnintp .eq. 1 .and. mype <= 0) then
             if (((svrpkg .ne. 'nksol') .and. (svrpkg.ne."petsc")) .or. iterm .eq. 1) then
@@ -6494,7 +6494,7 @@ c ...    If a parallel run, send and gather data to PE0 first
                if(ismpion == 0) then
                   call gchange("Interp",0)
                   call gridseq
-                  call comp_vertex_vals  # gen plasma/neut values at rm,zm(,,4)
+                  call comp_vertex_vals  ! gen plasma/neut values at rm,zm(,,4)
                endif
             endif
          write(6,*) "Interpolants created; mype =", mype
@@ -6502,7 +6502,7 @@ c ...    If a parallel run, send and gather data to PE0 first
 
   100 continue
 
-      igrid = min(igrid, ngrid)  # prevents igrid>1 problem for ngrid=1
+      igrid = min(igrid, ngrid)  ! prevents igrid>1 problem for ngrid=1
 
       return
       end
@@ -6534,7 +6534,7 @@ c-----------------------------------------------------------------------
 
 c     Subroutine simply calls MPI_Finalize()
 c     This is just a device to allow calling from the Python or CXX wrapper
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
 c_mpi      integer(int4) ierr
 c_mpi      call MPI_Barrier(uedgeComm, ierr)
@@ -6550,11 +6550,11 @@ c-----------------------------------------------------------------------
 *     This has been separated to make it easier to duplicate EXMAIN
 *     in parser code.
 
-      implicit none
+            use Err_msg_out    ! errmsgflag,errunit
+            use Dim            ! nx,ny,nisp,ngsp  in UEpar 
+            use UEpar          ! label
 
-      Use(Err_msg_out)   # errmsgflag,errunit
-      Use(Dim)           # nx,ny,nisp,ngsp (in UEpar)
-      Use(UEpar)         # label
+      implicit none
 
       character*8 cdate, ctime, rtime, rdate, rmach
 
@@ -6579,25 +6579,25 @@ c-----------------------------------------------------------------------
 c     GATHER_SOLN combines primary variables from multiple processors
 c     into nisg etc. and then copies to resized ni etc. on PE0
 
-      implicit none
-
-      Use(Err_msg_out)         # errmsgflag,errunit
-      Use(Dim)                 # nx,ny,nxm,nym
-      Use(Npes_mpi)            # mype
-      Use(Indices_domain_dcg)  # ndomain,ixpt1g,ixpt2g,iysptrxg
-      Use(Indices_domain_dcl)  # ixpt1l,ixpt2l,iysptrxl,ixlbl,ixrbl
-      Use(Global_vars)         # nisg,upsg,...
-      Use(Parallv)             # nxg,nyg
-      Use(Compla)              # ni,up,...
-      Use(Imprad)              # isimpon
-      Use(Interp)              # nis,ups,...,nxold,nyold
-      Use(RZ_grid_info)        # rm,zm
-      Use(RZ_grid_global)      # rmg,zmg
-      Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx1,iysptrx2,iysptrx
-      Use(Comgeo)              # lcon,lcone,lconi
-      Use(Comgeo_g)            # lcong,lconeg,lconig
+            use Err_msg_out          ! errmsgflag,errunit
+            use Dim                  ! nx,ny,nxm,nym
+            use Npes_mpi             ! mype
+            use Indices_domain_dcg   ! ndomain,ixpt1g,ixpt2g,iysptrxg
+            use Indices_domain_dcl   ! ixpt1l,ixpt2l,iysptrxl,ixlbl,ixrbl
+            use Global_vars          ! nisg,upsg,...
+            use Parallv              ! nxg,nyg
+            use Compla               ! ni,up,...
+            use Imprad               ! isimpon
+            use Interp               ! nis,ups,...,nxold,nyold
+            use RZ_grid_info         ! rm,zm
+            use RZ_grid_global       ! rmg,zmg
+            use Xpoint_indices       ! ixpt1,ixpt2,iysptrx1,iysptrx2,iysptrx
+            use Comgeo               ! lcon,lcone,lconi
+            use Comgeo_g             ! lcong,lconeg,lconig
 
 c ... Local variables
+      implicit none
+
       integer id,ifld,igsp,igmh
 
 c ... Received and manipulate data on PE0
@@ -6652,7 +6652,7 @@ c ... Copy nisg -> ni, upsg -> up, etc
          call s2copy (nx+2, ny+2, afracsg, 1, nx+2, afracs, 1, nx+2)
       endif
 
-      do igmh = 0, 4  # mesh (R,Z) coordinates set to global
+      do igmh = 0, 4  ! mesh (R,Z) coordinates set to global
          call s2copy (nx+2, ny+2, rmg(0,0,igmh), 1, nx+2,
      .            rm(0,0,igmh), 1, nx+2)
          call s2copy (nx+2, ny+2, zmg(0,0,igmh), 1, nx+2,
@@ -6674,10 +6674,10 @@ c ... Store some local values of indices for sub reset_pe0_vars
 c ... Reset some indices to global values for PE0 (mype=0)
       ixpt1(1) = ixpt1g(1)
       ixpt2(1) = ixpt2g(1)
-      iysptrx1(1) = iysptrxg(1)  # limited to single-null
+      iysptrx1(1) = iysptrxg(1)  ! limited to single-null
       iysptrx2(1) = iysptrxg(1)
       iysptrx = iysptrx1(1)
-      ixlb(1) = 0      # next two lines limited to single-null geo
+      ixlb(1) = 0      ! next two lines limited to single-null geo
       ixrb(1) = nx
 
       return
@@ -6690,26 +6690,26 @@ c     Reset variables on PE0 back to the original domain-decomposed values
 c     that were overwritten by gather_pll_soln in order to do a dump of the
 c     global data to a hdf5 file; thus, the reverse of sub gather_pll_soln
 
-      implicit none
-
-      Use(Err_msg_out)         # errmsgflag,errunit
-      Use(Dim)                 # nx,ny,nxm,nym
-      Use(Npes_mpi)            # mype
-      Use(Indices_domain_dcg)  # ndomain
-      Use(Indices_domain_dcl)  # nx_loc,ny_loc,ixpt1l,ixpt2l,iysptrxl,
-                               # ixlbl,ixrbl
-      Use(Global_vars)         # nisg,upsg,...
-      Use(Parallv)             # nxg,nyg
-      Use(Compla)              # ni,up,...
-      Use(Imprad)              # isimpon
-      Use(Interp)              # nis,ups,...,nxold,nyold
-      Use(RZ_grid_info)        # rm,zm
-      Use(RZ_grid_global)      # rmg,zmg
-      Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx1,iysptrx2,iysptrx
-      Use(Comgeo)              # lcon,lcone,lconi
-      Use(Comgeo_g)            # lcong,lconeg,lconig
+            use Err_msg_out          ! errmsgflag,errunit
+            use Dim                  ! nx,ny,nxm,nym
+            use Npes_mpi             ! mype
+            use Indices_domain_dcg   ! ndomain
+            use Indices_domain_dcl   ! nx_loc,ny_loc,ixpt1l,ixpt2l,iysptrxl,
+                               ! ixlbl,ixrbl
+            use Global_vars          ! nisg,upsg,...
+            use Parallv              ! nxg,nyg
+            use Compla               ! ni,up,...
+            use Imprad               ! isimpon
+            use Interp               ! nis,ups,...,nxold,nyold
+            use RZ_grid_info         ! rm,zm
+            use RZ_grid_global       ! rmg,zmg
+            use Xpoint_indices       ! ixpt1,ixpt2,iysptrx1,iysptrx2,iysptrx
+            use Comgeo               ! lcon,lcone,lconi
+            use Comgeo_g             ! lcong,lconeg,lconig
 
 c ... Local variables
+      implicit none
+
       integer id,ifld,igsp,igmh
 
 c ... Resize arrays and copy data to appropriate arrays
@@ -6758,7 +6758,7 @@ c ... Copy nisg -> ni, upsg -> up, etc
          call s2copy (nx+2, ny+2, afracsg, 1, nx+2, afracs, 1, nx+2)
       endif
 
-      do igmh = 0, 4  # mesh (R,Z) coordinates set to global
+      do igmh = 0, 4  ! mesh (R,Z) coordinates set to global
          call s2copy (nx+2, ny+2, rmg(0,0,igmh), 1, nx+2,
      .            rm(0,0,igmh), 1, nx+2)
          call s2copy (nx+2, ny+2, zmg(0,0,igmh), 1, nx+2,
@@ -6773,10 +6773,10 @@ c ... Copy nisg -> ni, upsg -> up, etc
 c ... Reset some indices to local values for PE0 (mype=0)
       ixpt1(1) = ixpt1l
       ixpt2(1) = ixpt2l
-      iysptrx1(1) = iysptrx1l  # limited to single-null
+      iysptrx1(1) = iysptrx1l  ! limited to single-null
       iysptrx2(1) = iysptrx1l
       iysptrx = iysptrx1l
-      ixlb(1) = ixlbl      # next two lines limited to single-null geo
+      ixlb(1) = ixlbl      ! next two lines limited to single-null geo
       ixrb(1) = ixrbl
 
       return
@@ -6788,14 +6788,14 @@ c-----------------------------------------------------------------------
 c     Subroutine sends all PE plasma data (ni, up, ...) to PE0 and 
 c     then these are copied into save-variables nis, ups, etc.
 
+            use Npes_mpi             ! mype
+
       implicit none
 
-      Use(Npes_mpi)            # mype
-
-      call sendloc_glob(mype+1)   # send data to PE0
+      call sendloc_glob(mype+1)   ! send data to PE0
       if (mype == 0) then           
-        call gather_pll_soln      # recieve data put in ni, up, ...
-        call gridseq              # copy datat to nis, ups, ...
+        call gather_pll_soln      ! recieve data put in ni, up, ...
+        call gridseq              ! copy datat to nis, ups, ...
       endif
 
       return
@@ -6810,8 +6810,8 @@ C
 CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 
-      Use (Dim)
-      Use (Zag_output)
+            use  Dim 
+            use  Zag_output 
       REAL XP,XS,XK,YP,YK,PI,EC,XEM,XMI,ZM,AMU,AMZ,SING,RT,RP,RS,BT,
      &   Q,DIFA,VINW,GAMAD,GAMAW,DIFH,VINH,ETAY0,CONDE,CONDI,DIFE,
      &   AREA,TME
@@ -6897,12 +6897,12 @@ c -----------------------------------------------------------------------
 *     Writes a file out_ue_s of plasma profiles to be read by the parallel
 *     UEDGE on the T3E
 
-      implicit none
-
-      Use(Dim)           # nx,ny,nisp,ngsp
-      Use(Compla)        # ni,up,te,ti,ng,phi
+            use Dim            ! nx,ny,nisp,ngsp
+            use Compla         ! ni,up,te,ti,ng,phi
 
 c     Local variables
+      implicit none
+
       integer ix,iy,ifld,igsp,ip,basopen
 
       external basopen,basclose
@@ -6941,12 +6941,12 @@ c ------------------------------------------------------------------------
 
 *     Reads output file out_ue from the T3E for plasma profiles
 
-      implicit none
-
-      Use(Dim)           # nx,ny,nisp,ngsp
-      Use(Interp)        # nis,ups,tes,tis,ngs,phis
+            use Dim            ! nx,ny,nisp,ngsp
+            use Interp         ! nis,ups,tes,tis,ngs,phis
 
 c     Local variables
+      implicit none
+
       integer ix,iy,ifld,igsp,ip,basopen
 
       external basopen,basclose
@@ -6978,15 +6978,15 @@ c *** -------------------------------------------------------------------
 *     Writes a file out_ue_s of plasma profiles to be read by the parallel
 *     UEDGE on the T3E
 
-      implicit none
-
-      Use(Dim)           # nx,ny,nisp,ngsp
-      Use(Compla)        # ni,up,te,ti,ng,phi
-      Use(Phyvar)        # ev
-      Use(Share)         # nxomit,igrid,geometry,isnonog,nyomitmx
-      Use(RZ_grid_info)  # rm,zm
+            use Dim            ! nx,ny,nisp,ngsp
+            use Compla         ! ni,up,te,ti,ng,phi
+            use Phyvar         ! ev
+            use Share          ! nxomit,igrid,geometry,isnonog,nyomitmx
+            use RZ_grid_info   ! rm,zm
 
 c     Local variables
+      implicit none
+
       integer ix,iy,ifld,igsp,ip,basopen
       character filename*32
 
@@ -7034,17 +7034,17 @@ c ------------------------------------------------------------------------
 
 *     Reads output file out_ue from the T3E for plasma profiles
 
-      implicit none
-
-      Use(Dim)           # nx,ny,nisp,ngsp
-      Use(Interp)        # nis,ups,tes,tis,ngs,phis
-      Use(Phyvar)        # ev
-      Use(Share)         # nxomit,igrid,geometry,isnonog,nyomitmx
-      Use(RZ_grid_info)  # rm,zm
+            use Dim            ! nx,ny,nisp,ngsp
+            use Interp         ! nis,ups,tes,tis,ngs,phis
+            use Phyvar         ! ev
+            use Share          ! nxomit,igrid,geometry,isnonog,nyomitmx
+            use RZ_grid_info   ! rm,zm
 
 c     Input variables
+      implicit none
+
       character filename*32
-      integer ivers          # =0 for old case, =1 for new ng case
+      integer ivers          ! =0 for old case, =1 for new ng case
 
 c     Local variables
       integer ix,iy,ifld,igsp,ip,basopen
@@ -7087,11 +7087,11 @@ c ** Next are some subroutines needed for the parallel version only **
 c ...........................................................
       SUBROUTINE GLOCFN (NLOC, T, YLOC, GLOC)
 C Routine to define local approximate function g, here the same as f.
+            use Indices_domain_dcg 
+
       REAL NLOC,T,YLOC,GLOC
       DIMENSION YLOC(*), GLOC(*)
 C
-      Use(Indices_domain_dcg)
-
       isddcon = 0
       CALL FFUN(NLOC, T, YLOC, GLOC)
       isddcon = 1
@@ -7116,8 +7116,8 @@ C Routine to perform communication required for evaluation of g.
 c ...........................................................
       subroutine set_uedgeComm(COMM)
 c...  Sets the communicator
-      Use(Npes_mpi)            # hascomm
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+            use Npes_mpi             ! hascomm
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
       integer, intent(inout) :: COMM
 c_mpi      integer(int4) :: ireturn
@@ -7137,8 +7137,8 @@ cpetsc      call PetscInitWrap()
 c ...........................................................
       subroutine uedge_mpiInit
 c...  Sets the communicator
-      Use(Npes_mpi)            # hascomm
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+            use Npes_mpi             ! hascomm
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
 c****
 c_mpi      integer(int4) :: ireturn
@@ -7167,8 +7167,8 @@ cpetsc      call PetscInitWrap()
 c ...........................................................
       INTEGER FUNCTION MY_PE()
 c...  Returns processor number for calling PE.  0 if serial.
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-      Use(Npes_mpi)
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+            use Npes_mpi 
       ! integer me, ireturn
 c_mpi      integer(int4) ireturn
       integer me
@@ -7181,8 +7181,8 @@ c_mpi      call MPI_Comm_rank(uedgeComm, me, ireturn)
 c ...........................................................
       INTEGER FUNCTION N_PES()
 c...  Returns total number of processors.  1 if not parallel.
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-      Use(Npes_mpi)
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+            use Npes_mpi 
 c_mpi      integer(int4) :: ireturn
       integer :: mynpes
       mynpes = 1
@@ -7194,10 +7194,10 @@ c_mpi      call MPI_Comm_size(uedgeComm,mynpes,ireturn)
 c ------------------------------------------------------------ c
       subroutine setLogFile(filename)
 c...  sets the name of the logfile to which to write, also sets up the logger proper
-      implicit none
+            use Logging 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
-      Use(Logging)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+      implicit none
 
       character*(*), intent(in) :: filename
       character(7) :: rankstr
@@ -7236,12 +7236,12 @@ c        WRITE(6, fmt='(O4)') message(len(message):len(message))
 c... ** End of subroutine writeToLog ---------------------- c
 
         subroutine uedge_reset
-      implicit none
-      Use(Dim)      # nx,ny
-      Use(Interp)   # nis,ngs,...
-      Use(Oldpla)   # ni0,ng0, ...
+            use Dim       ! nx,ny
+            use Interp    ! nis,ngs,...
+            use Oldpla    ! ni0,ng0, ...
 c     resets Uedge variables to their state prior to last call to ueAdvance.
 c     returns time at beginning of last call to ueAdvance
+      implicit none
       nis=ni0
       ups=up0
       ngs=ng0
@@ -7265,10 +7265,10 @@ c... ** End of subroutine uedge_reset -------------------- c
 ! inward convection (pinch) peaking near x=1 and an enhanced diffusion
 ! there. Use upwinding on the convective term.
 
-      implicit none
-      Use(Convdiffeqn)
+            use Convdiffeqn 
 
 !...  Local variables
+      implicit none
       integer ix,it
       real tim,delto,delt,delx,dtdx,vrzmax,drzmax
 
@@ -7276,8 +7276,8 @@ c... ** End of subroutine uedge_reset -------------------- c
 
 !... Compute mesh, vr, and dr
       do ix = 1, nxx
-        xcz(ix) = float(ix-1)/float(nxx-1)
-        xfz(ix) = xcz(ix) + 0.5/float(nxx-1)
+        xcz(ix) = real(ix-1)/real(nxx-1)
+        xfz(ix) = xcz(ix) + 0.5/real(nxx-1)
         vrz(ix) = -vrfac*(alfz-1.)*sp*xfz(ix)**2
         drz(ix) = 1 + (alfz-1.)*xfz(ix)*(0.5*sp*(1-xfz(ix)**2)+ 1)
       enddo
@@ -7289,11 +7289,11 @@ c... ** End of subroutine uedge_reset -------------------- c
         vrzmax = max(abs(vrz(ix)),vrzmax) + 1.e-20
         drzmax = max(abs(drz(ix)),drzmax) + 1.e-20
       enddo
-      delx = 1./float(nxx-1)
+      delx = 1./real(nxx-1)
       delt = courant*min(delx/vrzmax, 0.5*delx**2/drzmax)
       write(*,*) 'delt = ',delt
       dtdx = delt/delx
-      delto = tend/float(ntim)
+      delto = tend/real(ntim)
       ito = 1
       timo(1) = 0.
 
@@ -7305,8 +7305,8 @@ c... ** End of subroutine uedge_reset -------------------- c
 
 !... Form finite volume eqn and advance in time
       do it = 1, ndtmax
-        dens(1) = dens(2)  # Gives zero flux for finite volume method
-cc        dens(1) = (4.*dens(2) - dens(3))/3.  # 2nd order Boundary condition
+        dens(1) = dens(2)  ! Gives zero flux for finite volume method
+cc        dens(1) = (4.*dens(2) - dens(3))/3.  ! 2nd order Boundary condition
         dens(nxx) = 1.
         tim = tim + delt
         do ix = 2, nxx-1
@@ -7318,9 +7318,9 @@ cc        dens(1) = (4.*dens(2) - dens(3))/3.  # 2nd order Boundary condition
                       drz(ix)*(dens(ix+1)-dens(ix  ))/delx
           dens(ix) = dens(ix) + (-vrhs(ix) - drhs(ix) + sp*delx)*dtdx
         enddo
-        if (tim > timo(ito)+delto .and. ito<ntim) then   # store solution
-          dens(1) = dens(2)  # Gives zero flux for finite volume method
-cc          dens(1) = (4.*dens(2) - dens(3))/3.     # Update boundary vals
+        if (tim > timo(ito)+delto .and. ito<ntim) then   ! store solution
+          dens(1) = dens(2)  ! Gives zero flux for finite volume method
+cc          dens(1) = (4.*dens(2) - dens(3))/3.     ! Update boundary vals
           dens(nxx) = 1.
           ito = ito + 1
           timo(ito) = tim
@@ -7339,16 +7339,16 @@ c     Determines if the local processor owns the global index (ixg,iyg); if yes,
 c     and determines the local index pair (ixl,iyl).  
 c     iownit is set to 1 only if the data point is in the physical domain, i.e. in an interior cell or 
 c     in an active (physical boundary) ghost cell.  Hence only 1 pe will own any point.
+            use Indices_domain_dcg        !ixmin,ixmax,iymin,iymax
+            use Indices_domain_dcl        !ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
+            use Npes_mpi   ! mype, ismpion
       implicit none
-      Use(Indices_domain_dcg)       #ixmin,ixmax,iymin,iymax
-      Use(Indices_domain_dcl)       #ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
-      Use(Npes_mpi)  # mype, ismpion
       integer ixg,iyg,ixl,iyl,iownit
       integer ixltest,ixutest,iyltest,iyutest
 
       iownit = 0
       if (ismpion .eq. 0) then
-         # If not mpi, then yes the one processor owns it, and local index = global index
+         ! If not mpi, then yes the one processor owns it, and local index = global index
          iownit = 1
          ixl = ixg
          iyl = iyg
@@ -7378,15 +7378,15 @@ c     variables ixmnbcl, ixmxbcl, iymnbcl, iymxbcl
       subroutine getbdyindexlims
 c     calculates values of running index corresponding to start and end of various
 c     portions of the edge boundary
-      implicit none
-      Use(Bdy_indexlims) # ib_idiv, ie_idiv, ib_comwall, ie_comwall, ib_odiv, ie_odiv
-                                          # ib_opfwall,ie_opfwall, ib_ipfewall, ie_ipfwall
-      Use(Parallv)              #nxg,nyg
-      Use(Npes_mpi)  # mype, ismpion
-      Use(Share)   # geometry
-      Use(Dim)           # nx,ny,nisp,ngsp
-      Use(Xpoint_indices)  # ixpt1,ixpt2
+            use Bdy_indexlims  ! ib_idiv, ie_idiv, ib_comwall, ie_comwall, ib_odiv, ie_odiv
+                                          ! ib_opfwall,ie_opfwall, ib_ipfewall, ie_ipfwall
+            use Parallv               !nxg,nyg
+            use Npes_mpi   ! mype, ismpion
+            use Share    ! geometry
+            use Dim            ! nx,ny,nisp,ngsp
+            use Xpoint_indices   ! ixpt1,ixpt2
 
+      implicit none
       integer nx1,ny1,nyglob,nlpfi1,nlpfo1
 c     sets limits of running index on various segments of boundary
       if (ismpion .eq. 1) then
@@ -7400,20 +7400,20 @@ c     sets limits of running index on various segments of boundary
       endif
 
 c     lower private flux is divided into two parts in uedge grid
-      nlpfi1=ixpt1(1)-1    # number phys. cells in inner portion of lpf wall-1
-      nlpfo1=nx1-ixpt2(1)    # number phys. cells in outer part of lpf wall-1
+      nlpfi1=ixpt1(1)-1    ! number phys. cells in inner portion of lpf wall-1
+      nlpfo1=nx1-ixpt2(1)    ! number phys. cells in outer part of lpf wall-1
       if ((geometry == 'snull') .or. (geometry == 'uppersn')) then
 c        carry indices for both beginning and end of surfaces for clarity
-         ib_idiv = 1   # begin inner divertor
-         ie_idiv = nyglob    # end inner divertor
-         ib_comwall = ie_idiv+1  # begin common flux wall
-         ie_comwall = ib_comwall+nx1 # end common flux wall
-         ib_odiv = ie_comwall + 1  # begin outer divertor
-         ie_odiv = ib_odiv + ny1  # end outer divertor
-         ib_opfwall = ie_odiv+1 # begin outer portion of pf wall
-         ie_opfwall = ib_opfwall+nlpfi1 # end outer part pf wall
-         ib_ipfwall = ie_opfwall+1  # begin inner part of pf wall
-         ie_ipfwall = ib_ipfwall+nlpfo1 # end inner part of pf wall
+         ib_idiv = 1   ! begin inner divertor
+         ie_idiv = nyglob    ! end inner divertor
+         ib_comwall = ie_idiv+1  ! begin common flux wall
+         ie_comwall = ib_comwall+nx1 ! end common flux wall
+         ib_odiv = ie_comwall + 1  ! begin outer divertor
+         ie_odiv = ib_odiv + ny1  ! end outer divertor
+         ib_opfwall = ie_odiv+1 ! begin outer portion of pf wall
+         ie_opfwall = ib_opfwall+nlpfi1 ! end outer part pf wall
+         ib_ipfwall = ie_opfwall+1  ! begin inner part of pf wall
+         ie_ipfwall = ib_ipfwall+nlpfo1 ! end inner part of pf wall
       endif
       return
       end
@@ -7436,13 +7436,13 @@ c     Half double null: not implemented
 c
 c    Must call getbdyindexlims prior to calling getixiybdy
 
+            use Dim       ! nxpt
+            use Share     ! geometry
+            use Xpoint_indices  ! ixpt1
+            use Parallv              ! nxg,nyg
+            use Bdy_indexlims  ! ib_idiv, ie_idiv, ib_comwall, ie_comwall, ib_odiv, ie_odiv
+                                          ! ib_opfwall,ie_opfwall, ib_ipfewall, ie_ipfwall
       implicit none
-      Use(Dim)      # nxpt
-      Use(Share)    # geometry
-      Use(Xpoint_indices) # ixpt1
-      Use(Parallv)             # nxg,nyg
-      Use(Bdy_indexlims) # ib_idiv, ie_idiv, ib_comwall, ie_comwall, ib_odiv, ie_odiv
-                                          # ib_opfwall,ie_opfwall, ib_ipfewall, ie_ipfwall
       integer lindex,ix,iy
       character*(*), intent(out):: surfacename
 
@@ -7454,30 +7454,30 @@ c     across outer divertor, then around private flux boundary.
          if ((lindex .lt. ib_idiv) .or. (lindex .gt. ie_ipfwall)) then
             call xerrab('*** Index out of bounds ***')
             endif
-         if (lindex .le. ie_idiv) then   # inboard divertor
+         if (lindex .le. ie_idiv) then   ! inboard divertor
             ix = 0
-            iy = lindex  # Recall iy=0 is a thin ghost cell
+            iy = lindex  ! Recall iy=0 is a thin ghost cell
             surfacename = "innerdiv"
             return
          endif
-         if (lindex .le. ie_comwall) then # common flux outer wall
+         if (lindex .le. ie_comwall) then ! common flux outer wall
             ix = lindex-ie_idiv
-            iy = nyg   # outer radial ghost cell value
+            iy = nyg   ! outer radial ghost cell value
             surfacename = "outerwall"
             return
          endif
-         if (lindex .le. ie_odiv) then   # outer divertor 
+         if (lindex .le. ie_odiv) then   ! outer divertor 
             ix = nxg+1
             iy = ie_odiv-lindex+1
             surfacename = "outerdiv" 
             return
          endif
-         if (lindex .le. ie_opfwall) then  # Outer portion private flux wall
+         if (lindex .le. ie_opfwall) then  ! Outer portion private flux wall
             ix = nxg+ib_opfwall-lindex
             iy = 0
             surfacename = "privwall" 
             return
-         else   # Inner portion private flux wall
+         else   ! Inner portion private flux wall
             ix = ixpt1(1)+ib_ipfwall-lindex
             iy = 0
             surfacename = "privwall"
@@ -7494,10 +7494,10 @@ c     across outer divertor, then around private flux boundary.
 c     Sets value of 2D array "darray" at global index point ix,iy to value "val".
 c     Assumes that darray is dimensioned (0:nx+1,0:ny+1).
       
-      implicit none
+            use Dim  ! nx, ny
+            use Npes_mpi   ! mype, ismpion
 
-      Use(Dim) # nx, ny
-      Use(Npes_mpi)  # mype, ismpion
+      implicit none
 
       real darray(0:nx+1,0:ny+1)
       real val
@@ -7509,7 +7509,7 @@ c      the local indices, and set
          if (iownit == 1) then
             darray(ixl,iyl) = val
          endif
-      else     #serial
+      else     !serial
          darray(ix,iy) = val
       endif
       return
@@ -7531,11 +7531,11 @@ c     by surfacename
       if (iownit == 1) then
          if ((surfacename == "innerdiv") .or. (surfacename == "outerdiv")) then
 c           running index is y
-            darray(iyl+1) = val   # this should work in serial or parallel
+            darray(iyl+1) = val   ! this should work in serial or parallel
          endif
          if ((surfacename == "privwall") .or. (surfacename == "outerwall")) then
 c           running index is x
-            darray(ixl+1) = val   # this should work in serial or parallel
+            darray(ixl+1) = val   ! this should work in serial or parallel
          endif
       endif
       return
@@ -7545,11 +7545,11 @@ c ------------------------------------------------------------------ c
       real function getat2dpoint(darray,ix,iy)
 c     Returns value of 2D array "darray" at global index point ix,iy.
 c     Assumes that darray is dimensioned (0:nx+1,0:ny+1).
-      implicit none
+            use Dim  ! nx, ny
+            use Npes_mpi   ! mype, ismpion
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
-      Use(Dim) # nx, ny
-      Use(Npes_mpi)  # mype, ismpion
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+      implicit none
 
       real darray(0:nx+1,0:ny+1)
       real val
@@ -7570,7 +7570,7 @@ c_mpi         call MPI_RECV(val, 1, MPI_DOUBLE_PRECISION, pedonor,
 c_mpi     .               typeval, uedgeComm, status, ierr)
 
          endif
-      else     #serial
+      else     !serial
          val = darray(ix,iy)
       endif
       getat2dpoint = val
@@ -7580,9 +7580,9 @@ c_mpi     .               typeval, uedgeComm, status, ierr)
       real function getat1dpoint(darray,lindex)
 c     Gets value of 2D array "darray" assumed dimensioned 0:nx+1,0:ny+1, at value
 c     of index "lindex" that runs around periphery
-      implicit none
+            use Dim  ! nx, ny
 
-      Use(Dim) # nx, ny
+      implicit none
 
       real darray(0:nx+1,0:ny+1)
       real getat2dpoint
@@ -7601,19 +7601,19 @@ c     of index "lindex" that runs around periphery
 !*** in units of the fundamental (-electron) charge, and atomic charge.
 !*** Returns 1 if yes and 0 if no.
 
+            use Dim     !nfsp,ngsp
+            use UEint   !minu, ziin, znuclin
+            use Compla  !mg
+            use Phyvar  !mp
+ 
       implicit none
 
-      Use(Dim)    #nfsp,ngsp
-      Use(UEint)  #minu, ziin, znuclin
-      Use(Compla) #mg
-      Use(Phyvar) #mp
- 
       integer amumass,charge,znucleus,ij
 
       do ij = 1, nfsp
         if ( amumass == minu(ij) .and. znucleus == znuclin(ij) .and.
      .       charge == ziin(ij) ) then
-          ru_active = 1   # species is present
+          ru_active = 1   ! species is present
           return
         endif
       enddo
@@ -7628,7 +7628,7 @@ c     of index "lindex" that runs around periphery
         enddo
       endif
  
-      ru_active = 0   # no match in do loop, so species not present
+      ru_active = 0   ! no match in do loop, so species not present
 
       return
       end

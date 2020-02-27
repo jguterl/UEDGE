@@ -1,70 +1,70 @@
-c!include "../mppl.h"
-c!include "../sptodp.h"
+#include "../mppl.h"
+#include "../sptodp.h"
 c-----------------------------------------------------------------------
       subroutine bouncon(neq, yl, yldot)
 
 *   BOUNCON provides the evaluation of the equations for the boundaries.
 
+            use Dim       ! nx,ny,nhsp,nzspt,nzsp,nisp,ngsp,nusp,nxpt
+            use Share     ! nxpt,nxc,geometry,cutlo,islimon,ix_lim,iy_lims
+		    ! isudsym
+            use Xpoint_indices  ! ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
+            use Math_problem_size    ! neqmx 
+            use Phyvar 
+            use UEpar     ! isnewpot,r0slab,cslim,dcslim,csfaclb,csfacrb,csfacti,
+                    ! isnion,isupon,isteon,istion,isngon,isnionxy,isuponxy,
+                    ! isteonxy,istionxy,isngonxy,isphionxy
+            use Aux       ! ix,iy,igsp,iv,iv1,iv2,iv3,iv4,ix1,ix2,t0,t1
+            use Coefeq    ! fac2sp,cf2ef,exjbdry
+            use Bcond     ! iflux,ncore,tcoree,tcorei,tbmin,nbmin,ngbmin,
+                    ! tepltl,tipltl,tepltr,tipltr,
+                    ! istewc,istiwc,istepfc,istipfc,
+                    ! tewalli,tiwalli,tewallo,tiwallo,isextrnp,
+                    ! isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw,
+                    ! iflcore,pcoree,pcorei,ifluxni,ckinfl,isupss,
+                    ! isnwconi,isnwcono,nwalli,nwallo,iscpli,iscplo,
+                    ! fngysi,fngyso,albedoo,albedoi,matwallo,matwalli,
+                    ! sinphi,isfixlb,nib,teb,tib,nibprof,tebprof,tibprof,
+                    ! engbsr,epsbs,rlimiter,ngcore,isngcore,isutcore,
+                    ! ixfixnc,incixc,isupcore,isfixrb,chemsputi,chemsputo
+                    ! islbcn,islbcu,islbce,islbci,islbcg,isexunif
+                    ! fchemygwi,fchemylb,fphysylb,fchemygwo,fchemyrb,fphysyrb
+                    ! xcnearlb,xcnearrb,openbox,fqpsatlb,fqpsatrb
+                    ! cfueb,ikapmod,cfvytanbc
+            use Parallv   ! nxg,nyg
+            use Selec     ! i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7,xlinc
+            use Comgeo    ! gx,gy,gyf,sx,sy,xcwi,xcwo,yylb,rrv,sygytotc,isixcore
+            use Compla    ! mi, mg
+            use Comflo    ! fqx,fqy,fnix,fniy,feex,feey,feix,feiy,fngx,fngy
+                    ! fdiaxlb, fdiaxrb
+            use Conduc    ! visx
+            use Indexes 
+            use Ynorm     ! temp0,nnorm,ennorm
+            use Poten     ! newbcl,newbcr,bcee,bcei,rsigpl,bcel,bcer,bcil,bcir,
+                    ! kappal,kappar,bctype,phi0l,phi0r,isfdiax
+            use Rccoef    ! recylb,recyrb,alblb,albrb,recycw,sputtr,
+                    ! recycm,recyce,recycmlb,recycmrb
+            use Bfield    ! rbfbt,btot
+            use Imprad    ! isimpon
+            use Impurity_source_flux    ! fnzysi,fnzyso
+            use Gradients   ! ey
+            use RZ_grid_info       ! rm
+            use Indices_domain_dcl    !ixmxbcl,ixmnbcl,iymxbcl,iymnbcl,ispwrbcl
+            use Interp 
+            use Jacaux    ! yldot_diag
+            use Npes_mpi  ! npes
+            use Indices_domain_dcg  ! ndomain,ispwrbc
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+
+            use MCN_dim 
+            use MCN_sources  ! edisspl, edisspr, cmntgpl, cmntgpl
+
+c...  local scalars
       implicit none
 
       integer neq
       real yl(neq), yldot(neq)
 
-      Use(Dim)      # nx,ny,nhsp,nzspt,nzsp,nisp,ngsp,nusp,nxpt
-      Use(Share)    # nxpt,nxc,geometry,cutlo,islimon,ix_lim,iy_lims
-		    # isudsym
-      Use(Xpoint_indices) # ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
-      Use(Math_problem_size)   # neqmx 
-      Use(Phyvar)
-      Use(UEpar)    # isnewpot,r0slab,cslim,dcslim,csfaclb,csfacrb,csfacti,
-                    # isnion,isupon,isteon,istion,isngon,isnionxy,isuponxy,
-                    # isteonxy,istionxy,isngonxy,isphionxy
-      Use(Aux)      # ix,iy,igsp,iv,iv1,iv2,iv3,iv4,ix1,ix2,t0,t1
-      Use(Coefeq)   # fac2sp,cf2ef,exjbdry
-      Use(Bcond)    # iflux,ncore,tcoree,tcorei,tbmin,nbmin,ngbmin,
-                    # tepltl,tipltl,tepltr,tipltr,
-                    # istewc,istiwc,istepfc,istipfc,
-                    # tewalli,tiwalli,tewallo,tiwallo,isextrnp,
-                    # isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw,
-                    # iflcore,pcoree,pcorei,ifluxni,ckinfl,isupss,
-                    # isnwconi,isnwcono,nwalli,nwallo,iscpli,iscplo,
-                    # fngysi,fngyso,albedoo,albedoi,matwallo,matwalli,
-                    # sinphi,isfixlb,nib,teb,tib,nibprof,tebprof,tibprof,
-                    # engbsr,epsbs,rlimiter,ngcore,isngcore,isutcore,
-                    # ixfixnc,incixc,isupcore,isfixrb,chemsputi,chemsputo
-                    # islbcn,islbcu,islbce,islbci,islbcg,isexunif
-                    # fchemygwi,fchemylb,fphysylb,fchemygwo,fchemyrb,fphysyrb
-                    # xcnearlb,xcnearrb,openbox,fqpsatlb,fqpsatrb
-                    # cfueb,ikapmod,cfvytanbc
-      Use(Parallv)  # nxg,nyg
-      Use(Selec)    # i1,i2,i3,i4,i5,i6,i7,j1,j2,j3,j4,j5,j6,j7,xlinc
-      Use(Comgeo)   # gx,gy,gyf,sx,sy,xcwi,xcwo,yylb,rrv,sygytotc,isixcore
-      Use(Compla)   # mi, mg
-      Use(Comflo)   # fqx,fqy,fnix,fniy,feex,feey,feix,feiy,fngx,fngy
-                    # fdiaxlb, fdiaxrb
-      Use(Conduc)   # visx
-      Use(Indexes)
-      Use(Ynorm)    # temp0,nnorm,ennorm
-      Use(Poten)    # newbcl,newbcr,bcee,bcei,rsigpl,bcel,bcer,bcil,bcir,
-                    # kappal,kappar,bctype,phi0l,phi0r,isfdiax
-      Use(Rccoef)   # recylb,recyrb,alblb,albrb,recycw,sputtr,
-                    # recycm,recyce,recycmlb,recycmrb
-      Use(Bfield)   # rbfbt,btot
-      Use(Imprad)   # isimpon
-      Use(Impurity_source_flux)   # fnzysi,fnzyso
-      Use(Gradients)  # ey
-      Use(RZ_grid_info)      # rm
-      Use(Indices_domain_dcl)   #ixmxbcl,ixmnbcl,iymxbcl,iymnbcl,ispwrbcl
-      Use(Interp)
-      Use(Jacaux)   # yldot_diag
-      Use(Npes_mpi) # npes
-      Use(Indices_domain_dcg) # ndomain,ispwrbc
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-      Use(MCN_dim)
-      Use(MCN_sources) # edisspl, edisspr, cmntgpl, cmntgpl
-
-c...  local scalars
       real totfeix, totfeex, kfeix, vyn, cosphi,
      .     ueb, nbound, tbound, vxn, ut0, sumb, feeytotc, feiytotc,
      .     r_major, fniytotc, fng_chem, vbound, eng_sput, flx_incid,
@@ -101,22 +101,22 @@ c ====================================================================
 
 c...  do the iy = 0 boundary
 c...  if extrapolation b.c. on p.f. region, isextrpf=1, otherwise isextrpf=0
-      if (iymnbcl .eq. 0) goto 1100   # interior domain boundary; no bdry eqn
-      ixc1 = max(0, ixpt1(1)+1)       # 1st  core cell;used for core flux BC
+      if (iymnbcl .eq. 0) goto 1100   ! interior domain boundary; no bdry eqn
+      ixc1 = max(0, ixpt1(1)+1)       ! 1st  core cell;used for core flux BC
       if ((geometry(1:9)=="snowflake" .and. geometry(10:11).ne."15")
      &                     .or. geometry=="dnXtarget") then
         ix_fl_bc = min(ixpt2(1), nx)
       else
-        ix_fl_bc = min(ixpt2(nxpt), nx) # last core cell;use for flux BC
+        ix_fl_bc = min(ixpt2(nxpt), nx) ! last core cell;use for flux BC
       endif 
 
 c  Note: j3 is local range index for iy passed from pandf in oderhs.m
       if (j3 .le. isextrnpf .or. j3 .le. isextrtpf .or. 
      .                                         j3 .le. isextrngc) then
-              # this is a very large if-loop; check for 'j3 index' to find end
+              ! this is a very large if-loop; check for 'j3 index' to find end
 
       do 274 ifld = 1, nisp
-         do 272 ix = i4+1-ixmnbcl, i8-1+ixmxbcl # ix-loop over ion dens
+         do 272 ix = i4+1-ixmnbcl, i8-1+ixmxbcl ! ix-loop over ion dens
            if (isnionxy(ix,0,ifld)==1) then
              iv1 = idxn(ix,0,ifld)
 
@@ -125,7 +125,7 @@ c ---  Different boundary conditions if neutral momentum equation use;
 c ---  typically hydrogen only, so DIVIMP chem sputt not used here.
 c ---  Below, isupon(1) & ngbackg(1) used, so implies hydrogen
              if (isupgon(1) .eq. 1 .and. zi(ifld) .eq. 0.0) then
-               if (isixcore(ix)==1) then   # ix is part of the core boundary:
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                  if (isngcore(1) .eq. 0) then
                    t0 = max(tg(ix,0,1),temin*ev)
                    vyn = sqrt( 0.5*t0/(pi*mi(ifld)) )
@@ -153,16 +153,16 @@ c ---  Below, isupon(1) & ngbackg(1) used, so implies hydrogen
                    nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                           ng(ix,1,1)-1) ) ) + 0.2*ng(ix,1,1)
                    yldot(iv1) = nurlxn *(nbound - ng(ix,0,1))/n0(ifld)
-                 else  # old condition before 2/21/99
+                 else  ! old condition before 2/21/99
                    yldot(iv1) = nurlxn*(ni(ix,1,ifld)-ni(ix,0,ifld))/
      .                                                    n0(ifld)
                  endif
-               else   # ix is not part of the core boundary
+               else   ! ix is not part of the core boundary
                   if (iscpli(ix) .eq. 1) call wsmodi(1)
 		  t0 = max(tg(ix,0,1),temin*ev)
                   vyn = sqrt( 0.5*t0/(pi*mi(1)) )
                   fng_chem = 0.
-		  do ii = 1, ngsp  #chem sputt of hydrogen - strange = 0
+		  do ii = 1, ngsp  !chem sputt of hydrogen - strange = 0
                      flx_incid = ng(ix,1,ii)*0.25*sqrt(8*t0/(pi*mg(ii)))
                      fng_chem= fng_chem + chemsputi(1,ii)*flx_incid*
      .                                                        sy(ix,0)
@@ -185,7 +185,7 @@ c...   Caution: the wall source models assume gas species 1 only is inertial
      .                            fng_chem ) / (vyn*n0(ifld)*sy(ix,0))
                     elseif (recycwit(ix,1,1) < -1) then
                       yldot(iv1)=nurlxg*(ngbackg(1)-ni(ix,0,ifld))/n0(ifld)
-                    elseif (recycwit(ix,1,1) .le. 0.) then  # treat recycwit as albedo
+                    elseif (recycwit(ix,1,1) .le. 0.) then  ! treat recycwit as albedo
                       nharmave = 2.*(ni(ix,0,ifld)*ni(ix,1,ifld)) /
      .                              (ni(ix,0,ifld)+ni(ix,1,ifld))
                       yldot(iv1) = -nurlxg*( fniy(ix,0,ifld) +
@@ -197,19 +197,19 @@ c...   Caution: the wall source models assume gas species 1 only is inertial
      .                                           .and. matwalli(ix)==0.)
      .               yldot(iv1)= -nurlxg*(fniy(ix,0,ifld) - fngysi(ix,1) -
      .                            fngyi_use(ix,1) ) / (vyn*sy(ix,0)* n0(ifld))
-               endif   # end if-test for core and p.f. boundaries
-             else  # ifld is NOT inertial neutrals but still hydrogen ion
+               endif   ! end if-test for core and p.f. boundaries
+             else  ! ifld is NOT inertial neutrals but still hydrogen ion
 c
-               if (isixcore(ix)==1) then   # ix is part of the core boundary:
-                  if (isnicore(ifld) .eq. 1) then # set uniform, fixed density
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary:
+                  if (isnicore(ifld) .eq. 1) then ! set uniform, fixed density
                      yldot(iv1) = nurlxn*(ncore(ifld)-ni(ix,0,ifld))/
      .                                                          n0(ifld)
-                  elseif (isnicore(ifld) .eq. 0) then # set flux to curcore
+                  elseif (isnicore(ifld) .eq. 0) then ! set flux to curcore
                      yldot(iv1) = - nurlxn* ( qe*
      .                       (fniy(ix,0,ifld)-fniycbo(ix,ifld))/sy(ix,0)
      .                            - curcore(ifld)*gyf(ix,0)/sygytotc ) /
      .                                              (qe*vpnorm*n0(ifld))
-                  elseif (isnicore(ifld) .eq. 2) then # set flux & ni over range
+                  elseif (isnicore(ifld) .eq. 2) then ! set flux & ni over range
                      yldot(iv1) = - nurlxn* ( qe*
      .                       (fniy(ix,0,ifld)-fniycbo(ix,ifld))/sy(ix,0)
      .                            - curcore(ifld)*gyf(ix,0)/sygytotc ) /
@@ -218,32 +218,32 @@ c
                         yldot(iv1) = nurlxn*(ncore(ifld)-ni(ix,0,ifld))/
      .                                                           n0(ifld)
                      endif                       
-		  elseif (isnicore(ifld) .eq. 3) then # const ni; flux set to
-                                                      # curcore-recycc*fngy
+		  elseif (isnicore(ifld) .eq. 3) then ! const ni; flux set to
+                                                      ! curcore-recycc*fngy
                      yldot(iv1) = -nurlxn*( ni(ix,0,ifld) -
      .                                 ni(ixp1(ix,0),0,ifld) ) / n0(ifld)
                      if (ix.eq.ix_fl_bc) then
                         ii=max(0,ixpt1(1)+1)
                         fniytotc=fniy(ii,0,ifld)-fniycbo(ii,ifld)
-                        fngytotc = fngy(ii,0,1)  # needs generalization
+                        fngytotc = fngy(ii,0,1)  ! needs generalization
                         do
                           ii=ixp1(ii,0)
                           fniytotc = fniytotc + fniy(ii,0,ifld) -
      .                                          fniycbo(ii,ifld)
-                          fngytotc = fngytotc + fngy(ii,0,1) #generalize
-                          if (ii==ix_fl_bc) break
+                          fngytotc = fngytotc + fngy(ii,0,1) !generalize
+                          if (ii==ix_fl_bc) exit
                         enddo
-			if (ifld > 1) fngytotc = 0.  # crude fix for imp.
+			if (ifld > 1) fngytotc = 0.  ! crude fix for imp.
                         yldot(iv1)= -nurlxn*(qe*fniytotc +
      .                                       qe*recycc(1)*fngytotc -
      .                               curcore(ifld))/(qe*vpnorm*n0(ifld))
                      endif
-                  elseif (isnicore(ifld)==5) then # set dni/dy=-ni/lynicore
-                                                  # at midpl; the pol const ni
-                     if (ix .ne. ixmp) then  #  flux func for ni
+                  elseif (isnicore(ifld)==5) then ! set dni/dy=-ni/lynicore
+                                                  ! at midpl; the pol const ni
+                     if (ix .ne. ixmp) then  !  flux func for ni
                        yldot(iv1) = -nurlxn*( ni(ix,0,ifld) -
      .                                 ni(ixp1(ix,0),0,ifld) ) / n0(ifld)
-                     else  # close by setting midp gradient 1/lynicore
+                     else  ! close by setting midp gradient 1/lynicore
                        yldot(iv1)=-nurlxn*( ni(ix,0,ifld) - ni(ix,1,ifld)*
      .                                 (2*gyf(ixmp,0)*lynicore(ifld)+1)/
      .                                 (2*gyf(ixmp,0)*lynicore(ifld)-1)- 
@@ -253,7 +253,7 @@ c
 		            call xerrab ('** isnicore value not valid option **')
                   endif
                elseif (isnwconi(ifld) .eq. 0) then
-               # ix not on core boundary; set zero gradient (or flux)
+               ! ix not on core boundary; set zero gradient (or flux)
                   yldot(iv1) = nurlxn * ( (1-ifluxni)*
      .                      (niy1(ix,0,ifld) - niy0(ix,0,ifld))
      .                 - ifluxni*( fniy(ix,0,ifld)/(sy(ix,0)*vpnorm)    
@@ -261,26 +261,26 @@ c
      .                 ))/n0(ifld)
 c...  the last term going as 0.001 is to prevent very small densities
                elseif (isnwconi(ifld) .eq. 1) then
-               # ix is not part of the core boundary; set fixed density
+               ! ix is not part of the core boundary; set fixed density
                   yldot(iv1) = nurlxn*(nwalli(ix) - ni(ix,0,ifld))/
      .                                                        n0(ifld)
                elseif (isnwconi(ifld) .eq. 2) then
-               # ix is not part of the core boundary; set extrapolation bc
+               ! ix is not part of the core boundary; set extrapolation bc
                   nbound =  ni(ix,1,ifld) - gyf(ix,1)*
      .                         (ni(ix,2,ifld)-ni(ix,1,ifld))/gyf(ix,0)
                   nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                          ni(ix,1,ifld)-1) ) ) + 0.2*ni(ix,1,ifld)
                   yldot(iv1) = nurlxn *(nbound - ni(ix,0,ifld))/n0(ifld)
-               elseif (isnwconi(ifld) .eq. 3) then  #spec. gradient
+               elseif (isnwconi(ifld) .eq. 3) then  !spec. gradient
                     yldot(iv1) =-nurlxn*( niy0(ix,0,ifld) -
      .                niy1(ix,0,ifld)*(2*gyf(ix,0)*lynix(1,ix,ifld)-1)/
      .                                (2*gyf(ix,0)*lynix(1,ix,ifld)+1) -
      .                                  nwimin(ifld) ) / n0(ifld)
-               endif   # end if-test for core and p.f. boundaries
+               endif   ! end if-test for core and p.f. boundaries
 
-             endif           # endif for if (isupgon.eq.1 ...
-           endif             # end for if-test on isnionxy
-  272    continue  # ix-loop for ion dens
+             endif           ! endif for if (isupgon.eq.1 ...
+           endif             ! end for if-test on isnionxy
+  272    continue  ! ix-loop for ion dens
 
 c...  Reset density at corners
          do jx = 1, nxpt
@@ -298,55 +298,55 @@ c...  Reset density at corners
            endif
          enddo
       
-  274 continue  # ifld loop over ion species
+  274 continue  ! ifld loop over ion species
 
 c...  Now do the parallel velocity BC at iy = 0
       do ifld = 1, nusp
-         do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  #large ix-loop for up
+         do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  !large ix-loop for up
             if (isuponxy(ix,0,ifld) .eq. 1) then
                ix2 = ixp1(ix,0)
                iv2 = idxu(ix,0,ifld)
-               if (isixcore(ix)==1) then   # ix is part of the core boundary
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary
                   upbdry = up(ix,0,ifld)
                   upbdry1 = up(ix,1,ifld)
                   upbdry2 = up(ix,2,ifld)
 	          if (isupcore(ifld) == 0) then
 		    yldot(iv2) = nurlxu * (upcore(ifld) - upbdry)/vpnorm
-		  elseif (isupcore(ifld) ==1) then # d(up)/dy=0
+		  elseif (isupcore(ifld) ==1) then ! d(up)/dy=0
                     yldot(iv2) = nurlxu * (upbdry1 - upbdry) / vpnorm
-		  elseif(isupcore(ifld) ==2) then  # d^2(up)/dy^2 = 0
+		  elseif(isupcore(ifld) ==2) then  ! d^2(up)/dy^2 = 0
 		    yldot(iv2) = nurlxu * ( (upbdry1-upbdry )*gy(ix,1) -
      .                                    (upbdry2-upbdry1)*gy(ix,2) )/
      .                                                 (gy(ix,1)*vpnorm)
-		  elseif(isupcore(ifld)==3) then # set fmiy=0 on core bdry
+		  elseif(isupcore(ifld)==3) then ! set fmiy=0 on core bdry
                      yldot(iv2) = -nurlxu * fmiy(ix,0,ifld) / 
      .                                    (vpnorm*sy(ix,0)*fnorm(ifld))
 		  elseif (isupcore(ifld)==4 .or. isupcore(ifld)==5) then 
-                      # n*uz/rm=const & for =4- radial flux=lzflux; 
-                      # or, for =5- ave uz=utorave 
+                      ! n*uz/rm=const & for =4- radial flux=lzflux; 
+                      ! or, for =5- ave uz=utorave 
                     yldot(iv2)=-nurlxe*( uz(ix,0,ifld)-uz(ixp1(ix,0),0,ifld)*
      .                           rm(ix,0,2)*ni(ixp1(ix,0),0,ifld)/
      .                          (rm(ixp1(ix,0),0,2)*ni(ix,0,ifld)) )/vpnorm
-                    if (ix.eq.ix_fl_bc) then # not all Jac elems included
-                      # sum core parallel momentum flux:
+                    if (ix.eq.ix_fl_bc) then ! not all Jac elems included
+                      ! sum core parallel momentum flux:
                       ii = max(0, ixpt1(1)+1)
                       fmiytotc = rm(ii,0,0)*fmiy(ii,0,ifld)
                       sytotc = sy(ii,0)
                       uztotc = uz(ii,0,ifld)/gxf(ii,0)
                       xtotc = dx(ii,0)
-                      do    # loop over ii as changed by ii=ixp1 statement
+                      do    ! loop over ii as changed by ii=ixp1 statement
                         ii = ixp1(ii,0)
                         if (isudsym==1 .and. (ii==nxc .or. ii==nxc+1)) then
-                          continue  # skip m.p. guard cells
+                          continue  ! skip m.p. guard cells
                         else
                           fmiytotc=fmiytotc+ rm(ii,0,0)*fmiy(ii,0,ifld)
                           sytotc = sytotc + sy(ii,0)
                           uztotc = uztotc + uz(ii,0,ifld)/gxf(ii,0)
                           xtotc = xtotc + dx(ii,0)
                         endif
-                        if (ii==ix_fl_bc) break
+                        if (ii==ix_fl_bc) exit
                       enddo
-                      uztotc = uztotc/xtotc   # divide by total core distance
+                      uztotc = uztotc/xtotc   ! divide by total core distance
                       if (isupcore(ifld)==4) then
                          yldot(iv2)= -nurlxe*( fmiytotc/sytotc -
      .                                                 lzflux(ifld) )/
@@ -355,27 +355,27 @@ c...  Now do the parallel velocity BC at iy = 0
                          yldot(iv2)= -nurlxe*(uztotc - utorave(ifld))/vpnorm
                       endif
                     endif
-                  else   # isupcore does not correspond to cases above
+                  else   ! isupcore does not correspond to cases above
                     call xerrab ("*** Illegal setting of isupcore ***")
                   endif
 
-               elseif (isupwi(ifld)==1) then   # isixcore if-test; PF bdry
+               elseif (isupwi(ifld)==1) then   ! isixcore if-test; PF bdry
                   yldot(iv2) = -nurlxu * fmiy(ix,0,ifld) / 
      .                                    (vpnorm*sy(ix,0)*fnorm(ifld))
-               elseif (isupwi(ifld)==2) then   # PF bdry
+               elseif (isupwi(ifld)==2) then   ! PF bdry
                   yldot(iv2) = nurlxu * nm(ix,0,ifld) / fnorm(ifld) *
      .                               (up(ix,1,ifld) - up(ix,0,ifld))
-               elseif (isupwi(ifld)==3) then   # PF bdry
+               elseif (isupwi(ifld)==3) then   ! PF bdry
                   yldot(iv2) = -nurlxu * nm(ix,0,ifld) / fnorm(ifld) *
      .                         ( up(ix,0,ifld) - up(ix,1,ifld)*
      .                            (2*gyf(ix,0)*lyup(1)-1)/
      .                                     (2*gyf(ix,0)*lyup(1)+1) )
-               else                          # PF bdry
+               else                          ! PF bdry
                   yldot(iv2) = nurlxu * nm(ix,0,ifld) / fnorm(ifld) *
      .                                      (0. - up(ix,0,ifld))
-               endif   # end if-test for core and p.f. boundaries
-            endif      # endif for if (isuponxy .eq. 1)
-	 enddo         # ix-loop for up eqns
+               endif   ! end if-test for core and p.f. boundaries
+            endif      ! endif for if (isuponxy .eq. 1)
+	 enddo         ! ix-loop for up eqns
       enddo
 
 c ... Do boundary conditions for impurities along iy = 0.
@@ -384,19 +384,19 @@ c     the adjacent cells.
       do ifld = 1, nzspt
          iimp = nhsp + ifld
          if (isimpon .ge. 3 .and. isimpon .le. 7) then 
-           do ix = i2, i5   # ix-loop for ion dens
+           do ix = i2, i5   ! ix-loop for ion dens
              if (isnionxy(ix,0,iimp)==1) then
                iv = idxn(ix,0,iimp)
-               if (isixcore(ix)==1) then   # ix is part of the core boundary:
-                  if (isnicore(iimp) .eq. 1) then # set uniform, fixed density
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary:
+                  if (isnicore(iimp) .eq. 1) then ! set uniform, fixed density
                      yldot(iv) = nurlxn*(ncore(iimp)-ni(ix,0,iimp))/
      .                                                         n0(iimp)
-                  elseif (isnicore(iimp) .eq. 0) then # set flux to curcore
+                  elseif (isnicore(iimp) .eq. 0) then ! set flux to curcore
                      yldot(iv) = -nurlxn * ( qe*
      .                           (fniy(ix,0,iimp)-fniycbo(ix,iimp))/sy(ix,0)
      .                             - curcore(iimp)*gyf(ix,0)/sygytotc ) /
      .                                               (qe*vpnorm*n0(iimp))
-                  elseif (isnicore(iimp) .eq. 2) then # set flux & ni over range
+                  elseif (isnicore(iimp) .eq. 2) then ! set flux & ni over range
                      yldot(iv) = -nurlxn * ( qe*
      .                           (fniy(ix,0,iimp)-fniycbo(ix,iimp))/sy(ix,0)
      .                             - curcore(iimp)*gyf(ix,0)/sygytotc ) /
@@ -405,7 +405,7 @@ c     the adjacent cells.
                         yldot(iv) = nurlxn*(ncore(iimp)-ni(ix,0,iimp))/
      .                                                         n0(iimp)
                      endif
-                  elseif (isnicore(iimp) .eq. 3) then # set integr. flux, const ni 
+                  elseif (isnicore(iimp) .eq. 3) then ! set integr. flux, const ni 
                      yldot(iv1) = nurlxn*( ni(ix,0,iimp) -
      .                                 ni(ixp1(ix,0),0,iimp) ) / n0(iimp)
                      if (ix.eq.ix_fl_bc) then
@@ -414,20 +414,20 @@ c     the adjacent cells.
                         do
                           ii=ixp1(ii,0)
                           fniytotc=fniytotc+fniy(ii,0,iimp)-fniycbo(ii,iimp)
-                          if (ii==ix_fl_bc) break
+                          if (ii==ix_fl_bc) exit
                         enddo
                         yldot(iv1)= -nurlxn*(qe*fniytotc-
      .                               curcore(iimp))/(qe*vpnorm*n0(iimp))
                      endif
-                  elseif (isnicore(iimp) .eq. 4) then  # use bndry impur source
+                  elseif (isnicore(iimp) .eq. 4) then  ! use bndry impur source
                      yldot(iv) = -nurlxn *
      .                           (fniy(ix,0,iimp) - fnzysi(ix,ifld)) /
      .                           (sy(ix,0) * n0(iimp) * vpnorm)
-                  elseif (isnicore(iimp) == 5) then # set dni/dy=0
+                  elseif (isnicore(iimp) == 5) then ! set dni/dy=0
                      yldot(iv1) = nurlxn*( ni(ix,1,iimp) -
      .                                       ni(ix,0,iimp) ) / n0(ifld)
                   endif
-               else   # ix is not part of the core boundary:
+               else   ! ix is not part of the core boundary:
                   if (isnwconi(iimp) .eq. 0) then
                      yldot(iv) = -nurlxn *
      .                           (fniy(ix,0,iimp) - fnzysi(ix,ifld)) /
@@ -435,21 +435,21 @@ c     the adjacent cells.
                   elseif (isnwconi(iimp) .eq. 1) then
                      yldot(iv) = nurlxn*(nwalli(ix) - ni(ix,0,iimp))/
      .                                                        n0(iimp)
-                  elseif (isnwconi(iimp) .eq. 2) then  #extrapolation bc
+                  elseif (isnwconi(iimp) .eq. 2) then  !extrapolation bc
                      nbound =  ni(ix,1,iimp) - gyf(ix,1)*
      .                         (ni(ix,2,iimp)-ni(ix,1,iimp))/gyf(ix,0)
                      nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                          ni(ix,1,iimp)-1) ) ) + 0.2*ni(ix,1,iimp)
                      yldot(iv) = nurlxn *(nbound - ni(ix,0,iimp))/n0(iimp)
-                  elseif (isnwconi(iimp) .eq. 3) then  #spec. gradient
+                  elseif (isnwconi(iimp) .eq. 3) then  !spec. gradient
                      yldot(iv) = -nurlxn*( niy0(ix,0,iimp) -
      .                 niy1(ix,0,iimp)*(2*gyf(ix,0)*lynix(1,ix,iimp)-1)/
      .                                 (2*gyf(ix,0)*lynix(1,ix,iimp)+1) -
      .                                     nwimin(iimp) ) / n0(iimp)
                   endif
-               endif   # end if-test for core and p.f. boundaries
-             endif     # end if-test for isnionxy
-	   enddo       # end for do ix = i2, i5 loop for ion dens
+               endif   ! end if-test for core and p.f. boundaries
+             endif     ! end if-test for isnionxy
+	   enddo       ! end for do ix = i2, i5 loop for ion dens
 c...   set the corner values here
             if (ixmnbcl*iymnbcl.eq.1) then
                do jx = 1, nxpt
@@ -473,29 +473,29 @@ c...   set the corner values here
             endif
 
          endif
-      enddo          # end of impurities along iy = 0
+      enddo          ! end of impurities along iy = 0
 
 CCC  Do Te, Ti & later diffusive neutrals, phi along iy=0 boundary
 ccc  -------------------------------------------------------------------
 c
 c    if flux energy condition, precompute feeytotc & feiytotc for use
-      if (iflcore==1) then  #sum e-i core pwr fee,iytotc; unnecess if te,i frozen
+      if (iflcore==1) then  !sum e-i core pwr fee,iytotc; unnecess if te,i frozen
         feeytotc = 0.
         feiytotc = 0.
         do ix = i4+1-ixmnbcl, i8-1+ixmxbcl
-          if (iymnbcl==1 .and. isixcore(ix)==1) then  # domain part of core bdry
+          if (iymnbcl==1 .and. isixcore(ix)==1) then  ! domain part of core bdry
             ii = max(0, ixpt1(1)+1)
             feeytotc = feey(ii,0)-feeycbo(ii)
             feiytotc = feiy(ii,0)-feiycbo(ii)
-            do    # loop over ii as changed by ii=ixp1 statement
+            do    ! loop over ii as changed by ii=ixp1 statement
               ii = ixp1(ii,0)
               if (isudsym==1 .and.(ii==nxc .or. ii==nxc+iexclnxc1)) then
-                 continue  # skip m.p. guard cells
+                 continue  ! skip m.p. guard cells
               else
                  feeytotc = feeytotc+feey(ii,0)-feeycbo(ii)
                  feiytotc = feiytotc+feiy(ii,0)-feiycbo(ii)
               endif
-              if (ii==ix_fl_bc) break
+              if (ii==ix_fl_bc) exit
             enddo
           endif
         enddo
@@ -517,43 +517,43 @@ c_mpi      call mpi_allreduce(feiytotc, sfeiytotc, 1,
 c_mpi     .      MPI_DOUBLE_PRECISION, MPI_SUM, uedgeComm, ierr)
 
 c ... Set Te and Ti BCs
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl #long ix-loop for Te, Ti
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl !long ix-loop for Te, Ti
          if (isteonxy(ix,0) .eq. 1) then
            iv1 = idxte(ix,0)
-            if (isixcore(ix)==1) then   # ix is part of the core boundary:
+            if (isixcore(ix)==1) then   ! ix is part of the core boundary:
               yldot(iv1)=nurlxe*(tcoree*ev-te(ix,0))*1.5*ne(ix,0)/ennorm
               if (iflcore .eq. 1) then
                  yldot(iv1) = -nurlxe*(te(ix,0)-te(ixp1(ix,0),0))*n0(1)/ennorm
-                 if (ix.eq.ix_fl_bc) then # not all Jac elems included
-                    # sum core power:
+                 if (ix.eq.ix_fl_bc) then ! not all Jac elems included
+                    ! sum core power:
                     ii = max(0, ixpt1(1)+1)
                     feeytotc = feey(ii,0)-feeycbo(ii)
-                    do    # loop over ii as changed by ii=ixp1 statement
+                    do    ! loop over ii as changed by ii=ixp1 statement
                        ii = ixp1(ii,0)
                        if (isudsym==1 .and. (ii==nxc .or. ii==nxc+iexclnxc1)) then
-                          continue  # skip m.p. guard cells
+                          continue  ! skip m.p. guard cells
                        else
                           feeytotc = feeytotc+feey(ii,0)-feeycbo(ii)
                        endif
-                       if (ii==ix_fl_bc) break
+                       if (ii==ix_fl_bc) exit
                     enddo
                     yldot(iv1)= -nurlxe*(feeytotc-pcoree)/(vpnorm*ennorm)
                  endif
               elseif (iflcore .eq. -1) then
                  yldot(iv1) = -nurlxe*(te(ix,0)-te(ix,1))*n0(1)/ennorm
               endif
-            else   # ix is not part of the core boundary; various PF cases:
-               if (istepfc .eq. 0) then          # zero electron energy flux
+            else   ! ix is not part of the core boundary; various PF cases:
+               if (istepfc .eq. 0) then          ! zero electron energy flux
                  yldot(iv1) = -nurlxe*(feey(ix,0)/(n0(1)*vpnorm*sy(ix,0)))
      .                                                       / (temp0*ev) 
-               elseif (istepfc .eq. 1) then      # fixed Te
+               elseif (istepfc .eq. 1) then      ! fixed Te
                  yldot(iv1) =nurlxe*(tewalli(ix)*ev-te(ix,0))/(temp0*ev)
-               elseif (istepfc .eq. 2) then       # extrapolation
+               elseif (istepfc .eq. 2) then       ! extrapolation
                  tbound = te(ix,1) - gyf(ix,1)*
      .                                     (te(ix,2)-te(ix,1))/gyf(ix,0)
                  tbound = max(tbound, tbmin*ev)
                  yldot(iv1) = nurlxe *(tbound - te(ix,0))/(temp0*ev)
-               elseif (istepfc .eq. 3) then         # specified gradient
+               elseif (istepfc .eq. 3) then         ! specified gradient
                  yldot(iv1) = nurlxe*( (te(ix,1) - te(ix,0)) -
      .                             0.5*(te(ix,1) + te(ix,0))/
      .                              (gyf(ix,0)*lytex(1,ix)) )/(temp0*ev)
@@ -562,28 +562,28 @@ c ... Set Te and Ti BCs
      .                               vey(ix,0)*sy(ix,0)*te(ix,0)) /
      .                              (vpnorm*ennorm*sy(ix,0))
                endif
-            endif   # end if-test for core and p.f. boundaries
-         endif   # end if-test on isteonxy
+            endif   ! end if-test for core and p.f. boundaries
+         endif   ! end if-test on isteonxy
 
          if (istionxy(ix,0) .eq. 1) then
             iv2 = idxti(ix,0)
-            if (isixcore(ix)==1) then   # ix is part of the core boundary:
+            if (isixcore(ix)==1) then   ! ix is part of the core boundary:
               yldot(iv2)=nurlxi*(tcorei*ev-ti(ix,0))*1.5*ne(ix,0)/ennorm
               if (iflcore .eq. 1) then
                  yldot(iv2) = -nurlxi*(ti(ix,0)-ti(ixp1(ix,0),0))*
      .                                                     n0(1) /ennorm
-                 if (ix.eq.ix_fl_bc) then # not all Jac elems included
-                    # sum core power:
+                 if (ix.eq.ix_fl_bc) then ! not all Jac elems included
+                    ! sum core power:
                     ii = max(0, ixpt1(1)+1)
                     feiytotc = feiy(ii,0)-feiycbo(ii)
                     do
                        ii = ixp1(ii,0)
                        if (isudsym==1 .and. (ii==nxc .or. ii==nxc+iexclnxc1)) then
-                          continue  # skip m.p. guard cells
+                          continue  ! skip m.p. guard cells
                        else
                           feiytotc = feiytotc+feiy(ii,0)-feiycbo(ii)
                        endif
-                       if (ii==ix_fl_bc) break
+                       if (ii==ix_fl_bc) exit
                     enddo
                     yldot(iv2)= -nurlxi*(feiytotc-pcorei)/(vpnorm*ennorm)
                  endif
@@ -595,22 +595,22 @@ ccc               bcen = matwalli(ix)
 ccc               yldot(iv2) = -nurlxi*(feiy(ix,0) -
 ccc     .             (bcei*fniy(ix,0,1) + bcen*fniy(ix,0,iigsp))*ti(ix,0)) /
 ccc     .             (vpnorm*ennorm*sy(ix,0))
-            else                                 # various PF cases
-               if (istipfc .eq. 0) then          # zero ion energy flux
+            else                                 ! various PF cases
+               if (istipfc .eq. 0) then          ! zero ion energy flux
                  yldot(iv2) = -nurlxi*(feiy(ix,0)/(n0(1)*vpnorm*sy(ix,0)))
      .                                                       / (temp0*ev) 
-               elseif (istipfc .eq. 1) then      # fixed Ti
+               elseif (istipfc .eq. 1) then      ! fixed Ti
                  yldot(iv2) =nurlxi*(tiwalli(ix)*ev-ti(ix,0))/(temp0*ev)
-               elseif (istipfc .eq. 2) then      # extrapolation
+               elseif (istipfc .eq. 2) then      ! extrapolation
                  tbound = ti(ix,1) - gyf(ix,1)*
      .                                     (ti(ix,2)-ti(ix,1))/gyf(ix,0)
                  tbound = max(tbound, tbmin*ev)
                  yldot(iv2) = nurlxi *(tbound - ti(ix,0))/(temp0*ev)
-               elseif (istipfc .eq. 3) then      # specified gradient
+               elseif (istipfc .eq. 3) then      ! specified gradient
                  yldot(iv2) = nurlxi*( (ti(ix,1) - ti(ix,0)) -
      .                           0.5*(ti(ix,1) + ti(ix,0))/
      .                             (gyf(ix,0)*lytix(1,ix)) )/(temp0*ev)
-               elseif (istipfc .eq. 4) then      # sheath-like condition
+               elseif (istipfc .eq. 4) then      ! sheath-like condition
                  t0 = max(tg(ix,0,1), temin*ev)
                  fngyw=0.25*sqrt(8*t0/(pi*mg(1)))*ng(ix,1,1)*sy(ix,0)
                  yldot(iv2) = -nurlxi*( feiy(ix,0) - bceiw*fniy(ix,0,1)*
@@ -619,18 +619,18 @@ ccc     .             (vpnorm*ennorm*sy(ix,0))
      .                                cgengw*2.*tg(ix,0,iigsp)*fngyw ) /
      .                                          (vpnorm*ennorm*sy(ix,0))
                endif
-            endif   # end if-test for core and p.f. boundaries
-         endif   # end if-test on istionxy
-      enddo  # long ix-loop for Te and Ti BCs
+            endif   ! end if-test for core and p.f. boundaries
+         endif   ! end if-test on istionxy
+      enddo  ! long ix-loop for Te and Ti BCs
 
 ccc  Diffusive neutrals on iy=0 boundary
 ccc  - - - - - - - - - - - - -
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl #long ix-loop for diff neut dens
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl !long ix-loop for diff neut dens
          nzsp_rt = nhsp
          do 275 igsp = 1, ngsp
-	   jz = max(igsp - nhgsp, 1)  # identify impurity index
-	   if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) #prev index for fniy
-           if (isngonxy(ix,0,igsp) .eq. 1) then  # ends just before 275 continue statem.
+	   jz = max(igsp - nhgsp, 1)  ! identify impurity index
+	   if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) !prev index for fniy
+           if (isngonxy(ix,0,igsp) .eq. 1) then  ! ends just before 275 continue statem.
             if (iscpli(ix) .eq. 1) call wsmodi(igsp)
             iv = idxg(ix,0,igsp)   
 	    t0 = max(cdifg(igsp)*tg(ix,0,igsp),temin*ev)
@@ -644,7 +644,7 @@ c ... prepare impurity ion flux for possible recycling
               enddo
 	    endif
 c ... Set core BC
-            if (isixcore(ix)==1) then   # ix is part of the core boundary:
+            if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                if (isngcore(igsp) .eq. 0) then
                  nharmave = 2.*(ng(ix,0,igsp)*ng(ix,1,igsp)) /
      .                         (ng(ix,0,igsp)+ng(ix,1,igsp))
@@ -674,12 +674,12 @@ c ... Set core BC
      .                                                       n0g(igsp)
                endif
 
-###  End of core bounary conditions 
+!!!  End of core bounary conditions 
 
-            else  # cell is not part of core boundary
-### wall BCs. calc diff neut sputt fluxes
+            else  ! cell is not part of core boundary
+!!! wall BCs. calc diff neut sputt fluxes
                fng_chem = 0.
-               do igsp2 = 1, 1+ishymol  #include hydrogen neut sputt
+               do igsp2 = 1, 1+ishymol  !include hydrogen neut sputt
                  t0 = max(tg(ix,0,igsp2),temin*ev)
                  flx_incid=ng(ix,1,igsp2)*0.25*sqrt(8*t0/(pi*mg(igsp2)))
 		 if (isch_sput(igsp).ne.0) then
@@ -695,7 +695,7 @@ c ... Set core BC
 
 c ... Include gas BC from sputtering by ions
                sputflxpf(ix,igsp) = 0.
-               if (isi_sputpf(igsp).ge.1 .and. igsp>1) then # incl phys sput from ions
+               if (isi_sputpf(igsp).ge.1 .and. igsp>1) then ! incl phys sput from ions
                  do ifld = ipsputt_s, ipsputt_e 
                    eng_sput = ( 2*ti(ix,0) + zi(ifld)*
      .                                           3*te(ix,0) )/ev
@@ -703,8 +703,8 @@ c ... Include gas BC from sputtering by ions
      .                                min(fniy(ix,0,ifld),0.)*fphysyiwi(igsp)*
      .                                      yld96(matp,matt,eng_sput)
                  enddo
-                  if (isi_sputpf(igsp) .ge. 2) then # add chem sput from ions
-                    do ifld = 1,1  # (ipsputt_s, ipsputt_e) place holder for imp/imp sputt
+                  if (isi_sputpf(igsp) .ge. 2) then ! add chem sput from ions
+                    do ifld = 1,1  ! (ipsputt_s, ipsputt_e) place holder for imp/imp sputt
                       eng_sput = ( 2*ti(ix,0) + zi(ifld)*
      .                                             3*te(ix,0) )/ev
 		      flx_incid = -min(fniy(ix,0,ifld)/sy(ix,0),0.)
@@ -728,7 +728,7 @@ c ... Include gas BC from sputtering by ions
                    fniy_recy = fac2sp*fniy(ix,0,1)
                    if(isrefluxclip==1) fniy_recy=min(fniy_recy,0.)
                    if (igsp .gt. nhgsp) fniy_recy = zflux
-                   if (ishymol.eq.1 .and. igsp.eq.2) then # 2 atoms per molecule
+                   if (ishymol.eq.1 .and. igsp.eq.2) then ! 2 atoms per molecule
                      if (isupgon(1) .eq. 1) then
 		       fniy_recy = 0.5*( fniy(ix,0,1) + fniy(ix,0,2) )
                      else
@@ -744,7 +744,7 @@ c ... Include gas BC from sputtering by ions
                  elseif (recycwit(ix,igsp,1) < -1) then
                    yldot(iv)=nurlxg*(ngbackg(igsp)-ng(ix,0,igsp))/
      .                                                          n0g(igsp)
-                elseif (recycwit(ix,igsp,1) .le. 0.) then # treat recycwit as albedo
+                elseif (recycwit(ix,igsp,1) .le. 0.) then ! treat recycwit as albedo
                    nharmave = 2.*(ng(ix,0,igsp)*ng(ix,1,igsp)) /
      .                           (ng(ix,0,igsp)+ng(ix,1,igsp))
                    yldot(iv) = -nurlxg*( fngy(ix,0,igsp) +
@@ -757,58 +757,58 @@ c ... Include gas BC from sputtering by ions
      .                                            yldot(iv) = -nurlxg*
      .                             ( fngy(ix,0,igsp) - fngysi(ix,igsp) )
      .                                         / (vyn*sy(ix,0)*n0g(igsp))
-            endif   # end if-test for core and p.f. boundaries
-           endif    # End for if(isngon(igsp).eq.1) after do 275
- 275     continue   # igsp loop over species
-      enddo  # end of long ix-loop for diff neuts
+            endif   ! end if-test for core and p.f. boundaries
+           endif    ! End for if(isngon(igsp).eq.1) after do 275
+ 275     continue   ! igsp loop over species
+      enddo  ! end of long ix-loop for diff neuts
 
 c... BC for neutral gas temperature/energy at iy=0
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl # ix-loop for diff neut temp 
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl ! ix-loop for diff neut temp 
         do igsp = 1, ngsp
           if (istgonxy(ix,0,igsp) == 1) then
             iv = idxtg(ix,0,igsp)
             if (isixcore(ix)==1) then
-              if (istgcore(igsp) == 0) then  #set to ti
+              if (istgcore(igsp) == 0) then  !set to ti
                 yldot(iv)=nurlxg*(ti(ix,0)-tg(ix,0,igsp))/(temp0*ev)
-              elseif (istgcore(igsp) == 1) then   # set to tgcore
+              elseif (istgcore(igsp) == 1) then   ! set to tgcore
                 yldot(iv)=nurlxg*(tgcore(igsp)*ev-tg(ix,0,igsp))/
      .                                                      (temp0*ev)
-              else # all others, set to zero y-gradient
+              else ! all others, set to zero y-gradient
                 yldot(iv)=nurlxg*(tg(ix,1,igsp)-tg(ix,0,igsp))/
      .                                                      (temp0*ev)
               endif
-            else   # PF wall
-              if (istgpfc(igsp) == 0) then   # fixed Tg
+            else   ! PF wall
+              if (istgpfc(igsp) == 0) then   ! fixed Tg
                 yldot(iv) = nurlxg*(tgwall(igsp)*ev-tg(ix,0,igsp))/
      .                                                      (temp0*ev)
-              elseif (istgpfc(igsp) == 1)    # extrapolation
+              elseif (istgpfc(igsp) == 1)     then ! extrapolation
                  tbound = tg(ix,1,igsp) - gyf(ix,1)*
      .                       (tg(ix,2,igsp)-tg(ix,1,igsp))/gyf(ix,0)
-                 tbound = max(tbound, 0.25*tbmin*ev)  #tbmin=.1 eV
+                 tbound = max(tbound, 0.25*tbmin*ev)  !tbmin=.1 eV
                  yldot(iv) = nurlxi *(tbound - tg(ix,0,igsp))/(temp0*ev)
-              elseif (istgpfc(igsp) == 2)    # specified gradient
+              elseif (istgpfc(igsp) == 2)     then ! specified gradient
                  yldot(iv) = nurlxi*( (tg(ix,1,igsp) - tg(ix,0,igsp)) -
      .                           0.5*(tg(ix,1,igsp) + tg(ix,0,igsp))/
      .                           (gyf(ix,0)*lytg(1,igsp)) )/(temp0*ev)
-              elseif (istgpfc(igsp) > 2)
+              elseif (istgpfc(igsp) > 2) then
                  call xerrab("***Input error: invalid istgpfc ***")
               endif
 
             endif           
           endif
         enddo  
-      enddo  # end ix-loop for neutral temps
+      enddo  ! end ix-loop for neutral temps
 
 ccc  Now do potential along iy=0 boundary if isnewpot=-1 or -2; others next page
 ccc  - - - - - - - - - - - - - - 
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl #long ix-loop for potential
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl !long ix-loop for potential
          if (isphionxy(ix,0) .eq. 1) then
             iv3 = idxphi(ix,0)
             yldot(iv3) = nurlxp*( (phi(ix,1) - phi(ix,0)) -
      .                             0.5*(phi(ix,1) + phi(ix,0))/
      .                              (gyf(ix,0)*lyphix(1,ix)) )/temp0
             if (isnewpot==-1) then
-               if (isixcore(ix)==1) then   # ix is part of the core boundary:
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                   ix4 = ixm1(ix,0)
                   ut0 = (rr(ix,0)+rr(ix,1))/(btot(ix,0)+btot(ix,1))*
      .                  ( ey(ix,0) - gpiy(ix,0,1)/
@@ -816,29 +816,29 @@ ccc  - - - - - - - - - - - - - -
      .                        0.25*(rbfbt(ix,0)+rbfbt(ix,1))*
      .                              (up(ix,0,1)+up(ix4,0,1))
                   yldot(iv3) = -nurlxp*ut0/vpnorm
-               endif   # end if-test for core and p.f. boundaries
+               endif   ! end if-test for core and p.f. boundaries
             endif
-            if (isnewpot==-2) then  # phi is constant on core boundary
-               if (isixcore(ix)==1) then   # ix is part of the core boundary:
+            if (isnewpot==-2) then  ! phi is constant on core boundary
+               if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                   if (ix .ne. ix_fl_bc) then
                      yldot(iv3) = -nurlxp*(phi(ix,0)-phi(ixp1(ix,0),0))/temp0
-                  elseif (ix==ix_fl_bc) then # total core current = icoreelec
+                  elseif (ix==ix_fl_bc) then ! total core current = icoreelec
                      fqytotc = 0.
                      ii=ixc1
                      fqytotc=fqyao(ii,0)
                      do
                         ii=ixp1(ii,0)
                         fqytotc = fqytotc + fqyao(ii,0)
-                        if (ii==ix_fl_bc) break
+                        if (ii==ix_fl_bc) exit
                      enddo
                      yldot(iv3) = -nurlxp*(fqytotc - icoreelec)/
      .                                     (qe*n0(1)*vpnorm*sy(ixc1,0))
-                  endif   # end if-test for integral BC on core
-               endif   # end if-test for core and p.f. boundaries
-            endif   # end if-test for isnewpot==-2
+                  endif   ! end if-test for integral BC on core
+               endif   ! end if-test for core and p.f. boundaries
+            endif   ! end if-test for isnewpot==-2
          endif
 
-      enddo # long ix loop for potential
+      enddo ! long ix loop for potential
 ccc  -------------------------------------------------------------------
 
 c...  Now do the corners: the ion density corners are done elsewhere
@@ -922,11 +922,11 @@ c...  Now do the corners: the ion density corners are done elsewhere
          enddo
        endif
 
-      endif           # end of iy = 0 boundary conditions except for isnewpot=1
+      endif           ! end of iy = 0 boundary conditions except for isnewpot=1
 
-c  ####################################################################
-c  ###  Now do the potential for isnewpot=1 case along iy=0 boundary
-c  ####################################################################
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c  !!!  Now do the potential for isnewpot=1 case along iy=0 boundary
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c...  If isnewpot=1, phi boundary involves two eqns at iy=0 and 1
 c...  Note: j3 is local range index for iy passed from pandf in oderhs.m
       if (isnewpot*isphion.eq.1 .and. j3.le.3) then
@@ -935,8 +935,8 @@ c...  Note: j3 is local range index for iy passed from pandf in oderhs.m
             iv  = idxphi(ix,0)
             iv1 = idxphi(ix,1)
 
-c  ################ do BC on core bdry, then on PF bdry #################
-            if (isixcore(ix)==1) then   # ix is part of the core boundary:
+c  !!!!!!!!!!!!!!!! do BC on core bdry, then on PF bdry !!!!!!!!!!!!!!!!!
+            if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                ix3 = ixm1(ix,1)
                ix4 = ixm1(ix,0)
                r_major = 0.5*(rm(ix,0,0) + rm(ix,1,0)) + r0slab
@@ -946,9 +946,9 @@ c         Set phi poloidally constant at iy=0 on core bdry
 
 c         Next set phi at iy=1 depending on iphibcc flag
 
-c  ######################################################################
-c  ### First core phi BC at iy=0 & 1 over full ixcore range; then ix=ixmp
-c  ######################################################################
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c  !!! First core phi BC at iy=0 & 1 over full ixcore range; then ix=ixmp
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                  if (iphibcc==1) then
                    yldot(iv1) = -nurlxp*( (ey(ix,1)-ey(ix,0))*gy(ix,1) -
      .                                  (ey(ix,2)-ey(ix,1))*gy(ix,2) )/
@@ -965,10 +965,10 @@ c  ######################################################################
      .                                     (tes(ix,1)-te(ix,1))/temp0
                  endif
 
-c  ####################################################################
-c  ### Reset phi BC at iy=0,1 at ix=ixmp only using iphibcc & isutcore
-c  ####################################################################
-               if (ix == ixmp) then  #redefine eqn for midplane ix
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c  !!! Reset phi BC at iy=0,1 at ix=ixmp only using iphibcc & isutcore
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+               if (ix == ixmp) then  !redefine eqn for midplane ix
                  fqytotc = 0.
                  uztotc = 0.
 	         uztotc1 = 0.
@@ -979,7 +979,7 @@ c NOTE: total poloidal distance around the core:
                  do
                     ii=ixp1(ii,1)
                     xtotc = xtotc + dx(ii,0)
-                    if (ii==ix_fl_bc) break
+                    if (ii==ix_fl_bc) exit
                  enddo
                  ii=ixc1
 c NOTE: bndry surface flux should exclude fqyb and include fqyd
@@ -996,7 +996,7 @@ c NOTE: bndry surface flux should exclude fqyb and include fqyd
                     uztotc  = uztotc  + uz(ii,0,1) / ( gxf(ii,0)*xtotc )
                     uztotc1 = uztotc1 + uz(ii,1,1) / ( gxf(ii,1)*xtotc )
                     uztotc2 = uztotc2 + uz(ii,2,1) / ( gxf(ii,2)*xtotc )
-                    if (ii==ix_fl_bc) break
+                    if (ii==ix_fl_bc) exit
                  enddo
 c ... Midplane phi(ixmp,0) BC is always to set rad current to icoreelec
                  yldot(iv)=-nurlxp*(fqytotc - icoreelec)/
@@ -1004,40 +1004,40 @@ c ... Midplane phi(ixmp,0) BC is always to set rad current to icoreelec
 
 c ... Midplane phi(ixmp,1) BC set by iphibcc if =1,2,3; if iphibbc otherwise,
 c ... isutcore sets phi(ixmp,1) BC
-		 if (iphibcc.eq.1) then  # set d^2(ey)/dy^2=0
+		 if (iphibcc.eq.1) then  ! set d^2(ey)/dy^2=0
                    yldot(iv1) = -nurlxp*( (ey(ix,1)-ey(ix,0))*gy(ix,1) -
      .                                   (ey(ix,2)-ey(ix,1))*gy(ix,2) )/
      .                                                  (gy(ix,1)*temp0)
                  elseif (iphibcc==2 .or. iphibcc==3) then
                    yldot(iv1)=-nurlxp*(ey(ix,0)-eycore)/(gyf(ix,0)*temp0)
-                 else  # any iphibcc > 3 uses isutcore BC at ix=ixmp
-                   if (isutcore .eq. 0) then # flux-ave R*n*m*uz = lzcore
+                 else  ! any iphibcc > 3 uses isutcore BC at ix=ixmp
+                   if (isutcore .eq. 0) then ! flux-ave R*n*m*uz = lzcore
                      yldot(iv1)=-nurlxp*(uztotc -
      .                        lzcore(1)/(mi(1)*n0(1)*r_major)) / vpnorm
-                   elseif (isutcore == 1) then  # zero radial deriv. of ave uz
+                   elseif (isutcore == 1) then  ! zero radial deriv. of ave uz
                      yldot(iv1) = nurlxp*(uztotc-uztotc1)/vpnorm
-		   else     # second deriv. of ey at the midplane
+		   else     ! second deriv. of ey at the midplane
                      yldot(iv1) = -nurlxp*( (ey(ix,1)-ey(ix,0))*gy(ix,1) -
      .                                   (ey(ix,2)-ey(ix,1))*gy(ix,2) )/
      .                                                  (gy(ix,1)*temp0)
                    endif
                  endif
-               endif  #end outer midplane cells ix=ixmp potential BCs
-c  ####################################################################
+               endif  !end outer midplane cells ix=ixmp potential BCs
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c  ... Completed phi BC on core bdry
-c  ####################################################################
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c  ... Special case rarely used
-               if (cfvycf .gt. 1e-20) then  # preserves PET97 cases
+               if (cfvycf .gt. 1e-20) then  ! preserves PET97 cases
                  yldot(iv) = -nurlxp*( ey(ix,0) - gpiy(ix,0,1)/
      .                     (qe*zi(1)*niy0(ix,0,1)) )/(btot(ix,0)*vpnorm)
                  yldot(iv1) =nurlxp*(fqy(ix,1)-(fqx(ix,1)-fqx(ix3,1))) /
      .                              (rrv(ix,0)*sy(ix,0)*vpnorm*ev*n0(1))
                endif
 
-c  ###################################################################
-c  ### Finally set private-flux (PF) phi BC at iy=0 & 1
-c  ###################################################################
-            else   # ix is not part of the core boundary:
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c  !!! Finally set private-flux (PF) phi BC at iy=0 & 1
+c  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            else   ! ix is not part of the core boundary:
                if(iphibcwi == 0) then
                  yldot(iv) = nurlxp*( phi(ix,1) - phi(ix,0) )/temp0
                elseif(iphibcwi == 1) then
@@ -1051,11 +1051,11 @@ c  ###################################################################
                  yldot(iv) = nurlxp*
      .                     (phiwi(ix) - phi(ix,0))/temp0
                endif
-            endif   # end if-test for core and p.f. boundaries
-          endif     # end if-test on isphionxy for ix=0,1
-        enddo       # end loop over ix
-      endif         # large if testing isnewpot*isphion=1, j3
- 1100 continue   # jump to here if iymnbcl = 0; interior bdry
+            endif   ! end if-test for core and p.f. boundaries
+          endif     ! end if-test on isphionxy for ix=0,1
+        enddo       ! end loop over ix
+      endif         ! large if testing isnewpot*isphion=1, j3
+ 1100 continue   ! jump to here if iymnbcl = 0; interior bdry
 
 c ====================================================================
 c ======================== The iy=ny+1 boundary ======================
@@ -1063,7 +1063,7 @@ c ====================================================================
 
 c...  now do the iy = ny+1 boundary
 c...  if extrapolation b.c.on outer wall, isextrw=1, otherwise isextrw=0
-      if (iymxbcl .eq. 0) goto 1200  #skip setting eqn because interior bdry
+      if (iymxbcl .eq. 0) goto 1200  !skip setting eqn because interior bdry
       if (j7 .ge. (ny+1)-isextrnw .or. j7 .ge. (ny+1)-isextrtw) then
       do 280 ifld = 1 , nisp
         do 278 ix = i4+1-ixmnbcl, i8-1+ixmxbcl
@@ -1100,7 +1100,7 @@ c...   Caution: the wall source models assume gas species 1 only is inertial
                   elseif (recycwot(ix,1) < -1) then
                     yldot(iv1)=nurlxg*(ngbackg(1)-ni(ix,ny+1,ifld))/
      .                                                           n0(ifld)
-                  elseif (recycwot(ix,1) .le. 0.) then  # treat recycwot as albedo
+                  elseif (recycwot(ix,1) .le. 0.) then  ! treat recycwot as albedo
                     yldot(iv1) = nurlxg*( fniy(ix,ny,ifld) -
      .                     (1+recycwot(ix,1))*ni(ix,ny+1,ifld)*vyn*sy(ix,ny) )/
      .                                            (vyn*n0(ifld)*sy(ix,ny))
@@ -1123,23 +1123,23 @@ c...  This next if is a recalc. if constant ni wanted - could be done better
               elseif (isnwcono(ifld) .eq. 1) then
                  yldot(iv1) =nurlxn*(nwallo(ix) - ni(ix,ny+1,ifld))/
      .                                                      n0(ifld)
-              elseif (isnwcono(ifld) .eq. 2) then  #extrapolation
+              elseif (isnwcono(ifld) .eq. 2) then  !extrapolation
                  nbound = ni(ix,ny,ifld) + gyf(ix,ny-1)*
      .                      (ni(ix,ny,ifld)-ni(ix,ny-1,ifld))/gyf(ix,ny)
                  nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                         ni(ix,ny,ifld)-1) ) ) + 0.2*ni(ix,ny,ifld)
 ccc                 nbound = max(nbound, 0.3*ni(ix,ny,ifld))
                  yldot(iv1) = nurlxn*(nbound - ni(ix,ny+1,ifld))/n0(ifld)
-              elseif (isnwcono(ifld) .eq. 3) then   #spec. gradient 
+              elseif (isnwcono(ifld) .eq. 3) then   !spec. gradient 
                   yldot(iv1) = -nurlxn*( niy1(ix,ny,ifld) -
      .              niy0(ix,ny,ifld)*(2*gyf(ix,ny)*lynix(2,ix,ifld)-1)/
      .                               (2*gyf(ix,ny)*lynix(2,ix,ifld)+1) -
      .                         nwomin(ifld) ) / n0(ifld)
 
-              endif            # endif for if (isnwcono.eq.1 .and. ..
-            endif              # endif for neut. ni; i.e., if (isupgon .eq. 1
-          endif                # endif for isnionxy
-  278   continue               # end loop over ix for ni BC
+              endif            ! endif for if (isnwcono.eq.1 .and. ..
+            endif              ! endif for neut. ni; i.e., if (isupgon .eq. 1
+          endif                ! endif for isnionxy
+  278   continue               ! end loop over ix for ni BC
 c...  Reset density at corners
           if (ixmnbcl*iymxbcl.eq.1) then
             do jx = 1, nxpt
@@ -1159,7 +1159,7 @@ c...  Reset density at corners
               endif
             enddo
           endif
-  280 continue             # end loop over ifld for ni BC
+  280 continue             ! end loop over ifld for ni BC
 
 c...  Do the parallel velocity BC along iy = ny+1
 
@@ -1167,13 +1167,13 @@ c...  Do the parallel velocity BC along iy = ny+1
          do ix = i4+1-ixmnbcl, i8-1+ixmxbcl
             if (isuponxy(ix,ny+1,ifld)==1) then
                iv2 = idxu(ix,ny+1,ifld)
-               if (isupwo(ifld)==1) then  #zero parallel momentum flux
+               if (isupwo(ifld)==1) then  !zero parallel momentum flux
                   yldot(iv2) = nurlxu * fmiy(ix,ny,ifld) / 
      .                                 (vpnorm*sy(ix,ny)*fnorm(ifld))
-               elseif (isupwo(ifld)==2) then  #  d(up)/dy = 0
+               elseif (isupwo(ifld)==2) then  !  d(up)/dy = 0
                   yldot(iv2) = nurlxu * nm(ix,ny,ifld) / fnorm(ifld) *
      .                           (up(ix,ny,ifld) - up(ix,ny+1,ifld))
-               elseif (isupwo(ifld)==3) then  # d(up)/dy = up/lyup
+               elseif (isupwo(ifld)==3) then  ! d(up)/dy = up/lyup
                   yldot(iv2) = -nurlxu * nm(ix,ny,ifld) / fnorm(ifld) *
      .                             ( up(ix,ny+1,ifld) - up(ix,ny,ifld)*
      .                                (2*gyf(ix,ny)*lyup(2)-1)/
@@ -1193,29 +1193,29 @@ c     of the adjacent cells.
       do ifld = 1, nzspt
         iimp = nhsp + ifld
         if (isimpon .ge. 3 .and. isimpon .le. 7) then
-          do ix = i2, i5  # i2 and i5 limits omit the ix=0 and nx+1 corners
+          do ix = i2, i5  ! i2 and i5 limits omit the ix=0 and nx+1 corners
             if (isnionxy(ix,ny+1,iimp)==1) then
                iv = idxn(ix,ny+1,iimp)  
-               if (isnwcono(iimp) .eq. 0) then       #fix flux
+               if (isnwcono(iimp) .eq. 0) then       !fix flux
                   yldot(iv) = nurlxn *
      .                        (fniy(ix,ny,iimp) + fnzyso(ix,ifld)) /
      .                            (sy(ix,ny) * n0(iimp) * vpnorm)
-               elseif (isnwcono(iimp) .eq. 1) then   #set to nwallo
+               elseif (isnwcono(iimp) .eq. 1) then   !set to nwallo
                   yldot(iv) =nurlxn*(nwallo(ix) - ni(ix,ny+1,iimp))/
      .                                                      n0(iimp)
-               elseif (isnwcono(iimp) .eq. 2) then   #extrapolation
+               elseif (isnwcono(iimp) .eq. 2) then   !extrapolation
                   nbound = ni(ix,ny,iimp) + gyf(ix,ny-1)*
      .                      (ni(ix,ny,iimp)-ni(ix,ny-1,iimp))/gyf(ix,ny)
                   nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                         ni(ix,ny,iimp)-1) ) ) + 0.2*ni(ix,ny,iimp)
                   yldot(iv) = nurlxn*(nbound - ni(ix,ny+1,iimp))/n0(iimp)
-               elseif (isnwcono(iimp) .eq. 3) then   #spec. gradient 
+               elseif (isnwcono(iimp) .eq. 3) then   !spec. gradient 
                   yldot(iv) = -nurlxn*( niy1(ix,ny,iimp) -
      .              niy0(ix,ny,iimp)*(2*gyf(ix,ny)*lynix(2,ix,iimp)-1)/
      .                               (2*gyf(ix,ny)*lynix(2,ix,iimp)+1) -
      .                         nwomin(iimp) ) / n0(iimp)
                endif
-            endif       # end if for isnionxy
+            endif       ! end if for isnionxy
           enddo
 c...   set the corner values here
           if (ixmnbcl*iymxbcl.eq.1) then
@@ -1238,30 +1238,30 @@ c...   set the corner values here
                endif
              enddo
           endif
-        endif     # end for if (isimpon .ge. 3 ...
-      enddo        # end of impurities along iy = ny+1
+        endif     ! end for if (isimpon .ge. 3 ...
+      enddo        ! end of impurities along iy = ny+1
 
 ccc  Now do Te, Ti
 ccc  - - - - - - - - - - - - - -
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  # loops over te,ti,ng,phi
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  ! loops over te,ti,ng,phi
          ix1 = ixm1(ix,ny+1)
          if(isteonxy(ix,ny+1) .eq. 1) then
            iv1 = idxte(ix,ny+1)
-           if (istewc .eq. 0) then       # fix flux to zero
+           if (istewc .eq. 0) then       ! fix flux to zero
              yldot(iv1) = nurlxe*(feey(ix,ny)/(n0(1)*vpnorm*sy(ix,ny)))
      .                                                      / (temp0*ev)
-           elseif (istewc .eq. 1) then   # set to tewallo
+           elseif (istewc .eq. 1) then   ! set to tewallo
              yldot(iv1) = nurlxe*(tewallo(ix)*ev-te(ix,ny+1))/(temp0*ev)
-           elseif (istewc .eq. 2) then   # extrapolation
+           elseif (istewc .eq. 2) then   ! extrapolation
              tbound = te(ix,ny) + gyf(ix,ny-1)*(te(ix,ny)-
      .                           te(ix,ny-1))/gyf(ix,ny)
              tbound = max(tbound, tbmin*ev)
              yldot(iv1) = nurlxe*(tbound - te(ix,ny+1)) / (temp0*ev) 
-           elseif (istewc .eq. 3) then   #spec. gradient 
+           elseif (istewc .eq. 3) then   !spec. gradient 
              yldot(iv1) = nurlxe*( (te(ix,ny) - te(ix,ny+1)) -
      .                         0.5*(te(ix,ny) + te(ix,ny+1))/
      .                           (gyf(ix,ny)*lytex(2,ix)) )/(temp0*ev)
-           elseif (istewc .eq. 4) then   #heat flux ~bcee*te*elec_flux
+           elseif (istewc .eq. 4) then   !heat flux ~bcee*te*elec_flux
              yldot(iv1) = nurlxe*( feey(ix,ny) - bceew*ne(ix,ny)*
      .                             vey(ix,ny)*sy(ix,ny)*te(ix,ny+1) )/
      .                                      (vpnorm*ennorm*sy(ix,ny))
@@ -1270,21 +1270,21 @@ ccc  - - - - - - - - - - - - - -
 
          if(istionxy(ix,ny+1) .eq. 1) then
            iv2 = idxti(ix,ny+1)
-           if (istiwc .eq. 0) then       # fix flux to zero
+           if (istiwc .eq. 0) then       ! fix flux to zero
              yldot(iv2) = nurlxi*(feiy(ix,ny)/(n0(1)*vpnorm*sy(ix,ny)))
      .                                                      / (temp0*ev)
-           elseif (istiwc .eq. 1) then   # set to tiwallo
+           elseif (istiwc .eq. 1) then   ! set to tiwallo
              yldot(iv2) = nurlxi*(tiwallo(ix)*ev-ti(ix,ny+1))/(temp0*ev)
-           elseif (istiwc .eq. 2) then   # extrapolation
+           elseif (istiwc .eq. 2) then   ! extrapolation
              tbound = ti(ix,ny) + gyf(ix,ny-1)*(ti(ix,ny)-
      .                           ti(ix,ny-1))/gyf(ix,ny)
              tbound = max(tbound, tbmin*ev)
              yldot(iv2) = nurlxi*(tbound - ti(ix,ny+1)) / (temp0*ev)
-           elseif (istiwc .eq. 3) then   #spec. gradient 
+           elseif (istiwc .eq. 3) then   !spec. gradient 
              yldot(iv2) = nurlxi*( (ti(ix,ny) - ti(ix,ny+1)) -
      .                         0.5*(ti(ix,ny) + ti(ix,ny+1))/
      .                            (gyf(ix,ny)*lytix(2,ix)) )/(temp0*ev)
-           elseif (istiwc .eq. 4) then   #heat flux ~bcei*ti*elec_flux
+           elseif (istiwc .eq. 4) then   !heat flux ~bcei*ti*elec_flux
              t0 = max(tg(ix,ny+1,1), temin*ev)
              fngyw=0.25*sqrt(8*t0/(pi*mg(1)))*ng(ix,ny,1)*sy(ix,ny)
              yldot(iv2) = nurlxi*( feiy(ix,ny) - bceiw*ne(ix,ny)*
@@ -1294,16 +1294,16 @@ ccc  - - - - - - - - - - - - - -
      .                                       (vpnorm*ennorm*sy(ix,ny))
            endif
          endif
-       enddo   # ix-loop for Te,Ti
+       enddo   ! ix-loop for Te,Ti
 
 ccc  Now do the diffusive neutral density (ng) and Tg equations
 ccc  - - - - - - - - - - - - - -          
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  # ix-loop for ng & Tg
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  ! ix-loop for ng & Tg
         nzsp_rt = nhsp
         do igsp = 1, ngsp
-          jz = max(igsp - nhgsp, 1)     #identify impurity index
-	  if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) #prev index for fniy
-          if(isngonxy(ix,ny+1,igsp) .eq. 1) then #skip do-loop if isngon=0
+          jz = max(igsp - nhgsp, 1)     !identify impurity index
+	  if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) !prev index for fniy
+          if(isngonxy(ix,ny+1,igsp) .eq. 1) then !skip do-loop if isngon=0
             if (iscplo(ix) .eq. 1) call wsmodo(igsp)
             iv = idxg(ix,ny+1,igsp)
 	    t0 = max(cdifg(igsp)*tg(ix,ny+1,igsp), temin*ev)
@@ -1316,7 +1316,7 @@ ccc  - - - - - - - - - - - - - -
             endif
 c ... prepare chemical sputtering info
             fng_chem = 0.
-            do igsp2 = 1, 1+ishymol  #include hydrogen neut sputt
+            do igsp2 = 1, 1+ishymol  !include hydrogen neut sputt
 	      t0 = max(tg(ix,ny+1,igsp2), temin*ev)
               flx_incid=ng(ix,ny+1,igsp2)*0.25*sqrt(8*t0/(pi*mg(igsp2)))
 	      if (isch_sput(igsp).ne.0) then
@@ -1331,7 +1331,7 @@ c ... prepare chemical sputtering info
             enddo
 c ... add ion sputtering to gas BC
 	    sputflxw(ix,igsp) = 0.
-            if (isi_sputw(igsp).ge.1 .and. igsp>1) then  # incl phys sput from ions
+            if (isi_sputw(igsp).ge.1 .and. igsp>1) then  ! incl phys sput from ions
               do ifld = ipsputt_s, ipsputt_e 
                 eng_sput = ( 2*ti(ix,ny+1) + zi(ifld)*
      .                                          3*te(ix,ny+1) )/ev
@@ -1339,8 +1339,8 @@ c ... add ion sputtering to gas BC
      .                            max(fniy(ix,ny,ifld),0.)*fphysyiwo(igsp)*
      .                                    yld96(matp,matt,eng_sput)
               enddo
-              if (isi_sputw(igsp) .ge. 2) then  # add chem sput from ions
-                do ifld = 1,1  #(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
+              if (isi_sputw(igsp) .ge. 2) then  ! add chem sput from ions
+                do ifld = 1,1  !(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
                   eng_sput = ( 2*ti(ix,ny+1) + zi(ifld)*
      .                                           3*te(ix,ny+1) )/ev
 		  flx_incid = max(fniy(ix,ny,ifld)/sy(ix,ny), 0.)
@@ -1365,7 +1365,7 @@ ccc
                 fniy_recy = fac2sp*fniy(ix,ny,1)
                 if(isrefluxclip==1) fniy_recy=max(fniy_recy,0.)
                 if (igsp .gt. nhgsp) fniy_recy = zflux
-                if (ishymol.eq.1 .and. igsp.eq.2) then # 2 atoms per molecule
+                if (ishymol.eq.1 .and. igsp.eq.2) then ! 2 atoms per molecule
                   if (isupgon(1) .eq. 1) then
                     fniy_recy = 0.5*( fniy(ix,ny,1) + fniy(ix,ny,2) )
                   else
@@ -1381,7 +1381,7 @@ ccc
               elseif (recycwot(ix,igsp) < -1) then
                 yldot(iv)=nurlxg*(ngbackg(igsp)-ng(ix,ny+1,igsp))/
      .                                                        n0g(igsp)
-             elseif (recycwot(ix,igsp) .le. 0.) then # treat recycw as albedo
+             elseif (recycwot(ix,igsp) .le. 0.) then ! treat recycw as albedo
                 nharmave = 2.*(ng(ix,ny,igsp)*ng(ix,ny+1,igsp)) /
      .                        (ng(ix,ny,igsp)+ng(ix,ny+1,igsp))              
                 yldot(iv) = nurlxg*( fngy(ix,ny,igsp) -
@@ -1394,34 +1394,34 @@ ccc
      .                   yldot(iv) = nurlxg*(fngy(ix,ny,igsp) +
      .                         fngyo_use(ix,igsp) + fngyso(ix,igsp) ) 
      .                                      /(vyn*sy(ix,ny)* n0g(igsp))
-          endif     # end if-test on isngonxy
+          endif     ! end if-test on isngonxy
  
 c... BC for neutral gas temperature/energy at iy=ny+1
           if (istgonxy(ix,ny+1,igsp) == 1) then
             iv = idxtg(ix,ny+1,igsp)
-            if (istgwc(igsp) == 0) then    # fixed Tg
+            if (istgwc(igsp) == 0) then    ! fixed Tg
               yldot(iv) = nurlxg*(tgwall(igsp)*ev-tg(ix,ny+1,igsp))/
      .                                                    (temp0*ev)
-            elseif (istgwc(igsp) == 1)    # extrapolation
+            elseif (istgwc(igsp) == 1)     then ! extrapolation
               tbound = tg(ix,ny,igsp) + gyf(ix,ny)*
      .                     (tg(ix,ny,igsp)-tg(ix,ny-1,igsp))/gyf(ix,ny)
-              tbound = max(tbound, 0.25*tbmin*ev)  #tbmin=.1 eV
+              tbound = max(tbound, 0.25*tbmin*ev)  !tbmin=.1 eV
               yldot(iv) = nurlxi *(tbound - tg(ix,ny+1,igsp))/(temp0*ev)
-            elseif (istgwc(igsp) == 2)    # specified gradient
+            elseif (istgwc(igsp) == 2)     then ! specified gradient
               yldot(iv) = nurlxi*( (tg(ix,ny,igsp) - tg(ix,ny+1,igsp)) -
      .                         0.5*(tg(ix,ny,igsp) + tg(ix,ny+1,igsp))/
      .                         (gyf(ix,ny)*lytg(2,igsp)) )/(temp0*ev)
-            elseif (istgwc(igsp) > 2)
+            elseif (istgwc(igsp) > 2) then
                call xerrab("***Input error: invalid istgwc ***")
             endif
           endif
 
-        enddo  # igsp loop over gas species
-      enddo  # ix-loop for ng and Tg
+        enddo  ! igsp loop over gas species
+      enddo  ! ix-loop for ng and Tg
 
 ccc  Now do the potential
 ccc  - - - - - - - - - - - -
-      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  # ix-loop for phi
+      do ix = i4+1-ixmnbcl, i8-1+ixmxbcl  ! ix-loop for phi
          if(isphionxy(ix,ny+1) .eq. 1) then
             iv3 = idxphi(ix,ny+1)
 	    iv2 = idxphi(ix,ny)
@@ -1434,12 +1434,12 @@ ccc  - - - - - - - - - - - -
               yldot(iv3) = nurlxp*( (phi(ix,ny) - phi(ix,ny+1)) -
      .                         0.5*(phi(ix,ny) + phi(ix,ny+1))/
      .                            (gyf(ix,ny)*lyphix(2,ix)) )/temp0
-	    elseif(iphibcwo == 4) then  #fixed prof = phiwo
+	    elseif(iphibcwo == 4) then  !fixed prof = phiwo
               yldot(iv3) = nurlxp*(phiwo(ix) - phi(ix,ny+1))/temp0
 ccc              yldot(iv2) = nurlxp*(phiwo(ix) - phi(ix,ny))/temp0
             endif
          endif
-      enddo  # ix-loop for phi
+      enddo  ! ix-loop for phi
 
 c...  Now do the corners: the ion density corners are done elsewhere
        if ((xcnearlb.or.openbox) .and. ixmnbcl*iymxbcl.eq.1) then
@@ -1517,8 +1517,8 @@ c...  Now do the corners: the ion density corners are done elsewhere
              endif
            enddo
          enddo
-       endif  # end of if-test on xcnearrb
-      endif   # end of iy = ny+1 boundary conditions except if isnewpot=1
+       endif  ! end of if-test on xcnearrb
+      endif   ! end of iy = ny+1 boundary conditions except if isnewpot=1
 
 c...  If isnewpot=1, phi boundary involves two eqns at iy=ny and ny+1
 CCC   NOTE: special coding for testing alternate phi B.C. (requires 
@@ -1536,17 +1536,17 @@ CCC   isnewpot*isphion=1000, so one can generally ignore this if section)
             yldot(iv1) = -nurlxp*( phi(ix,ny) - phi(ix,ny+1) +
      .                           gyf(ix,ny-1)*(phi(ix,ny)-phi(ix,ny-1))/
      .                                                      gyf(ix,ny) )
-          endif    # end of if-test ons isphionxy
+          endif    ! end of if-test ons isphionxy
         enddo 
       endif
 
- 1200 continue   # jump to here if iymxbcl = 0; interior bdry
+ 1200 continue   ! jump to here if iymxbcl = 0; interior bdry
 
 c ====================================================================
 c ======================== The ix = 0 boundary =======================
 c ====================================================================
 
-      if (ixmnbcl .eq. 0) goto 1300   #skip setting Eqn because interior bdry
+      if (ixmnbcl .eq. 0) goto 1300   !skip setting Eqn because interior bdry
 
 c********************************************************************
 c...  First check if ix=0 has fixed boundary values, no potential
@@ -1617,7 +1617,7 @@ c...  now do the gas and temperatures
                   vxn = 0.25 * sqrt( 8*t1/(pi*mg(igsp)) )
                   flux_inc = fac2sp*fnix(0,iy,1)
                   if (ishymol.eq.1 .and. igsp.eq.2) then
-                    if (isupgon(1) .eq. 1) then  # two atoms per molecule
+                    if (isupgon(1) .eq. 1) then  ! two atoms per molecule
                       flux_inc = 0.5*( fnix(0,iy,1) + fnix(0,iy,2) )
                     else
                       flux_inc = 0.5*( fnix(0,iy,1) + fngx(0,iy,1) ) 
@@ -1639,7 +1639,7 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
              iv = idxtg(0,iy,igsp)
              yldot(iv) = nurlxg*(tgwall(igsp)*ev -
      .                                    tg(0,iy,igsp))/(temp0*ev)
-             if(isfixlb(1)==2) then #just above applies if isfixlb=1
+             if(isfixlb(1)==2) then !just above applies if isfixlb=1
                yldot(iv)=nurlxg*(tg(1,iy,igsp)-tg(0,iy,igsp))/(temp0*ev)
              endif
              if(isfixlb(1)==2 .and. yylb(iy,1) > rlimiter) then
@@ -1656,7 +1656,7 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
 
  176  continue
 
-      endif         # end of ix = 0, isfixlb.ne.0 boundary conditions
+      endif         ! end of ix = 0, isfixlb.ne.0 boundary conditions
 
 c...  If isfixlb=2, check if i2,i5 range for yldot loop in pandf includes ixpt2(1)
 c...  Then overwrite pandf value is up(ixpt2(1)) --> 0 eqn.
@@ -1671,7 +1671,7 @@ c...  Then overwrite pandf value is up(ixpt2(1)) --> 0 eqn.
  178           continue
  179        continue
          endif 
-      endif            # end of isfixlb=2, check for ix=ixpt2
+      endif            ! end of isfixlb=2, check for ix=ixpt2
 c***********************************************************************
 
 c************************************************************************
@@ -1679,21 +1679,21 @@ c************************************************************************
 c     begin standard divertor plate conditions for left boundaries 
 c************************************************************************
 c************************************************************************
-      do jx = 1, nxpt # loop over nxpt mesh regions
+      do jx = 1, nxpt ! loop over nxpt mesh regions
       if (xcnearlb .or. openbox) then
 c     First, the density equations --
         do ifld = 1, nisp
           if ( i3.le.(ixlb(jx)+isextrnp) .and. isfixlb(jx)==0) then
           do iy = j2, j5
        
-            ixt  = ixlb(jx)        # analog of ix=0
-            ixt1 = ixp1(ixt,iy)    # analog of ix=1
-            ixt2 = ixp1(ixt1,iy)   # analog of ix=2
+            ixt  = ixlb(jx)        ! analog of ix=0
+            ixt1 = ixp1(ixt,iy)    ! analog of ix=1
+            ixt2 = ixp1(ixt1,iy)   ! analog of ix=2
 
             if(isnionxy(ixt,iy,ifld)==1) then
               iv1 = idxn(ixt,iy,ifld)
-              if (isupgon(1)==1 .and. zi(ifld)==0.0) then   ## neutrals
-                if (recylb(iy,1,jx) .gt. 0.) then           # recycling
+              if (isupgon(1)==1 .and. zi(ifld)==0.0) then   !! neutrals
+                if (recylb(iy,1,jx) .gt. 0.) then           ! recycling
                   t0 = max(ti(ixt1,iy),temin*ev)
                   vxn = 0.25 * sqrt( 8*t0/(pi*mi(ifld)) )
                   yldot(iv1) = -nurlxg *
@@ -1702,52 +1702,52 @@ c     First, the density equations --
      .              (1-alblb(iy,1,jx))*ni(ixt1,iy,ifld)*vxn*sx(ixt,iy) -
      .                 fngxslb(iy,1,jx) ) / (vpnorm*n0(ifld)*sx(ixt,iy))
                 elseif (recylb(iy,1,jx) <=  0. .and. 
-     .                  recylb(iy,1,jx) >= -1.) then  # recylb is albedo
+     .                  recylb(iy,1,jx) >= -1.) then  ! recylb is albedo
                   t0 = max(ti(ixt,iy),temin*ev)
                   vyn = sqrt( 0.5*t0/(pi*mi(1)) )
                   yldot(iv1) = -nurlxg * ( fnix(ixt,iy,ifld) +
      .             (1+recylb(iy,1,jx))*ni(ixt,iy,ifld)*vyn*sx(ixt,iy) )/
      .               (vpnorm*n0(ifld)*sx(ixt,iy))
                 elseif (recylb(iy,1,jx) < -1. .and.
-     .                 recylb(iy,1,jx) > -2. ) then  #fix density nglfix
+     .                 recylb(iy,1,jx) > -2. ) then  !fix density nglfix
                   yldot(iv1)=nurlxg*(nglfix - ni(ixt,iy,ifld))/n0(ifld)
-                elseif (recylb(iy,1,jx) <= -2.) then  #zero gradient
+                elseif (recylb(iy,1,jx) <= -2.) then  !zero gradient
                   yldot(iv1) =nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                          n0(ifld)
-                endif # end if-test on recylb
-              else                                     ## ions
-                if (isextrnp==0) then                  # zero x-gradient
+                endif ! end if-test on recylb
+              else                                     !! ions
+                if (isextrnp==0) then                  ! zero x-gradient
                    yldot(iv1) = nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                          n0(ifld)
-                else                                   # extrapolation
+                else                                   ! extrapolation
                    nbound =  ni(ixt1,iy,ifld) - gxf(ixt1,iy)*
      .                   (ni(ixt2,iy,ifld)-ni(ixt1,iy,ifld))/gxf(ixt,iy)
                    nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                    ni(ixt,iy,ifld)-1) ) ) + 0.2*ni(ixt,iy,ifld)
                    yldot(iv1) = nurlxn*(nbound-ni(ixt,iy,ifld))/n0(ifld)
-                endif # end if-test on isextrnp
-              endif # end if-test on isupgon and zi
-            endif   # end if-test on isnionxy
-          enddo     # end do-loop on iy
-          endif     # end if-test on i3 and isfixlb and isnion
-        enddo       # end do-loop on ifld
+                endif ! end if-test on isextrnp
+              endif ! end if-test on isupgon and zi
+            endif   ! end if-test on isnionxy
+          enddo     ! end do-loop on iy
+          endif     ! end if-test on i3 and isfixlb and isnion
+        enddo       ! end do-loop on ifld
 
 c     Now do the parallel velocity and other variables --
       if ( (i3 .le. ixlb(jx)) .and. isfixlb(jx)==0 ) then
-      do iy = j2, j5 # begin big do-loop on iy
+      do iy = j2, j5 ! begin big do-loop on iy
 
-        ixt  = ixlb(jx)        # analog of ix=0
-        ixt1 = ixp1(ixt,iy)    # analog of ix=1
-        ixt2 = ixp1(ixt1,iy)   # analog of ix=2
+        ixt  = ixlb(jx)        ! analog of ix=0
+        ixt1 = ixp1(ixt,iy)    ! analog of ix=1
+        ixt2 = ixp1(ixt1,iy)   ! analog of ix=2
 
         kfeix = 0.
         sumb = 0.
-        do ifld = 1, nfsp  # set up generalized Bohm condition
+        do ifld = 1, nfsp  ! set up generalized Bohm condition
           ueb = cfueb*( cf2ef*v2ce(ixt,iy,ifld)*rbfbt(ixt,iy) -
      .            vytan(ixt,iy,ifld) ) / rrv(ixt,iy) 
           sumb = sumb + ni(ixt,iy,ifld)*zi(ifld)**2*te(ixt,iy) /
      .                (mi(ifld)*(upi(ixt,iy,ifld)+ueb)**2 - ti(ixt,iy))
-        enddo # end do-loop on ifld for Bohm condition
+        enddo ! end do-loop on ifld for Bohm condition
         sumb = sqrt(abs(sumb/ne(ixt,iy)))
 
 c       Next, the momentum equations --
@@ -1756,15 +1756,15 @@ c       Next, the momentum equations --
             iv2 = idxu(ixt,iy,ifld)
             cs = csfaclb(ifld,jx)*sqrt( (te(ixt,iy)+
      .                                  csfacti*ti(ixt,iy))/mi(ifld) )
-            if (isupgon(1)==1 .and. zi(ifld)==0.0) then  ## neutrals
-              if (recycmlb(iy,1,jx) > -9.9) then  # backscatter with recycm
+            if (isupgon(1)==1 .and. zi(ifld)==0.0) then  !! neutrals
+              if (recycmlb(iy,1,jx) > -9.9) then  ! backscatter with recycm
                 yldot(iv2) = -nurlxu*(recycmlb(iy,1,jx)*up(ixt,iy,1) + 
      .                                       up(ixt,iy,ifld))/vpnorm
               elseif (recycmlb(iy,1,jx) <= -9.9 .and. 
-     .                    recycmlb(iy,1,jx) > -10.1) then # zero x-gradient
+     .                    recycmlb(iy,1,jx) > -10.1) then ! zero x-gradient
                 yldot(iv2) = nurlxu*(up(ixt1,iy,ifld) -
      .                                          up(ixt,iy,ifld))/vpnorm
-	      else  # neutral thermal flux to wall if recycm < -10.1
+	      else  ! neutral thermal flux to wall if recycm < -10.1
                 t0 = max(tg(ixt1,iy,1),temin*ev)
                 vxn = cgmompl*0.25*sqrt( 8*t0/(pi*mi(ifld)) ) 
 		vparn = up(ixt,iy,ifld)
@@ -1773,58 +1773,58 @@ c       Next, the momentum equations --
      .                                                 sx(ixt,iy) ) /
      .                               (vpnorm*fnorm(ifld)*sx(ixt,iy))
               endif
-            else                                         ## ions
+            else                                         !! ions
               ueb = cfueb*( cf2ef*v2ce(ixt,iy,ifld)*rbfbt(ixt,iy) -
      .                vytan(ixt,iy,ifld) ) / rrv(ixt,iy) 
-              yldot(iv2) = -nurlxu*(sumb - 1.)  # multispecies Bohm
-              if (isbohmms==0) then          # simple Bohm condition
+              yldot(iv2) = -nurlxu*(sumb - 1.)  ! multispecies Bohm
+              if (isbohmms==0) then          ! simple Bohm condition
                 yldot(iv2) = nurlxu * (-cs-ueb-up(ixt,iy,ifld))/vpnorm
               endif
               if(isupss(ifld)==1 .and. up(ixt1,iy,ifld)+ueb .lt. -cs)
-                                             # dup/dx=0 if supersonic
+                                             ! dup/dx=0 if supersonic
      .          yldot(iv2) = nurlxu*(up(ixt1,iy,ifld)-up(ixt,iy,ifld))/
      .                                                           vpnorm
-              if (isupss(ifld)==-1) then     # slip boundary conditions
+              if (isupss(ifld)==-1) then     ! slip boundary conditions
                 yldot(iv2) = nurlxu*(up(ixt1,iy,ifld)-up(ixt,iy,ifld))/
      .                                                           vpnorm
-              elseif (isupss(ifld)==-2) then # extrap. + no pos. uu
+              elseif (isupss(ifld)==-2) then ! extrap. + no pos. uu
                 vbound = up(ixt1,iy,ifld) - gx(ixt2,iy)*
      .                   (up(ixt2,iy,ifld)-up(ixt1,iy,ifld))/gx(ixt1,iy) 
-                vbound = min(vbound, -ueb)   # forces uu & fnix =< 0
+                vbound = min(vbound, -ueb)   ! forces uu & fnix =< 0
                 yldot(iv2) = nurlxu*(vbound - up(ixt,iy,ifld))/vpnorm
-              elseif (isupss(ifld)==-3) then # modified Bohm condition
+              elseif (isupss(ifld)==-3) then ! modified Bohm condition
                 vbound = -ueb -2*cs*uu(ixt1,iy,ifld)/(uu(ixt1,iy,ifld)-cs)
-                vbound = min(vbound, -ueb)   # forces uu & fnix =< 0
+                vbound = min(vbound, -ueb)   ! forces uu & fnix =< 0
                 yldot(iv2) = nurlxu * (vbound-up(ixt,iy,ifld))/vpnorm
-              endif # end if-test on isupss
-            endif # end if-test on isupgon
-          endif # end if-test on isuponxy
+              endif ! end if-test on isupss
+            endif ! end if-test on isupgon
+          endif ! end if-test on isuponxy
           kfeix = kfeix - cfvcsx(ifld)*0.5*sx(ixt,iy)
      .                     *visx(ixt1,iy,ifld)*gx(ixt1,iy)
      .           *( up(ixt1,iy,ifld)**2 - up(ixt,iy,ifld)**2 ) 
-        enddo # end do-loop on ifld
+        enddo ! end do-loop on ifld
 
 c       Next, the potential equation --
         if(isphion+isphiofft .eq. 1) then
 cc           fqpsatlb(iy,jx) = - qe*isfdiax*( ne(ixt,iy)*v2ce(ixt,iy,1)*
 cc     .                              rbfbt(ixt,iy)*sx(ixt,iy) + fdiaxlb(iy,jx) )
-cc           do ifld = 1, nfsp   # note fqp,fqpsat are poloidal proj. of || curr
+cc           do ifld = 1, nfsp   ! note fqp,fqpsat are poloidal proj. of || curr
 cc              fqpsatlb(iy,jx) = fqpsatlb(iy,jx) - qe*zi(ifld)*ni(ixt,iy,ifld)*
 cc     .                                   upi(ixt,iy,ifld)*sx(ixt,iy)*rrv(ixt,iy)
 cc           enddo
-           lambdae = 2e16*(te(ixt,iy)/ev)**2/ne(ixt,iy)  #approx mfp
+           lambdae = 2e16*(te(ixt,iy)/ev)**2/ne(ixt,iy)  !approx mfp
            kincorlb(iy,jx) = 1./(1 + cfkincor*(lambdae/lcone(ixt,iy))*
      .                                       abs(ev*phi(ixt,iy)/te(ixt,iy)))
            fqpsate = qe*ne(ixt,iy)*sqrt(te(ixt,iy)/(2*pi*me))*
      .                                    kincorlb(iy,jx)*sx(ixt,iy)*rrv(ixt,iy)
 c          NOTE: by definition, fqpsate is always > 0
            if (ikapmod==0) then
-cc              if (fqp(ixt,iy) < 0.) then #limit to saturation current
+cc              if (fqp(ixt,iy) < 0.) then !limit to saturation current
 cc                fqp(ixt,iy)=-( abs((fqp(ixt,iy)*fqpsatlb(iy,jx)))**exjbdry/
 cc     .                      (abs(fqp(ixt,iy))**exjbdry +
 cc     .                       abs(fqpsatlb(iy,jx))**exjbdry) )**(1/exjbdry)
 cc              endif
-              if ( fqpsatlb(iy,jx)+(1.-gamsec)*fqp(ixt,iy) > 0) then  # force +ve log argument
+              if ( fqpsatlb(iy,jx)+(1.-gamsec)*fqp(ixt,iy) > 0) then  ! force +ve log argument
                  arglgphi=( ((fqpsatlb(iy,jx)+(1.-gamsec)*fqp(ixt,iy))
      .                          /fqpsate)**2 + expkmx**2 )**0.5
               else
@@ -1850,9 +1850,9 @@ cc              endif
      .                                         / (fqpsatlb(iy,jx)+cutlo)
               endif
            endif
-	else    # corresponding to (isphion+isphiofft .ne. 1)
+	else    ! corresponding to (isphion+isphiofft .ne. 1)
            fqpsate = 0.
-	   kappal(iy,jx) = 3.  # some default of e*phi/Te - used for sputtering
+	   kappal(iy,jx) = 3.  ! some default of e*phi/Te - used for sputtering
         endif
         isphion2 = isphion + isphiofft
         bcel(iy,jx) = (1-newbcl(jx)*isphion2) * bcee
@@ -1863,10 +1863,10 @@ cc              endif
 
         t0 = te(ixt,iy)/ev
         f_cgpld = .5*(1. - cos(pi*(t0 - temin)/(.3 - temin)))
-                                # ramp cgpld effect down at low guard cell
-                                # Te; rampdown might not be necessary if
-                                # guard cell were allowed to access negative
-                                # temperatures (ETM 7 Jan 2014)
+                                ! ramp cgpld effect down at low guard cell
+                                ! Te; rampdown might not be necessary if
+                                ! guard cell were allowed to access negative
+                                ! temperatures (ETM 7 Jan 2014)
         if(t0 < temin) f_cgpld = 0.
         if(t0 > 0.3) f_cgpld = 1.
         t0 = max(tg(ixt1,iy,1),temin*ev)
@@ -1900,8 +1900,8 @@ c   Do the electron temp Eqn -----------------------------------
           elseif (ibctepl .eq. 2) then
              yldot(iv1) = nurlxe*(te(ixt1,iy)-te(ixt,iy))
      .                                    * 1.5 * ne(ixt,iy)/ennorm
-          endif # end loop for ibctepl
-        endif  # end loop for isteon=1
+          endif ! end loop for ibctepl
+        endif  ! end loop for isteon=1
 
 c  Do the ion temp Eqn ---------------------------
         if (istionxy(ixt,iy) == 1) then
@@ -1923,7 +1923,7 @@ cc               if (recylb(iy,1,jx) .gt. 0.) then
 cc                  bcen = recyce*bcil(iy,jx) - 0.5*mi(1)*(up(ixt,iy,2)**2 -
 cc     .               recyce*upi(ixt,iy,1)**2)/(recylb(iy,1,jx)*ti(ixt,iy))
 cc               endif
-cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
+cc               if (recyce .le. 0) bcen = 0.  ! gets back to old case
                yldot(iv2) = -nurlxi*(totfeixl(iy,jx)
      .                        -totfnix*ti(ixt,iy)*bcil(iy,jx) 
      .                        -cfneut*fnix(ixt,iy,iigsp)*tg(ixt,iy,1)*bcen
@@ -1938,7 +1938,7 @@ cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
      .                         -cmneut*fnix(ixt,iy,1)*recycp(1)*
      .                                cmntgpl*(ti(ixt,iy)-eidisspl*ev)
      .                                   )/(vpnorm*ennorm*sx(ixt,iy))
-            endif #end loop for isupgon(1)
+            endif !end loop for isupgon(1)
 
           elseif (ibctipl .eq. 0) then
              yldot(iv2) = nurlxi*(tipltl*ev - ti(ixt,iy))
@@ -1946,17 +1946,17 @@ cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
           elseif (ibctipl .eq. 2) then
              yldot(iv2) = nurlxi*(ti(ixt1,iy) - ti(ixt,iy))
      .                                    * 1.5 * ne(ixt,iy)/ennorm
-          endif # end loop for ibctipl
-        endif  # end loop for istion=1
+          endif ! end loop for ibctipl
+        endif  ! end loop for istion=1
 
 c       Do hydrogenic gas equations --
-        do igsp = 1, nhgsp  # imp gas below
+        do igsp = 1, nhgsp  ! imp gas below
            if (isngonxy(ixt,iy,igsp) .eq. 1) then
              iv = idxg(ixt,iy,igsp)
-             if (recylb(iy,igsp,jx) .gt. 0.) then  # normal recycling
+             if (recylb(iy,igsp,jx) .gt. 0.) then  ! normal recycling
                flux_inc = fac2sp*fnix(ixt,iy,1)
                if (ishymol.eq.1 .and. igsp.eq.2) then
-                 if (isupgon(1) .eq. 1) then  # two atoms for one molecule
+                 if (isupgon(1) .eq. 1) then  ! two atoms for one molecule
                    flux_inc = 0.5*( fnix(ixt,iy,1) + fnix(ixt,iy,2) ) 
                  else
                    flux_inc = 0.5*( fnix(ixt,iy,1) + fngx(ixt,iy,1) ) 
@@ -1970,16 +1970,16 @@ c       Do hydrogenic gas equations --
      .           (1-alblb(iy,igsp,jx))*ng(ixt1,iy,igsp)*vxn*sx(ixt,iy) )
      .                                   / (vpnorm*n0g(igsp)*sx(ixt,iy))
              elseif (recylb(iy,igsp,jx) <=  0. .and.
-     .               recylb(iy,igsp,jx) >= -1.) then # recylb is albedo
+     .               recylb(iy,igsp,jx) >= -1.) then ! recylb is albedo
                t0 = max(tg(ixt,iy,igsp), temin*ev)
                vxn = 0.25 * sqrt( 8*t0/(pi*mg(igsp)) )
                yldot(iv) = -nurlxg*( fngx(ixt,iy,igsp) +
      .           (1+recylb(iy,igsp,jx))*ng(ixt,iy,igsp)*vxn*sx(ixt,iy) )
      .                                      / (vxn*sx(ixt,iy)*n0g(igsp))
              elseif (recylb(iy,igsp,jx) < -1. .and.
-     .               recylb(iy,igsp,jx) > -2.) then  #fix density nglfix
+     .               recylb(iy,igsp,jx) > -2.) then  !fix density nglfix
                yldot(iv)=nurlxg*(nglfix - ng(ixt,iy,igsp))/n0g(igsp)
-             elseif (recylb(iy,igsp,jx) <= -2.) then #zero gradient
+             elseif (recylb(iy,igsp,jx) <= -2.) then !zero gradient
                yldot(iv1) = nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                         n0g(ifld)
              endif
@@ -1988,8 +1988,8 @@ c       Do hydrogenic gas equations --
 c   Special coding for Maxim
              if (isnglf==1) yldot(iv) = nurlxg*(nglfix - 
      .                                      ng(ixt,iy,igsp))/n0g(igsp)
-           endif # end if-test on isngon
-        enddo # end do-loop on igsp
+           endif ! end if-test on isngon
+        enddo ! end do-loop on igsp
 
 c       Finally, do impurity gas equations --
 c       Set neutral gas impurity flux to be the sum of the fluxes of the
@@ -1997,8 +1997,8 @@ c       sputtered impurities plus recycled impurities from all charge states.
         if (isimpon .ge. 4 .and. isimpon .le. 7 .and. nzspt.ge.1) then
            nzsp_rt = nhsp
            do igsp = nhgsp+1, ngsp
-	      jz = max(igsp - nhgsp, 1)   # identify impurity index
-	      if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) #prev index for fnix
+	      jz = max(igsp - nhgsp, 1)   ! identify impurity index
+	      if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) !prev index for fnix
               if (isngonxy(ixt,iy,igsp) .eq. 1) then
                  iv = idxg(ixt,iy,igsp)
                  hflux = 0.
@@ -2006,12 +2006,12 @@ c       sputtered impurities plus recycled impurities from all charge states.
                     if (zi(ihyd).gt.0.) hflux = hflux + fnix(ixt,iy,ihyd)
                  enddo
                  zflux = 0.
-                 do iimp = 1, nzsp(jz) # loop limited by numb. species
+                 do iimp = 1, nzsp(jz) ! loop limited by numb. species
                     zflux = zflux + fnix(ixt,iy,nzsp_rt+iimp)
                  enddo
                  sputflxlb(iy,igsp,jx) = 0.
                  zflux_chm = 0.
-                 if (isph_sput(igsp) .ge. 1) then  # use fits for phys sput
+                 if (isph_sput(igsp) .ge. 1) then  ! use fits for phys sput
                    do ifld = ipsputt_s, ipsputt_e 
                      eng_sput = ( 0.5*mi(ifld)*up(ixt,iy,ifld)**2 + 
      .                            ti(ixt,iy) +  zi(ifld)*
@@ -2020,8 +2020,8 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                                              fnix(ixt,iy,ifld)*
      .                            fphysylb(igsp,jx)*yld96(matp,matt,eng_sput)
                    enddo
-                   if (isph_sput(igsp) .ge. 2) then  # add chem sput from ions
-                     do ifld = 1,1  #(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
+                   if (isph_sput(igsp) .ge. 2) then  ! add chem sput from ions
+                     do ifld = 1,1  !(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
                        eng_sput = ( 0.5*mi(ifld)*up(ixt,iy,ifld)**2 + 
      .                            ti(ixt,iy) +  zi(ifld)*
      .                            kappal(iy,jx)*te(ixt,iy) )/ev
@@ -2032,8 +2032,8 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                       fchemylb(igsp,jx)*fnix(ixt,iy,ifld)*yld_chm
                      enddo
                    endif
-                   if (isph_sput(igsp) .eq. 3) then #add chem sput from h neuts
-                     do igsp2 = 1, 1+ishymol  #hydrogen neut fluxes only
+                   if (isph_sput(igsp) .eq. 3) then !add chem sput from h neuts
+                     do igsp2 = 1, 1+ishymol  !hydrogen neut fluxes only
                        t0p = max(tg(ixt1,iy,igsp2),temin*ev)
                        flx_incid = ng(ixt,iy,igsp2)*.25*
      .                                        sqrt(8*t0p/(pi*mg(igsp2)))
@@ -2055,28 +2055,28 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                   zflux_chm + fngxslb(iy,igsp,jx)+fngxlb_use(iy,igsp,jx)
                     yldot(iv) = -nurlxg * (fngx(ixt,iy,igsp) - zflux) /
      .                         (n0(igsp) * vpnorm * sx(ixt,iy))
-                 elseif (sputtlb(iy,igsp,jx).ge.-9.9) then # neg. sputtlb ==> albedo
+                 elseif (sputtlb(iy,igsp,jx).ge.-9.9) then ! neg. sputtlb ==> albedo
                     t0 = max(cdifg(igsp)*tg(ixt1,iy,igsp), temin*ev)
                     vxn = 0.25 * sqrt( 8*t0/(pi*mg(igsp)) )
                     yldot(iv) = -nurlxg*( fngx(ixt,iy,igsp) -
      .                (1+sputtlb(iy,igsp,jx))*ng(ixt,iy,igsp)*vxn*sx(ixt,iy) )
      .                                       / (vxn*sx(ixt,iy)*n0g(igsp))
-                 else                                # sputtlb < -9.9 ==> fix dens
+                 else                                ! sputtlb < -9.9 ==> fix dens
                     yldot(iv) = -nurlxg*(ng(ixt,iy,igsp)-ngplatlb(igsp,jx))/
      .                                                        n0g(igsp)
-                 endif  # end if-test on sputtlb
-              endif  # end if-test on isngon
-           enddo  # end do-loop in igsp
-        endif  # end if-test on isimpon and nzspt
+                 endif  ! end if-test on sputtlb
+              endif  ! end if-test on isngon
+           enddo  ! end do-loop in igsp
+        endif  ! end if-test on isimpon and nzspt
 
 c ... Neutral temperature - test if tg eqn is on, then set BC
 	do igsp = 1, ngsp
           if (istgonxy(ixt,iy,igsp) == 1) then
             iv = idxtg(ixt,iy,igsp)
-            if (istglb(igsp) == 0) then  #set tg=tgwall
+            if (istglb(igsp) == 0) then  !set tg=tgwall
               yldot(iv) = nurlxg*(tgwall(igsp)*ev -
      .                                    tg(ixt,iy,igsp))/(temp0*ev)
-            elseif (istglb(igsp) == 1)  #extrap. tg from interior cells
+            elseif (istglb(igsp) == 1)   then !extrap. tg from interior cells
               tbound = tg(ixt1,iy,igsp) - gyf(ixt1,iy)*
      .                   (tg(ixt2,iy,igsp)-tg(ixt1,iy,igsp))/gxf(ixt,iy)
               tbound = max(tbound,0.5*temin*ev)
@@ -2087,28 +2087,28 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
           endif
         enddo
 
-      enddo # end big do-loop on iy
+      enddo ! end big do-loop on iy
 
 c ...   Make electric field at plate uniform over last 2 cells --
         do iy = j2, j5
            if (isphionxy(ixt1,iy)==1 .and. isexunif==1) then
-              iv = idxphi(ixt1,iy)  # next formula assumes uniform mesh
+              iv = idxphi(ixt1,iy)  ! next formula assumes uniform mesh
               yldot(iv)=-nurlxp*(3*phi(ixt1,iy)-2*phi(ixt,iy)-
      .                                            phi(ixt2,iy))/temp0
            endif
         enddo
 
-      endif # end if-test on i3 and isfixlb
+      endif ! end if-test on i3 and isfixlb
 
-      endif # end if-test on xcnearlb and openbox
-      enddo # end do-loop over nxpt mesh regions
+      endif ! end if-test on xcnearlb and openbox
+      enddo ! end do-loop over nxpt mesh regions
 c************************************************************************
 c     end standard divertor plate conditions for left boundaries
 c************************************************************************
 
 c ... Special case for no divertor leg (ixpt1(1)=0, iy.le.iysptrx1(1)), just
 c ... use continuation boundary conditions for the guard cell (ix=0)
-ccc      if (ixpt1(1).eq.0 .and. isfixlb(1).eq.0) then  # should test i3.le.0 (no extrap)
+ccc      if (ixpt1(1).eq.0 .and. isfixlb(1).eq.0) then  ! should test i3.le.0 (no extrap)
 ccc
 ccc      do iy = j2, min(j5, iysptrx1(1))
 ccc        do ifld = 1, nisp
@@ -2141,23 +2141,23 @@ ccc        if (isphionxy(0,iy)+isphiofft .eq. 1) then
 ccc          iv = idxphi(0,iy)
 ccc          yldot(iv) = -nurlxp*(phi(0,iy)-phi(1,iy))/temp0
 ccc        endif
-ccc      enddo   # large loop over iy
+ccc      enddo   ! large loop over iy
 ccc
 ccc      endif
 c ... End special coding for no divertor leg at ix = 0
 
- 1300 continue    #jump over entire ix=0 cases for ixmnbcl=0; interior bdry
+ 1300 continue    !jump over entire ix=0 cases for ixmnbcl=0; interior bdry
 
 c ====================================================================
 c ======================== The ix=nx+1 boundary ======================
 c ====================================================================
 
-      if (ixmxbcl .eq. 0) goto 1400   #skip setting Eqn because interior bdry
+      if (ixmxbcl .eq. 0) goto 1400   !skip setting Eqn because interior bdry
 
 c********************************************************************
 c...  First, check if isfixrb=2 for using symmetry BC at ix = nx+1
 c*******************************************************************
-      if (i6 .ge. nx+1 .and. isfixrb(1) .gt. 0) then  #begin symmetry BC at nx+1
+      if (i6 .ge. nx+1 .and. isfixrb(1) .gt. 0) then  !begin symmetry BC at nx+1
 
        do iy = j2, j5
 c...  First do the ion density
@@ -2211,7 +2211,7 @@ c...  now do the gas and temperatures
      .                                         (vpnorm*ennorm*sx(nx,iy))
             endif
          endif
-         do igsp = 1, nhgsp # not valid for ngsp > nhgsp; only on hydrog. gas
+         do igsp = 1, nhgsp ! not valid for ngsp > nhgsp; only on hydrog. gas
             if (isngonxy(nx+1,iy,igsp) .eq. 1) then
                iv = idxg(nx+1,iy,igsp)
                yldot(iv) = nurlxg * (ngbackg(igsp) - 
@@ -2223,7 +2223,7 @@ c...  now do the gas and temperatures
                   vxn = 0.25 * sqrt( 8*t1/(pi*mg(igsp)) )
                   flux_inc = fac2sp*fnix(nx,iy,1)
                   if (ishymol.eq.1 .and. igsp.eq.2) then
-                    if (isupgon(1) .eq. 1) then  # two atoms for one molecule
+                    if (isupgon(1) .eq. 1) then  ! two atoms for one molecule
                       flux_inc = 0.5*( fnix(nx,iy,1) + fnix(nx,iy,2) ) 
                     else
                       flux_inc = 0.5*( fnix(nx,iy,1) + fngx(nx,iy,1) ) 
@@ -2236,14 +2236,14 @@ c...  now do the gas and temperatures
      .                                     / (vpnorm*n0g(igsp)*sx(nx,iy))
                endif
             endif
-         enddo      # end of igsp loop over gas
+         enddo      ! end of igsp loop over gas
 c ... Neutral temperature - test if tg eqn is on, then set BC
 	 do igsp = 1, ngsp
            if (istgonxy(nx+1,iy,igsp) == 1) then
              iv = idxtg(nx+1,iy,igsp)
              yldot(iv) = nurlxg*(tgwall(igsp)*ev -
      .                                    tg(nx+1,iy,igsp))/(temp0*ev)
-             if(isfixrb(1)==2) then #just above applies if isfixrb=1
+             if(isfixrb(1)==2) then !just above applies if isfixrb=1
                yldot(iv)=nurlxg*(tg(nx,iy,igsp)-tg(nx+1,iy,igsp))/
      .                                                      (temp0*ev)
              endif
@@ -2259,9 +2259,9 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
             yldot(iv) = nurlxp*(phi(nx,iy) - phi(nx+1,iy))/temp0
          endif
 
-       enddo         # end of main loop starting with iy = j2, j5
+       enddo         ! end of main loop starting with iy = j2, j5
 
-      endif         # end of ix = nx+1, isfixrb.ne.0 boundary conditions
+      endif         ! end of ix = nx+1, isfixrb.ne.0 boundary conditions
 
 c...  If isfixrb=2, check if i2,i5 range for yldot in pandf includes ixpt1(1);
 c...  the overwrite ix=ixpt1(1) up eqn with up(ixpt1(1)) --> 0 eqn.
@@ -2279,27 +2279,27 @@ c...  the overwrite ix=ixpt1(1) up eqn with up(ixpt1(1)) --> 0 eqn.
            enddo
          endif 
 
-      endif                             #end symm. BC at ix=nx+1 for isfixrb=2
+      endif                             !end symm. BC at ix=nx+1 for isfixrb=2
 
 c************************************************************************
 c     begin standard divertor plate conditions for right boundaries
 c************************************************************************
-      do jx = 1, nxpt # loop over nxpt mesh regions
+      do jx = 1, nxpt ! loop over nxpt mesh regions
       if (xcnearrb .or. openbox) then
 c     First, the density equations --
         do ifld = 1, nisp
           if ( i6.ge.(ixrb(jx)+1-isextrnp) .and. isfixrb(jx)==0) then
           do iy = j2, j5
 
-            ixt  = ixrb(jx) + 1    # analog of ix=nx+1
-            ixt1 = ixm1(ixt,iy)    # analog of ix=nx
-            ixt2 = ixm1(ixt1,iy)   # analog of ix=nx-1
-            ixt3 = ixm1(ixt2,iy)   # analog of ix=nx-2
+            ixt  = ixrb(jx) + 1    ! analog of ix=nx+1
+            ixt1 = ixm1(ixt,iy)    ! analog of ix=nx
+            ixt2 = ixm1(ixt1,iy)   ! analog of ix=nx-1
+            ixt3 = ixm1(ixt2,iy)   ! analog of ix=nx-2
 
 	    if (isnionxy(ixt,iy,ifld)==1) then
               iv1 = idxn(ixt,iy,ifld)
-              if (isupgon(1)==1 .and. zi(ifld)==0.0) then   ## neutrals
-                if (recyrb(iy,1,jx) .gt. 0.) then           # recycling
+              if (isupgon(1)==1 .and. zi(ifld)==0.0) then   !! neutrals
+                if (recyrb(iy,1,jx) .gt. 0.) then           ! recycling
                   t0 = max(ti(ixt1,iy),temin*ev)
                   vxn = 0.25 * sqrt( 8*t0/(pi*mi(ifld)) )
                   yldot(iv1) = nurlxg *
@@ -2308,73 +2308,73 @@ c     First, the density equations --
      .                (1-albrb(iy,1,jx))*ni(ixt1,iy,ifld)*vxn*sx(ixt1,iy)
      .                - fngxsrb(iy,1,jx) ) / (vpnorm*n0(ifld)*sx(ixt1,iy))
                 elseif (recyrb(iy,1,jx) <=  0. .and. 
-     .                  recyrb(iy,1,jx) >= -1.) then   # recyrb is albedo
+     .                  recyrb(iy,1,jx) >= -1.) then   ! recyrb is albedo
                   t0 = max(ti(ixt1,iy),temin*ev)
                   vyn = sqrt( 0.5*t0/(pi*mi(1)) )
                   yldot(iv1) = nurlxg * ( fnix(ixt1,iy,ifld) -
      .                 (1+recyrb(iy,1,jx))*ni(ixt,iy,ifld)*vyn*sx(ixt1,iy) )/
      .                 (vpnorm*n0(ifld)*sx(ixt1,iy))
                 elseif (recyrb(iy,1,jx) < -1. .and.
-     .                  recyrb(iy,1,jx) > -2.) then    #fix density ngrfix
+     .                  recyrb(iy,1,jx) > -2.) then    !fix density ngrfix
                   yldot(iv1)=nurlxg*(ngrfix - ni(ixt,iy,ifld))/n0(ifld)
-                elseif (recyrb(iy,1,jx) <= -2.) then   #zero gradient
+                elseif (recyrb(iy,1,jx) <= -2.) then   !zero gradient
                   yldot(iv1) = nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                          n0(ifld)
-                endif # end if-test on recyrb
-              else                                     ## ions
-                if (isextrnp==0) then                  # zero x-gradient
+                endif ! end if-test on recyrb
+              else                                     !! ions
+                if (isextrnp==0) then                  ! zero x-gradient
                   yldot(iv1) = nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                          n0(ifld)
-                else                                   # extrapolation
+                else                                   ! extrapolation
                   nbound =  ni(ixt1,iy,ifld) + gxf(ixt2,iy)*
      .                   (ni(ixt1,iy,ifld)-ni(ixt2,iy,ifld))/gxf(ixt1,iy)
                   nbound = 1.2*nbound/( 1+0.5*exp( -2*(nbound/
      .                    ni(ixt,iy,ifld)-1) ) ) + 0.2*ni(ixt,iy,ifld)
                   yldot(iv1) = nurlxn*(nbound-ni(ixt,iy,ifld))/n0(ifld)
-                endif # end if-test on isextrnp
-              endif   # end if-test on isupgon and zi
-            endif     # end if-test on isnionxy  
-          enddo       # end do-loop in iy
-          endif       # end if-test on i6 and isfixrb and isnion
-        enddo         # end do-loop on ifld
+                endif ! end if-test on isextrnp
+              endif   ! end if-test on isupgon and zi
+            endif     ! end if-test on isnionxy  
+          enddo       ! end do-loop in iy
+          endif       ! end if-test on i6 and isfixrb and isnion
+        enddo         ! end do-loop on ifld
 
 c     Now do the parallel velocity and other variables --
       if ( (i6 .ge. (ixrb(jx)+1)) .and. isfixrb(jx)==0 ) then
-      do iy = j2, j5 # begin big do-loop on iy
+      do iy = j2, j5 ! begin big do-loop on iy
 
-        ixt  = ixrb(jx) + 1    # analog of ix=nx+1
-        ixt1 = ixm1(ixt,iy)    # analog of ix=nx
-        ixt2 = ixm1(ixt1,iy)   # analog of ix=nx-1
-        ixt3 = ixm1(ixt2,iy)   # analog of ix=nx-2
+        ixt  = ixrb(jx) + 1    ! analog of ix=nx+1
+        ixt1 = ixm1(ixt,iy)    ! analog of ix=nx
+        ixt2 = ixm1(ixt1,iy)   ! analog of ix=nx-1
+        ixt3 = ixm1(ixt2,iy)   ! analog of ix=nx-2
 
         kfeix = 0.
         sumb = 0.
-        do ifld = 1, nfsp  # set up generalized Bohm condition
-          upi(ixt,iy,ifld) = upi(ixt1,iy,ifld) # not set before; upi not var
-          upi(ixt,iy,1   ) =  up(ixt ,iy,1   ) # need to keep up(,,1) as var
+        do ifld = 1, nfsp  ! set up generalized Bohm condition
+          upi(ixt,iy,ifld) = upi(ixt1,iy,ifld) ! not set before; upi not var
+          upi(ixt,iy,1   ) =  up(ixt ,iy,1   ) ! need to keep up(,,1) as var
           ueb = cfueb*( cf2ef*v2ce(ixt1,iy,ifld)*rbfbt(ixt,iy) -
      .            vytan(ixt1,iy,ifld) ) / rrv(ixt1,iy) 
           sumb = sumb + ni(ixt,iy,ifld)*zi(ifld)**2*te(ixt,iy) /
      .                (mi(ifld)*(upi(ixt,iy,ifld)+ueb)**2 - ti(ixt,iy))
-        enddo # end do-loop on ifld for Bohm condition
+        enddo ! end do-loop on ifld for Bohm condition
         sumb = sqrt(abs(sumb/ne(ixt,iy)))
 
 c       Next, the momentum equations --
         do ifld = 1, nusp
           if (isuponxy(ixt,iy,ifld)==1) then
-            iv2 = idxu(ixt1,iy,ifld)  #ixt1 ~ nx
-	    iv = idxu(ixt,iy,ifld)    #ixt ~ nx+1
+            iv2 = idxu(ixt1,iy,ifld)  !ixt1 ~ nx
+	    iv = idxu(ixt,iy,ifld)    !ixt ~ nx+1
             cs = csfacrb(ifld,jx)*sqrt( (te(ixt,iy)+
      .                                  csfacti*ti(ixt,iy))/mi(ifld) )
-            if (isupgon(1)==1 .and. zi(ifld)==0.0) then  ## neutrals
-              if (recycmrb(iy,1,jx) > -9.9) then  # backscatter with recycm
+            if (isupgon(1)==1 .and. zi(ifld)==0.0) then  !! neutrals
+              if (recycmrb(iy,1,jx) > -9.9) then  ! backscatter with recycm
                 yldot(iv2) = -nurlxu*(recycmrb(iy,1,jx)*up(ixt1,iy,1) + 
      .                                       up(ixt1,iy,ifld))/vpnorm
               elseif (recycmrb(iy,1,jx) <= -9.9 .and. 
-     .                      recycmrb(iy,1,jx) > -10.1) then # zero x-gradient
+     .                      recycmrb(iy,1,jx) > -10.1) then ! zero x-gradient
                 yldot(iv2) = nurlxu*(up(ixt2,iy,ifld) -
      .                                          up(ixt1,iy,ifld))/vpnorm
-              else  #neutral thermal flux to wall if recycm < -10.1
+              else  !neutral thermal flux to wall if recycm < -10.1
                 t0 = max(tg(ixt,iy,1),temin*ev)
                 vxn = cgmompl*0.25*sqrt( 8*t0/(pi*mi(ifld))) 
 c...              if up > 0, leave unchanged; if up<0, big reduction
@@ -2387,63 +2387,63 @@ cc     .                             exp(-up(ixt,iy,ifld)/vgmomp)) )
      .                               (vpnorm*fnorm(ifld)*sx(ixt1,iy))
               endif
               yldot(iv) =nurlxu*(up(ixt1,iy,ifld)-up(ixt,iy,ifld))/vpnorm
-            else                                         ## ions
+            else                                         !! ions
               ueb = cfueb*( cf2ef*v2ce(ixt1,iy,ifld)*rbfbt(ixt,iy) -
      .                vytan(ixt1,iy,ifld) ) / rrv(ixt1,iy) 
-              yldot(iv2) = -nurlxu*(sumb - 1.)  # multispecies Bohm
-              if (isbohmms==0) then          # simple Bohm condition
+              yldot(iv2) = -nurlxu*(sumb - 1.)  ! multispecies Bohm
+              if (isbohmms==0) then          ! simple Bohm condition
                 yldot(iv2) = nurlxu * (cs-ueb-up(ixt1,iy,ifld))/vpnorm
               endif
               if(isupss(ifld)==1 .and. up(ixt2,iy,ifld)+ueb .gt. cs)
-                                             # dup/dx=0 if supersonic
+                                             ! dup/dx=0 if supersonic
      .          yldot(iv2) = nurlxu*(up(ixt2,iy,ifld)-up(ixt1,iy,ifld))/
      .                                                           vpnorm
-              if (isupss(ifld)==-1) then     # slip boundary conditions
+              if (isupss(ifld)==-1) then     ! slip boundary conditions
                 yldot(iv2) = nurlxu*(up(ixt2,iy,ifld)-up(ixt1,iy,ifld))/
      .                                                           vpnorm
-              elseif (isupss(ifld)==-2) then # extrap. + no pos. uu
+              elseif (isupss(ifld)==-2) then ! extrap. + no pos. uu
                 vbound = up(ixt2,iy,ifld) - gx(ixt2,iy)*
      .                   (up(ixt3,iy,ifld)-up(ixt2,iy,ifld))/gx(ixt1,iy) 
-                vbound = max(vbound, -ueb)   # forces uu & fnix >= 0
+                vbound = max(vbound, -ueb)   ! forces uu & fnix >= 0
                 yldot(iv2) = nurlxu*(vbound - up(ixt1,iy,ifld))/vpnorm
-              elseif (isupss(ifld)==-3) then # modified Bohm condition
+              elseif (isupss(ifld)==-3) then ! modified Bohm condition
                 vbound = -ueb +2*cs*uu(ixt2,iy,ifld)/
      .                             (uu(ixt2,iy,ifld)+rrv(ixt,iy)*cs)
-                vbound = max(vbound, -ueb)   # forces uu & fnix >= 0
+                vbound = max(vbound, -ueb)   ! forces uu & fnix >= 0
                 yldot(iv2) = nurlxu * (vbound-up(ixt1,iy,ifld))/vpnorm
-              endif # end if-test on isupss
+              endif ! end if-test on isupss
 
 c Finally set unused up(ixt,,) = up(ixt1,,); note ixt~nx+1
               yldot(iv) =nurlxu*(up(ixt1,iy,ifld)-up(ixt,iy,ifld))/vpnorm
-            endif # end if-test on isupgon
-          endif # end if-test on isupon
+            endif ! end if-test on isupgon
+          endif ! end if-test on isupon
 
           kfeix = kfeix - cfvcsx(ifld)*0.5*sx(ixt1,iy)
      .                     *visx(ixt1,iy,ifld)*gx(ixt1,iy)
      .           *( up(ixt1,iy,ifld)**2 - up(ixt2,iy,ifld)**2 ) 
-        enddo # end do-loop on ifld
+        enddo ! end do-loop on ifld
 
 c       Next, the potential equation --
         if(isphion+isphiofft .eq. 1) then
 cc           fqpsatrb(iy,jx) = qe*isfdiax*( ne(ixt,iy)*v2ce(ixt1,iy,1)*
 cc     .                           rbfbt(ixt,iy)*sx(ixt1,iy) + fdiaxrb(iy,jx) )
-cc           do ifld = 1, nfsp   # note fqp,fqpsat are poloidal proj. of || curr
+cc           do ifld = 1, nfsp   ! note fqp,fqpsat are poloidal proj. of || curr
 cc            fqpsatrb(iy,jx) = fqpsatrb(iy,jx) + qe*zi(ifld)*ni(ixt,iy,ifld)*
 cc     .                        upi(ixt1,iy,ifld)*sx(ixt1,iy)*rrv(ixt1,iy)  
 cc           enddo
-           lambdae = 2e16*(te(ixt,iy)/ev)**2/ne(ixt,iy)  #approx mfp
+           lambdae = 2e16*(te(ixt,iy)/ev)**2/ne(ixt,iy)  !approx mfp
            kincorrb(iy,jx) = 1./(1 + cfkincor*(lambdae/lcone(ixt,iy))*
      .                                       abs(ev*phi(ixt,iy)/te(ixt,iy)))
            fqpsate = qe*ne(ixt,iy)*sqrt(te(ixt,iy)/(2*pi*me))*
      .                               kincorrb(iy,jx)*sx(ixt1,iy)*rrv(ixt1,iy)
 c          NOTE: by definition, fqpsate is always > 0
            if (ikapmod==0) then
-cc           if (fqp(ixt1,iy) > 0.) then #limit to saturation current
+cc           if (fqp(ixt1,iy) > 0.) then !limit to saturation current
 cc             fqp(ixt1,iy)= ( abs((fqp(ixt1,iy)*fqpsatrb(iy,jx)))**exjbdry/
 cc     .                  (abs(fqp(ixt1,iy))**exjbdry +
 cc     .                   abs(fqpsatrb(iy,jx))**exjbdry) )**(1/exjbdry)
 cc           endif
-              if ( fqpsatrb(iy,jx)-(1.-gamsec)*fqp(ixt1,iy) > 0) then  # force +ve log argument
+              if ( fqpsatrb(iy,jx)-(1.-gamsec)*fqp(ixt1,iy) > 0) then  ! force +ve log argument
                 arglgphi=(((fqpsatrb(iy,jx)-(1.-gamsec)*fqp(ixt1,iy))
      .                             /fqpsate)**2 + expkmx**2)**(0.5)
               else
@@ -2459,7 +2459,7 @@ cccTDR            if ((isnewpot==1) .and. ((iy==1) .or. (iy==ny))) then
               iv = idxphi(ixt,iy)
               if ((isnewpot==100) .and. ((iy==1) .or. (iy==ny))) then
                  continue
-              elseif (isphirbc==1)
+              elseif (isphirbc==1) then
                  yldot(iv) = - nurlxp * (phi(ixt,iy) - phi0r(iy,jx))/temp0 
               else
                  yldot(iv) = -nurlxp*(1.-bctype(iy))*
@@ -2469,9 +2469,9 @@ cccTDR            if ((isnewpot==1) .and. ((iy==1) .or. (iy==ny))) then
      .                                 / (fqpsatrb(iy,jx)+cutlo)
               endif
            endif
-	else    # corresponding to (isphion+isphiofft .ne. 1)
+	else    ! corresponding to (isphion+isphiofft .ne. 1)
            fqpsate = 0.
-	   kappar(iy,jx) = 3.  # estimate for e*phi/Te; may be used for sputtering
+	   kappar(iy,jx) = 3.  ! estimate for e*phi/Te; may be used for sputtering
         endif
         isphion2 = isphion + isphiofft
         bcer(iy,jx) = (1-newbcr(jx)*isphion2) * bcee
@@ -2482,10 +2482,10 @@ cccTDR            if ((isnewpot==1) .and. ((iy==1) .or. (iy==ny))) then
 
         t0 = te(ixt,iy)/ev
         f_cgpld = .5*(1. - cos(pi*(t0 - temin)/(.3 - temin)))
-                                # ramp cgpld effect down at low guard cell
-                                # Te; rampdown might not be necesasry if
-                                # guard cell were allowed to access negative
-                                # temperatures (ETM 7 Jan 2014)
+                                ! ramp cgpld effect down at low guard cell
+                                ! Te; rampdown might not be necesasry if
+                                ! guard cell were allowed to access negative
+                                ! temperatures (ETM 7 Jan 2014)
         if(t0 < temin) f_cgpld = 0.
         if(t0 > 0.3) f_cgpld = 1.
         t0 = max(tg(ixt1,iy,1),temin*ev)
@@ -2499,7 +2499,7 @@ c   Do the electron temp Eqn -----------------------------------
              faceel2 = bcer(iy,jx)*(fqpsate/qe)*exp(-kappamx+2) 
              totfeexr(iy,jx) = feex(ixt1,iy) + cfeexdbo*( 
      .             2.5*fdiaxrb(iy,jx) + floxebgt(ixt1,iy) )*te(ixt,iy)
-cc           if (feex(ixt1,iy) < 0.) then #if totfeex<0;force te(ixt)=.5*te(ixt1)
+cc           if (feex(ixt1,iy) < 0.) then !if totfeex<0;force te(ixt)=.5*te(ixt1)
 cc             totfeex = 0.1*faceel*te(ixt1,iy)
 cc           else
 cc             totfeex =(feex(ixt1,iy)**2+(0.1*faceel*te(ixt1,iy))**2)**0.5
@@ -2525,7 +2525,7 @@ cc           endif
              yldot(iv1) = nurlxe*(te(ixt1,iy)-te(ixt,iy))
      .                                    * 1.5 * ne(ixt,iy)/ennorm
           endif 
-        endif  # end loop for isteon=1
+        endif  ! end loop for isteon=1
 
 c  Do the ion temp Eqn ---------------------------
         if (istionxy(ixt,iy) == 1) then
@@ -2549,7 +2549,7 @@ cc     .              recyce*upi(ixt1,iy,1)**2)/(recyrb(iy,1,jx)*ti(ixt,iy))
 cc               else
 cc                  bcen = 0.
 cc               endif
-cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
+cc               if (recyce .le. 0) bcen = 0.  ! gets back to old case
                yldot(iv2) = nurlxi*(totfeixr(iy,jx)
      .                        -totfnix*bcir(iy,jx)*ti(ixt,iy)
      .                        -cfneut*fnix(ixt1,iy,iigsp)*bcen*tg(ixt,iy,1)
@@ -2564,7 +2564,7 @@ cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
      .                        -cmneut*fnix(ixt1,iy,1)*recycp(1)*
      .                                 cmntgpr*(ti(ixt,iy)-eidisspr*ev)    
      .                                    )/(vpnorm*ennorm*sx(ixt1,iy))
-            endif # end test for isupgon(1)==1
+            endif ! end test for isupgon(1)==1
 
           elseif (ibctipr .eq. 0) then
              yldot(iv2) = nurlxi*(tipltr*ev - ti(ixt,iy))
@@ -2572,17 +2572,17 @@ cc               if (recyce .le. 0) bcen = 0.  # gets back to old case
           elseif (ibctipr .eq. 2) then
              yldot(iv2) = nurlxi*(ti(ixt1,iy) - ti(ixt,iy))
      .                                  * 1.5 * ne(ixt,iy)/ennorm
-          endif # end loop for bctipr
-        endif  # end loop for istion=1
+          endif ! end loop for bctipr
+        endif  ! end loop for istion=1
 
 c       Next, the hydrogenic gas equations --
-        do igsp = 1, nhgsp  # imp gas below
+        do igsp = 1, nhgsp  ! imp gas below
            if (isngonxy(ixt,iy,igsp) .eq. 1) then
              iv = idxg(ixt,iy,igsp)
-             if (recyrb(iy,igsp,jx) .gt. 0.) then  # normal recycling
+             if (recyrb(iy,igsp,jx) .gt. 0.) then  ! normal recycling
                flux_inc = fac2sp*fnix(ixt1,iy,1)
                if (ishymol.eq.1 .and. igsp.eq.2) then
-                 if (isupgon(1) .eq. 1) then  # two atoms for one molecule
+                 if (isupgon(1) .eq. 1) then  ! two atoms for one molecule
                    flux_inc = 0.5*( fnix(ixt1,iy,1) + fnix(ixt1,iy,2) ) 
                  else
                    flux_inc = 0.5*( fnix(ixt1,iy,1) + fngx(ixt1,iy,1) ) 
@@ -2596,16 +2596,16 @@ c       Next, the hydrogenic gas equations --
      .          (1-albrb(iy,igsp,jx))*ng(ixt1,iy,igsp)*vxn*sx(ixt1,iy) )
      .                                  / (vpnorm*n0g(igsp)*sx(ixt1,iy))
              elseif (recyrb(iy,igsp,jx) <=  0. .and.
-     .               recyrb(iy,igsp,jx) >= -1.) then  # recyrb is albedo
+     .               recyrb(iy,igsp,jx) >= -1.) then  ! recyrb is albedo
                t0 = max(tg(ixt,iy,igsp), temin*ev)
                vxn = 0.25 * sqrt( 8*t0/(pi*mg(igsp)) )
                yldot(iv) =  nurlxg*( fngx(ixt1,iy,igsp) -
      .          (1+recyrb(iy,igsp,jx))*ng(ixt,iy,igsp)*vxn*sx(ixt1,iy) )
      .                                     / (vxn*sx(ixt1,iy)*n0g(igsp))
              elseif (recyrb(iy,igsp,jx) < -1. .and.
-     .               recyrb(iy,igsp,jx) > -2.)  then  #fix density ngrfix
+     .               recyrb(iy,igsp,jx) > -2.)  then  !fix density ngrfix
                yldot(iv)=nurlxg*(ngrfix - ng(ixt,iy,igsp))/n0g(igsp)
-             elseif (recyrb(iy,igsp,jx) <= -2.) then   #zero gradient
+             elseif (recyrb(iy,igsp,jx) <= -2.) then   !zero gradient
                yldot(iv) = nurlxg*(ng(ixt1,iy,igsp) -
      .                                      ng(ixt,iy,igsp))/n0g(igsp)
              endif
@@ -2614,8 +2614,8 @@ c       Next, the hydrogenic gas equations --
 c   Special coding for Maxim
              if (isngrf==1) yldot(iv) = nurlxg*(ngrfix - 
      .                                    ng(ixt,iy,igsp))/n0g(igsp)
-           endif # end if-test on isngon
-        enddo # end do-loop on igsp
+           endif ! end if-test on isngon
+        enddo ! end do-loop on igsp
 
 c       Finally, do impurity gas equations --
 c       Set neutral gas impurity flux to be the sum of the fluxes of the
@@ -2623,8 +2623,8 @@ c       sputtered impurities plus recycled impurities from all charge states.
         if (isimpon .ge. 4 .and. isimpon .le. 7 .and. nzspt.ge.1) then
            nzsp_rt = nhsp
            do igsp = nhgsp+1, ngsp
-	      jz = max(igsp - nhgsp, 1)   # identify impurity index
-	      if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) #prev index for fnix
+	      jz = max(igsp - nhgsp, 1)   ! identify impurity index
+	      if (jz > 1) nzsp_rt = nzsp_rt + nzsp(jz-1) !prev index for fnix
               if (isngonxy(ixt,iy,igsp) .eq. 1) then
                  iv = idxg(ixt,iy,igsp)
                  hflux = 0.
@@ -2632,12 +2632,12 @@ c       sputtered impurities plus recycled impurities from all charge states.
                     if (zi(ihyd).gt.0.) hflux = hflux + fnix(ixt1,iy,ihyd)
                  enddo
                  zflux = 0.
-                 do iimp = 1, nzsp(jz) # need to limit this loop per species
+                 do iimp = 1, nzsp(jz) ! need to limit this loop per species
                    zflux = zflux + fnix(ixt1,iy,nzsp_rt+iimp)
                  enddo
                  sputflxrb(iy,igsp,jx) = 0.
                  zflux_chm = 0.
-                 if (isph_sput(igsp) .ge. 1) then  # use fits for phys sput
+                 if (isph_sput(igsp) .ge. 1) then  ! use fits for phys sput
                    do ifld = ipsputt_s, ipsputt_e 
                      eng_sput = ( 0.5*mi(ifld)*up(ixt1,iy,ifld)**2 + 
      .                             ti(ixt,iy) + zi(ifld)*
@@ -2646,8 +2646,8 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                                             fnix(ixt1,iy,ifld)*
      .                            fphysyrb(igsp,jx)*yld96(matp,matt,eng_sput)
                    enddo
-                   if (isph_sput(igsp) .ge. 2) then  # add chem sput from ions
-                      do ifld = 1,1  #(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
+                   if (isph_sput(igsp) .ge. 2) then  ! add chem sput from ions
+                      do ifld = 1,1  !(ipsputt_s, ipsputt_e) place holder for imp/imp sputt
                         eng_sput = ( 0.5*mi(ifld)*up(ixt1,iy,ifld)**2 + 
      .                               ti(ixt,iy) + zi(ifld)*
      .                               kappar(iy,jx)*te(ixt,iy) )/ev
@@ -2658,7 +2658,7 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                      fchemyrb(igsp,jx)*fnix(ixt1,iy,ifld)*yld_chm
                       enddo
                    endif
-                   if (isph_sput(igsp) .eq. 3) then # add chem sput from h. neut
+                   if (isph_sput(igsp) .eq. 3) then ! add chem sput from h. neut
                      do igsp2 = 1, 1+ishymol
                        t0p = max(tg(ixt1,iy,igsp2),temin*ev)
                        flx_incid=ng(ixt,iy,igsp2)*.25*
@@ -2681,28 +2681,28 @@ c       sputtered impurities plus recycled impurities from all charge states.
      .                   zflux_chm + fngxsrb(iy,igsp,jx)-fngxrb_use(iy,igsp,jx)
                     yldot(iv) = nurlxg * (fngx(ixt1,iy,igsp) - zflux) /
      .                         (n0(igsp) * vpnorm * sx(ixt1,iy))
-                 elseif (sputtrb(iy,igsp,jx).ge.-9.9) then # neg. sputtrb ==> albedo
+                 elseif (sputtrb(iy,igsp,jx).ge.-9.9) then ! neg. sputtrb ==> albedo
                     t0 = max(cdifg(igsp)*tg(ixt1,iy,igsp), temin*ev)
                     vxn = 0.25 * sqrt( 8*t0/(pi*mg(igsp)) )
                     yldot(iv) =  nurlxg*( fngx(ixt1,iy,igsp) -
      .                (1+sputtrb(iy,igsp,jx))*ng(ixt,iy,igsp)*vxn*sx(ixt1,iy) )
      .                                       / (vxn*sx(ixt1,iy)*n0g(igsp))
-                 else                                # sputtrb < -9.9 ==> fix dens
+                 else                                ! sputtrb < -9.9 ==> fix dens
                     yldot(iv) = -nurlxg*(ng(ixt,iy,igsp)-ngplatrb(igsp,jx))/
      .                                                        n0g(igsp)    
-                 endif  # end if-test on sputtrb
-              endif  # end if-test on isngon
-           enddo  # end do-loop in igsp
-        endif  # end if-test on isimpon and nzspt
+                 endif  ! end if-test on sputtrb
+              endif  ! end if-test on isngon
+           enddo  ! end do-loop in igsp
+        endif  ! end if-test on isimpon and nzspt
 
 c ... Neutral temperature - test if tg eqn is on, then set BC
 	do igsp = 1, ngsp
           if (istgonxy(ixt,iy,igsp) == 1) then
             iv = idxtg(ixt,iy,igsp)
-            if (istgrb(igsp) == 0) then  #set tg=tgwall
+            if (istgrb(igsp) == 0) then  !set tg=tgwall
               yldot(iv) = nurlxg*(tgwall(igsp)*ev -
      .                                 tg(ixt,iy,igsp))/(temp0*ev)
-            elseif (istgrb(igsp) == 1) then  #extrapolate tg from interior
+            elseif (istgrb(igsp) == 1) then  !extrapolate tg from interior
               tbound = tg(ixt1,iy,igsp) + gxf(ixt2,iy)*
      .               (tg(ixt1,iy,igsp)-tg(ixt2,iy,igsp))/gxf(ixt1,iy)
               tbound = max(tbound,0.5*temin*ev)
@@ -2713,30 +2713,30 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
           endif
         enddo
 
-      enddo # end big do-loop on iy
+      enddo ! end big do-loop on iy
 
 c ...   Make electric field at plate uniform over last 2 cells --
         if (isexunif.eq.1) then
            do iy = j2, j5
 	     if(isphionxy(ixt1,iy)==1) then
-               iv = idxphi(ixt1,iy)  # next formula assumes uniform mesh
+               iv = idxphi(ixt1,iy)  ! next formula assumes uniform mesh
                yldot(iv)=-nurlxp*(3*phi(ixt1,iy)-2*phi(ixt,iy)-
      .                                            phi(ixt2,iy))/temp0
              endif
            enddo
         endif
 
-      endif # end if-test on i6 and isfixrb
+      endif ! end if-test on i6 and isfixrb
 
-      endif # end if-test on xcnearrb and openbox
-      enddo # end do-loop over nxpt mesh regions
+      endif ! end if-test on xcnearrb and openbox
+      enddo ! end do-loop over nxpt mesh regions
 c************************************************************************
 c     end standard divertor plate conditions for right boundaries
 c************************************************************************
 
 c ... Special case for no divertor leg (ixpt2(1)=nx, iy.le.iysptrx2(1)), just
 c ... use continuation boundary conditions for the guard cell (ix=nx+1)
-ccc      if (ixpt2(1).eq.nx .and. isfixrb(1).eq.0) then  # should test i6.ge.nx+1
+ccc      if (ixpt2(1).eq.nx .and. isfixrb(1).eq.0) then  ! should test i6.ge.nx+1
 ccc
 ccc      do iy = j2, min(j5, iysptrx2(1))
 ccc        do ifld = 1, nisp
@@ -2769,12 +2769,12 @@ ccc        if (isphion+isphiofft .eq. 1) then
 ccc          iv = idxphi(nx+1,iy)
 ccc          yldot(iv) = -nurlxp*(phi(nx+1,iy)-phi(nx,iy))/temp0
 ccc        endif
-ccc      enddo   # large loop over iy
+ccc      enddo   ! large loop over iy
 ccc
 ccc      endif
 c ... End special coding for no divertor leg at ix = nx
 
- 1400 continue    #jump over all ix=nx+1 if ixmxbcl=0 since interior bdry
+ 1400 continue    !jump over all ix=nx+1 if ixmxbcl=0 since interior bdry
 
 c************************************************************************
 c...  do ix = nxc (normally nx/2) boundary if geometry=dnbot (double null)
@@ -2784,13 +2784,13 @@ c************************************************************************
      &                                     .and. isfixlb(1).eq.0) then
          if (i2.le.nxc+1 .and. i5.ge.nxc-1) then
 c...  this "if" test assumes both xlinc and xrinc are at least 1
-            do 194 iy = j1, j6  # was j2, j5, but this missed corners
+            do 194 iy = j1, j6  ! was j2, j5, but this missed corners
 c...  First do the ion density
                do 192 ifld = 1, nisp
                  if(isnionxy(nxc,iy,ifld)*isnionxy(nxc+1,iy,ifld)==1) then
                    if (.not. ((isnicore(ifld)==3).and.(iy==0))) then
-                     # do not over-write corner cell b.c. from iy=0
-                     # because it connects inboard and outboard core te
+                     ! do not over-write corner cell b.c. from iy=0
+                     ! because it connects inboard and outboard core te
                      iv = idxn(nxc,iy,ifld)
                      iv2 = idxn(nxc+1,iy,ifld)
                      yldot(iv) = nurlxn *
@@ -2815,8 +2815,8 @@ c...  Now do the parallel velocity
 
                if(isteonxy(nxc,iy)*isteonxy(nxc+1,iy) .eq. 1) then
                   if ( .not. ((iflcore==1).and.(iy==0)) ) then
-                     # do not over-write corner cell b.c. from iy=0
-                     # because it connects inboard and outboard core te
+                     ! do not over-write corner cell b.c. from iy=0
+                     ! because it connects inboard and outboard core te
                      iv = idxte(nxc,iy)
                      iv2 = idxte(nxc+1,iy)
                      yldot(iv) = nurlxe*(te(nxc-1,iy) - te(nxc,iy))
@@ -2827,8 +2827,8 @@ c...  Now do the parallel velocity
                endif
                if(istionxy(nxc,iy)*istionxy(nxc+1,iy) .eq. 1) then
                   if ( .not. ((iflcore==1).and.(iy==0)) ) then
-                     # do not over-write corner cell b.c. from iy=0
-                     # because it connects inboard and outboard core ti
+                     ! do not over-write corner cell b.c. from iy=0
+                     ! because it connects inboard and outboard core ti
                      iv = idxti(nxc,iy)
                      iv2 = idxti(nxc+1,iy)
                      yldot(iv) = nurlxi*(ti(nxc-1,iy) - ti(nxc,iy))
@@ -2852,8 +2852,8 @@ c...  Now do the parallel velocity
 c...  Do boundary condition for potential along ix=nxc and ix=nxc+1
                if (isphionxy(nxc,iy)*isphionxy(nxc+1,iy)==1) then
                   if ( .not. (isnewpot==1 .and. (iy==0 .or. iy==1)) ) then
-                     # do not over-write BC from iy=0 & iy=1 because
-                     # these connect inboard and outboard phi values
+                     ! do not over-write BC from iy=0 & iy=1 because
+                     ! these connect inboard and outboard phi values
                      iv = idxphi(nxc,iy)
                      iv2 = idxphi(nxc+1,iy)
                      yldot(iv) = nurlxi*(phi(nxc-1,iy) - phi(nxc,iy))
@@ -2877,11 +2877,11 @@ c...  Do boundary condition for impurities along ix=nxc
      .                                     ni(nxc+1,iy,nhsp+ifld) )
      .                                                 /n0(nhsp+ifld)
                   endif
-               enddo            # end of impurities along ix=nxc
+               enddo            ! end of impurities along ix=nxc
 
  194        continue
          endif
-      endif                  # end of ix = nxc b.c. for double null
+      endif                  ! end of ix = nxc b.c. for double null
 
       if( islimon .ne. 0) then
 c************************************************************************
@@ -3080,7 +3080,7 @@ ccc islbcg=2:
                      endif
                   endif
                enddo
- 198        continue   # end of loop over iy
+ 198        continue   ! end of loop over iy
 
 
 c...  Now do potential; start at iy=2 since 0,1 already set as core BCs
@@ -3194,17 +3194,17 @@ ccc   Apply sonic flow condition in "smooth" manner (MER 08 Apr 2002)
                if(istionxy(ix_lim,iy)*istionxy(ix_lim+1,iy) .eq. 1) then
                   iv = idxti(ix_lim,iy)
                   iv2 = idxti(ix_lim+1,iy)
-                  totfeix = feix(ix_lim-1,iy)  # reduced model/no neutrals
+                  totfeix = feix(ix_lim-1,iy)  ! reduced model/no neutrals
                   yldot(iv) = nurlxi*(totfeix -bcei*
      .                           fnix(ix_lim-1,iy,1)*ti(ix_lim,iy))/
      .                           (vpnorm*ennorm*sx(ix_lim-1,iy))
-                  totfeix = feix(ix_lim+1,iy)  # reduced model/no neutrals
+                  totfeix = feix(ix_lim+1,iy)  ! reduced model/no neutrals
                   yldot(iv2) = -nurlxi*(totfeix -bcei*
      .                           fnix(ix_lim+1,iy,1)*ti(ix_lim+1,iy))/
      .                           (vpnorm*ennorm*sx(ix_lim+1,iy))
                endif
    
-               do 196 igsp = 1, ngsp  # no impurities yet
+               do 196 igsp = 1, ngsp  ! no impurities yet
                   if(isngonxy(ix_lim,iy,igsp)*isngonxy(ix_lim+1,iy,igsp)
      .                                                       .eq. 1) then
                      iv =  idxg(ix_lim  ,iy,igsp)
@@ -3236,7 +3236,7 @@ c...  Do boundary condition for impurities along ix=ix_lim
 
  197        continue
 
-        # initial simple BC 
+        ! initial simple BC 
             do iy = max(j2p,iy_lims), j5p
 	       if(isphionxy(ix_lim,iy)*isphionxy(ix_lim+1,iy)==1) then  
                   iv = idxphi(ix_lim,iy)
@@ -3261,7 +3261,7 @@ c ... Set the corner gas density cells at iy=ny+1 to avoid probs
               endif
             enddo
          endif
-      endif                  # end of limiter case
+      endif                  ! end of limiter case
 
 
       ncrhs = ncrhs + 1
@@ -3289,23 +3289,23 @@ c     corresponding to the boundary and potential equation, i.e., those
 c     without time derivatives. 
 c************************************************************************
 
-      implicit none
-      Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nusp
-      Use(Math_problem_size)   # neqmx
-      Use(Lsode)
-      Use(UEpar)    # isnion,isupon,isteon,istion,isngon,isnionxy,isuponxy,
-                    # isteonxy,istionxy,isngonxy,isphionxy 
-      Use(Indexes)  # iseqalg
-      Use(Compla)
-      Use(Aux)
-      Use(Ynorm)
-      Use(Selec) 
-      Use(Bcond)    # isfixlb, isfixrb
-      Use(Parallv)  # nxg,nyg
-      Use(Xpoint_indices)  # ixpt1,ixpt2, iysptrx1,iysptrx2
-      Use(Indices_domain_dcl)   #ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
-      Use(Share)   # islimon, ix_lim, iy_lims, geometry, nxc
+            use Dim       ! nx,ny,nhsp,nisp,ngsp,nusp
+            use Math_problem_size    ! neqmx
+            use Lsode 
+            use UEpar     ! isnion,isupon,isteon,istion,isngon,isnionxy,isuponxy,
+                    ! isteonxy,istionxy,isngonxy,isphionxy 
+            use Indexes   ! iseqalg
+            use Compla 
+            use Aux 
+            use Ynorm 
+            use Selec  
+            use Bcond     ! isfixlb, isfixrb
+            use Parallv   ! nxg,nyg
+            use Xpoint_indices   ! ixpt1,ixpt2, iysptrx1,iysptrx2
+            use Indices_domain_dcl    !ixmxbcl,ixmnbcl,iymxbcl,iymnbcl
+            use Share    ! islimon, ix_lim, iy_lims, geometry, nxc
 
+      implicit none
       integer ifld, ii
 	  
 c ... Initialize the iseqalg array to zero (==>differential equation)
@@ -3315,7 +3315,7 @@ c ... Initialize the iseqalg array to zero (==>differential equation)
 
 c ... Now set iseqalg=1 for boundary equations and potential equation
 
-        if (iymnbcl .eq. 1) then    # true iy=0 boundary for domain dc
+        if (iymnbcl .eq. 1) then    ! true iy=0 boundary for domain dc
          do 11 ix = 1-ixmnbcl, nx+ixmxbcl
            do ifld = 1, nisp
 	    if (isnionxy(ix,0,ifld).eq.1) then
@@ -3345,9 +3345,9 @@ c ... Now set iseqalg=1 for boundary equations and potential equation
                iseqalg(idxphi(ix,0)) = 1
 	    endif 
    11    continue
-        endif    # for iymnbcl test
+        endif    ! for iymnbcl test
 
-        if (ixmnbcl .eq. 1) then    # true ix=0 boundary for domain dc
+        if (ixmnbcl .eq. 1) then    ! true ix=0 boundary for domain dc
          do 18 iy = 1, ny
            do ifld = 1, nisp
 	    if (isnionxy(0,iy,ifld).eq.1) then
@@ -3376,9 +3376,9 @@ c ... Now set iseqalg=1 for boundary equations and potential equation
                if(isphionxy(ix,iy)==1) iseqalg(idxphi(ix,iy)) = 1
    15       continue
    18    continue
-        endif    # for ixmnbcl test
+        endif    ! for ixmnbcl test
 
-        if (ixmxbcl .eq. 1) then    # true ix=nx+1 boundary for domain dc
+        if (ixmxbcl .eq. 1) then    ! true ix=nx+1 boundary for domain dc
          do 19 iy = 1, ny
            do ifld = 1, nisp
 	    if (isnionxy(nx+1,iy,ifld).eq.1) then
@@ -3406,9 +3406,9 @@ c ... Now set iseqalg=1 for boundary equations and potential equation
                iseqalg(idxphi(nx+1,iy)) = 1
 	    endif
    19    continue
-        endif    # for ixmxbcl test
+        endif    ! for ixmxbcl test
 
-        if (iymxbcl .eq. 1) then    # true iy=ny+1 boundary for domain dc
+        if (iymxbcl .eq. 1) then    ! true iy=ny+1 boundary for domain dc
 	 do 24 ix = 1-ixmnbcl, nx+ixmxbcl
            do ifld = 1, nisp
 	    if (isnionxy(ix,ny+1,ifld).eq.1) then
@@ -3435,7 +3435,7 @@ c ... Now set iseqalg=1 for boundary equations and potential equation
                iseqalg(idxphi(ix,ny+1)) = 1
 	    endif
    24    continue
-        endif    # for iymxbcl test
+        endif    ! for iymxbcl test
 
 c ... Check for interior boundaries with set velocities; used in rscalf
       if (isfixlb(1).eq.2 .or. isfixrb(1).eq.2) then
@@ -3457,7 +3457,7 @@ c ... Check for interior boundaries with set velocities; used in rscalf
 
 c ... Check for double-null symmetry boundaries
       if (isudsym==1 .and. isfixlb(1) == 0) then
-        do iy=1,ny   # whole ix=nxc and nxc+1 surfaces use algebraic eqns.
+        do iy=1,ny   ! whole ix=nxc and nxc+1 surfaces use algebraic eqns.
           do ifld = 1, nisp
             if (isnionxy(nxc,iy,ifld)*isnionxy(nxc+1,iy,ifld)==1) then
               iseqalg(idxn(nxc,iy,ifld)) = 1
@@ -3494,7 +3494,7 @@ c ... Check for double-null symmetry boundaries
 
 c ... Check for an interior limiter surface
       if (islimon .ne. 0) then
-        do iy = 1, ny   # whole ix=ix_lim surface uses algebraic eqns.
+        do iy = 1, ny   ! whole ix=ix_lim surface uses algebraic eqns.
           do ifld = 1, nisp
             if (isnionxy(ix_lim,iy,ifld)*isnionxy(ix_lim+1,iy,ifld)==1) then
               iseqalg(idxn(ix_lim,iy,ifld)) = 1
@@ -3576,30 +3576,30 @@ c-----------------------------------------------------------------------
 *     WALSOR defines the profiles for wall sources corresponding to gas
 *     puffing or pumping; zero albedo implies a recycling wall in bouncon
 
+            use Dim                  ! nx,ny,ngsp,nxpt
+            use Share                ! nyomitmx
+            use Xpoint_indices       ! ixlb,ixrb,ixpt1,ixpt2,iysptrx1,iysptrx2
+            use Math_problem_size    ! neqmx for arrays not used here  
+            use Aux       ! ix,iy,igsp
+            use Selec     ! ixp1
+            use Phyvar    ! pi,qe
+            use Comgeo    ! gy,sy,xcwi,xcwo,xcpf,yylb,yyrb
+            use Noggeo    ! vtag
+            use Bcond     ! nwsor,igasi,igaso,issorlb,xgasi,xgaso,wgasi,wgaso,
+                    ! jxsori,jxsoro
+                    ! albdsi,albdso,matwsi,matwso,
+                    ! issori,iesori,issoro,iesoro,ncpli,ncplo,cplsori,cplsoro,
+                    ! iscpli,iscplo,fwsori,fwsoro,fngysi,fngyso,
+                    ! albedoo,albedoi,matwallo,matwalli,
+                    ! ywnii,ywnio,ywupi,ywupo,ywtei,ywteo,ywtii,ywtio,
+                    ! nibprof,upbprof,tebprof,tibprof
+            use Parallv   ! nxg,nyg
+            use Npes_mpi  ! npes,mype
+            use Rccoef    ! albedo_by_user
+            use Indices_domain_dcg  !ndomain
+
+
       implicit none
-
-      Use(Dim)                 # nx,ny,ngsp,nxpt
-      Use(Share)               # nyomitmx
-      Use(Xpoint_indices)      # ixlb,ixrb,ixpt1,ixpt2,iysptrx1,iysptrx2
-      Use(Math_problem_size)   # neqmx(for arrays not used here) 
-      Use(Aux)      # ix,iy,igsp
-      Use(Selec)    # ixp1
-      Use(Phyvar)   # pi,qe
-      Use(Comgeo)   # gy,sy,xcwi,xcwo,xcpf,yylb,yyrb
-      Use(Noggeo)   # vtag
-      Use(Bcond)    # nwsor,igasi,igaso,issorlb,xgasi,xgaso,wgasi,wgaso,
-                    # jxsori,jxsoro
-                    # albdsi,albdso,matwsi,matwso,
-                    # issori,iesori,issoro,iesoro,ncpli,ncplo,cplsori,cplsoro,
-                    # iscpli,iscplo,fwsori,fwsoro,fngysi,fngyso,
-                    # albedoo,albedoi,matwallo,matwalli,
-                    # ywnii,ywnio,ywupi,ywupo,ywtei,ywteo,ywtii,ywtio,
-                    # nibprof,upbprof,tebprof,tibprof
-      Use(Parallv)  # nxg,nyg
-      Use(Npes_mpi) # npes,mype
-      Use(Rccoef)   # albedo_by_user
-      Use(Indices_domain_dcg) #ndomain
-
 
 *  -- local scalars --
       integer isor, jx, jxlbi, jxrbi, jxlbo, jxrbo, ixbegi, ixendi, ixbego, ixendo
@@ -3702,15 +3702,15 @@ c ... private flux walls may extend over two regions for double-nulls
          else
             jxrbi = jxlbi - 1
          endif
-         ixbegi = ixlb(jxlbi)+1     # omit guard cell
-         ixendi = ixrb(jxrbi)       # omit guard cell
+         ixbegi = ixlb(jxlbi)+1     ! omit guard cell
+         ixendi = ixrb(jxrbi)       ! omit guard cell
          xnoti = issorlb(isor)*xgasi(isor)
      .             + (1-issorlb(isor))*(xcpf(ixendi)-xgasi(isor))
 c ... outer walls begin and end in the same mesh region
          jxlbo = jxsoro(isor)
          jxrbo = jxlbo
-         ixbego = ixlb(jxlbo)+1     # omit guard cell
-         ixendo = ixrb(jxrbo)       # omit guard cell
+         ixbego = ixlb(jxlbo)+1     ! omit guard cell
+         ixendo = ixrb(jxrbo)       ! omit guard cell
          xnoto = issorlb(isor)*xgaso(isor)
      &             + (1-issorlb(isor))*(xcwo(ixendo)-xgaso(isor))
 c...  calculate the normalization factors
@@ -3721,7 +3721,7 @@ c...  calculate the normalization factors
               if( abs(argi)<pi/2. ) sycosi(isor) = sycosi(isor) +
      .                                            cos(argi) * sy(ix,0)
             endif
-            if (ix==ixendi) break
+            if (ix==ixendi) exit
             ix=ixp1(ix,0)
          enddo
          ix=ixbego
@@ -3729,7 +3729,7 @@ c...  calculate the normalization factors
             argo = (xcwo(ix) - xnoto) * pi / (wgaso(isor)+1.e-20)
             if( abs(argo) .lt. pi/2. ) sycoso(isor) = sycoso(isor) +
      .                                            cos(argo) * sy(ix,ny)
-            if (ix==ixendo) break
+            if (ix==ixendo) exit
             ix=ixp1(ix,ny)
          enddo
 c...  The gas is injected via fluxes fngyso,i
@@ -3750,7 +3750,7 @@ c...  The gas is injected via fluxes fngyso,i
      .                        albedoo(ix,igspsoro(isor)) = albdso(isor)
                matwallo(ix) = matwallo(ix) + matwso(isor)
             endif
-            if (ix==ixendo) break
+            if (ix==ixendo) exit
             ix=ixp1(ix,ny)
          enddo
          ix=ixbegi
@@ -3772,7 +3772,7 @@ c...  The gas is injected via fluxes fngyso,i
      .                     albedoi(ix,igspsori(isor)) = albdsi(isor)
                matwalli(ix) = matwalli(ix) + matwsi(isor)
             endif
-            if (ix==ixendi) break
+            if (ix==ixendi) exit
             ix=ixp1(ix,0)
          enddo
  33   continue
@@ -3786,23 +3786,23 @@ c-----------------------------------------------------------------------
 *     wsmodi calculates the current from source regions on the inner wall
 *     boundary and resets the wall source if the coupling switch is on
 
+            use Dim       ! nx,ny,ngsp
+            use Math_problem_size    ! neqmx for arrays not used here 
+            use Selec     ! ixp1
+            use Phyvar    ! qe,ev,pi
+            use Compla    ! tg,mi
+            use Comgeo    ! sy
+            use Indexes   ! idxg
+            use Xpoint_indices   ! ixpt1,ixpt2
+!!!      Use(Ynorm)    ! nnorm
+            use UEpar     ! nurlxg
+            use Comflo    ! fngy
+            use Bcond     ! ncpli,iwalli,issori,iesori,cplsori,fngysi
+            use Parallv   ! nxg,nyg
+
       implicit none
 
       integer ig
-
-      Use(Dim)      # nx,ny,ngsp
-      Use(Math_problem_size)   # neqmx(for arrays not used here)
-      Use(Selec)    # ixp1
-      Use(Phyvar)   # qe,ev,pi
-      Use(Compla)   # tg,mi
-      Use(Comgeo)   # sy
-      Use(Indexes)  # idxg
-      Use(Xpoint_indices)  # ixpt1,ixpt2
-###      Use(Ynorm)    # nnorm
-      Use(UEpar)    # nurlxg
-      Use(Comflo)   # fngy
-      Use(Bcond)    # ncpli,iwalli,issori,iesori,cplsori,fngysi
-      Use(Parallv)  # nxg,nyg
 
 *  -- local scalars --
       integer isor, jsor, ixt
@@ -3812,7 +3812,7 @@ c-----------------------------------------------------------------------
        if (igspsori(isor)==ig) then
 
 c...  Set inner source index for coupling
-        jsor = ncpli(isor)  # jsor > 0 for inner bdry, jsor < 0 for outer bdry
+        jsor = ncpli(isor)  ! jsor > 0 for inner bdry, jsor < 0 for outer bdry
 
 c...  calculate the current out at source isor
         iwalli(isor) = 0.
@@ -3820,16 +3820,16 @@ c...  calculate the current out at source isor
           do ixt = issori(isor), iesori(isor)
             if(ixt <= ixpt1(1) .or. ixt > ixpt2(1)) then
 	      t0 = max(tg(ixt,0,ig),temin*ev)
-              vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+              vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
               iwalli(isor) = iwalli(isor) + qe*(1 - albedoi(ixt,ig))*
      .                                  ng(ixt,1,ig)*vyn*sy(ixt,0)
             endif
           enddo
-	elseif (jsor < 0) then # signal for outer bdry;now change to jsor > 0
+	elseif (jsor < 0) then ! signal for outer bdry;now change to jsor > 0
           jsor = -jsor
           do ixt = issoro(isor), iesoro(isor)
 	    t0 = max(tg(ixt,ny+1,ig),temin*ev)
-            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
             iwalli(isor) = iwalli(isor) + qe*(1 - albedoo(ixt,ig))*
      .                              ng(ixt,ny,ig)*vyn*sy(ixt,ny)
           enddo
@@ -3839,7 +3839,7 @@ c...  reinject current at coupled source jsor
           do ixt = issori(jsor), iesori(jsor)
             if(ixt <= ixpt1(1) .or. ixt > ixpt2(1)) then
 	      t0 = max(tg(ixt,0,ig),temin*ev)
-              vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+              vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
               fngysi(ixt,ig)= iwalli(isor)*cplsori(jsor)*fwsori(ixt,jsor)
 ccc     .                                   - (1 - albedoi(ixt,ig))*
 ccc     .                                     ng(ixt,1,ig)*vyn*sy(ixt,0)
@@ -3847,7 +3847,7 @@ ccc     .                                     ng(ixt,1,ig)*vyn*sy(ixt,0)
           enddo
         endif
 
-       endif     # end if-test on igspori(isor)
+       endif     ! end if-test on igspori(isor)
       enddo
 
       return
@@ -3859,23 +3859,23 @@ c-----------------------------------------------------------------------
 *     wsmodo calculates the current from source regions on the outer wall
 *     boundary and resets the wall source if the coupling switch is on
 
+            use Dim       ! nx,ny,ngsp
+            use Math_problem_size    ! neqmx for arrays not used here 
+            use Selec     ! ixp1
+            use Phyvar    ! qe
+            use Compla    ! tg,mi
+            use Comgeo    ! sy
+            use Indexes   ! idxg
+!!!      Use(Ynorm)    ! nnorm
+            use UEpar     ! nurlxg
+            use Comflo    ! fngy
+            use Bcond     ! ncplio,iwallio,issoro,iesoro,cplsoro,fwsoro
+            use Parallv   ! nxg,nyg
+
+
       implicit none
 
       integer ig
-
-      Use(Dim)      # nx,ny,ngsp
-      Use(Math_problem_size)   # neqmx(for arrays not used here)
-      Use(Selec)    # ixp1
-      Use(Phyvar)   # qe
-      Use(Compla)   # tg,mi
-      Use(Comgeo)   # sy
-      Use(Indexes)  # idxg
-###      Use(Ynorm)    # nnorm
-      Use(UEpar)    # nurlxg
-      Use(Comflo)   # fngy
-      Use(Bcond)    # ncplio,iwallio,issoro,iesoro,cplsoro,fwsoro
-      Use(Parallv)  # nxg,nyg
-
 
 *  -- local scalars --
       integer isor, jsor, ixt
@@ -3885,22 +3885,22 @@ c-----------------------------------------------------------------------
        if (igspsoro(isor)==ig) then
 
 c...  Set outer source index for coupling
-        jsor = ncplo(isor)  # jsor > 0 for outer bdry, jsor < 0 for inner bdry
+        jsor = ncplo(isor)  ! jsor > 0 for outer bdry, jsor < 0 for inner bdry
 
 c...  calculate the current out at source isor
         iwallo(isor) = 0.
         if (jsor > 0) then
           do ixt = issoro(isor), iesoro(isor)
 	    t0 = max(tg(ixt,ny+1,ig),temin*ev)
-            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
             iwallo(isor) = iwallo(isor) + qe*(1 - albedoo(ixt,ig))*
      .                               ng(ixt,ny,ig)*vyn*sy(ixt,ny)
           enddo
-	elseif (jsor < 0) then # signal for inner bdry;now change to jsor > 0 
+	elseif (jsor < 0) then ! signal for inner bdry;now change to jsor > 0 
           jsor = -jsor
           do ixt = issori(isor), iesori(isor)
 	    t0 = max(tg(ixt,0,ig),temin*ev)
-            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
             iwallo(isor) = iwallo(isor) + qe*(1 - albedoi(ixt,ig))*
      .                                    ng(ixt,1,ig)*vyn*sy(ixt,0)
           enddo
@@ -3909,14 +3909,14 @@ c...  reinject current at coupled source jsor
         if (abs(jsor) > 0) then
           do ixt = issoro(jsor), iesoro(jsor)
 	    t0 = max(tg(ixt,ny+1,ig),temin*ev)
-            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) # mass only for scaling here
+            vyn = 0.25 * sqrt( 8*t0/(pi*mg(ig)) ) ! mass only for scaling here
             fngyso(ixt,ig)=iwallo(isor)*cplsoro(jsor)*fwsoro(ixt,jsor)
 ccc     .                                 - (1 - albedoo(ixt,ig))*
 ccc     .                                  ng(ixt,ny,ig)*vyn*sy(ixt,ny)  
           enddo
         endif
 
-       endif     # end if-test on igsporo(isor)
+       endif     ! end if-test on igsporo(isor)
       enddo
 
       return
@@ -3928,22 +3928,22 @@ c-----------------------------------------------------------------------
 *     PLTSOR defines the profiles for plate sources corresponding to gas
 *     puffing or pumping; zero albedo implies a recycling wall in bouncon
 
-      implicit none
+            use Dim                  ! nx,ny,ngsp,nxpt
+!!      Use(Share)               ! nyomitmx
+            use Xpoint_indices       ! ixlb,ixrb
+!!      Use(Math_problem_size)   ! neqmx(for arrays not used here) 
+            use Aux       ! ix,iy,igsp
+!!      Use(Selec)    ! ixp1
+            use Rccoef    ! igasl,rb; igspsorl,rb; ygasl,rb; wgasl,rb;fvaplb,avaplb,
+                    ! tvaplb,tvaprb,
+            use Phyvar    ! pi,qe
+            use Comgeo    ! gy,sy,xcwi,xcwo,xcpf,yylb,yyrb
+            use Noggeo    ! vtag
+            use Bcond     ! nwsor,igaslb,igasrb,xgaslb,xgasrb,wgaslb,wgasrb,
+                    ! fwsori,fsorrb,fngxslb,fngxsrb
+            use Parallv   ! nxg,nyg
 
-      Use(Dim)                 # nx,ny,ngsp,nxpt
-##      Use(Share)               # nyomitmx
-      Use(Xpoint_indices)      # ixlb,ixrb
-##      Use(Math_problem_size)   # neqmx(for arrays not used here) 
-      Use(Aux)      # ix,iy,igsp
-##      Use(Selec)    # ixp1
-      Use(Rccoef)   # igasl,rb; igspsorl,rb; ygasl,rb; wgasl,rb;fvaplb,avaplb,
-                    # tvaplb,tvaprb,
-      Use(Phyvar)   # pi,qe
-      Use(Comgeo)   # gy,sy,xcwi,xcwo,xcpf,yylb,yyrb
-      Use(Noggeo)   # vtag
-      Use(Bcond)    # nwsor,igaslb,igasrb,xgaslb,xgasrb,wgaslb,wgasrb,
-                    # fwsori,fsorrb,fngxslb,fngxsrb
-      Use(Parallv)  # nxg,nyg
+      implicit none
 
 *  -- local scalars --
       integer isor,jx,igw
@@ -3987,8 +3987,8 @@ c...  sources
 
       do jx = 1, nxpt
         do iy = 0, ny+1
-          if(tvaplb(iy,jx) == 0.) tvaplb(iy,jx) = 1.  #avoid divide-by-zero
-          if(tvaprb(iy,jx) == 0.) tvaprb(iy,jx) = 1.  #avoid divide-by-zero
+          if(tvaplb(iy,jx) == 0.) tvaplb(iy,jx) = 1.  !avoid divide-by-zero
+          if(tvaprb(iy,jx) == 0.) tvaprb(iy,jx) = 1.  !avoid divide-by-zero
           do igsp = 1, ngsp
             fngxslb(iy,igsp,jx) = 0.
             fngxsrb(iy,igsp,jx) = 0.
@@ -4038,8 +4038,8 @@ c...  The gas is injected at plates via fluxes fngxslb,rb
      .                                       igasrb(isor,jx)*fsorrb(iy,isor)
             endif
          enddo
-       enddo     #loop over isor for source number
-      enddo      #loop over jx for X-pt index
+       enddo     !loop over isor for source number
+      enddo      !loop over jx for X-pt index
 
 c ... Compute and add evaporative gas flux from liquid plates
       do jx = 1, nxpt
@@ -4070,22 +4070,22 @@ c------------------------------------------------------------------------
 ***   coefficients on the inner and outer divertor plate surfaces.
 ***   Also computes evaporative source-fluxes fngxslb,rb from liquids.
 
-      implicit none
+            use Dim       ! nx,ny,nhsp,ngsp,nxpt
+            use Comgeo    ! yylb,yyrb
+            use Rccoef    ! recycp,recycflb,recycfrb,recylb,recyrb
+                    ! ndatlb,ndatrb,ydatlb,ydatrb,rdatlb,rdatrb
+                    ! alblb,albrb,adatlb,adatrb,sptttlb,sputtrb,
+                    ! albedo_by_user
+            use Xpoint_indices   ! ixlb,ixrb
+            use Selec     ! ixm1
 
-      Use(Dim)      # nx,ny,nhsp,ngsp,nxpt
-      Use(Comgeo)   # yylb,yyrb
-      Use(Rccoef)   # recycp,recycflb,recycfrb,recylb,recyrb
-                    # ndatlb,ndatrb,ydatlb,ydatrb,rdatlb,rdatrb
-                    # alblb,albrb,adatlb,adatrb,sptttlb,sputtrb,
-                    # albedo_by_user
-      Use(Xpoint_indices)  # ixlb,ixrb
-      Use(Selec)    # ixm1
+      implicit none
 
 *  -- local scalars --
       integer iy, ix, ifld, igsp, idat, jx
 
 c...  Initialize plt recycling, albedo; may replace if ndatrlb,rb>0
-      do jx = 1, nxpt  # loop over number of X-points
+      do jx = 1, nxpt  ! loop over number of X-points
         do igsp = 1, ngsp
           do iy = 0, ny+1
             recylb(iy,igsp,jx) = recycp(igsp)*recycflb(igsp,jx) +
@@ -4095,7 +4095,7 @@ c...  Initialize plt recycling, albedo; may replace if ndatrlb,rb>0
             recycmlb(iy,igsp,jx) = recycm + recycmlb_use(iy,igsp,jx)
             recycmrb(iy,igsp,jx) = recycm + recycmrb_use(iy,igsp,jx)
           enddo
-          if (abs(sputtr) .gt. 0.) then #use sputtr; neg => pump or const
+          if (abs(sputtr) .gt. 0.) then !use sputtr; neg => pump or const
             call sfill (ny+2, sputtr, sputtlb(0,igsp,jx), 1)
             call sfill (ny+2, sputtr, sputtrb(0,igsp,jx), 1)
           endif
@@ -4134,10 +4134,10 @@ c_Pigarov            if (iy = 2) write(*,*) "recompute recylb", recylb(2,1,1)
             enddo
           enddo
         enddo
-      enddo  # loop over jx X-pts
+      enddo  ! loop over jx X-pts
 
 c...  Instead use data arrays on outer plt recycling coeff., albedo if ndatrb>0
-      do jx = 1, nxpt  # loop over x-points
+      do jx = 1, nxpt  ! loop over x-points
         do igsp = 1, ngsp
           do idat = 1, ndatrb(igsp,jx)
             do iy = 0, ny+1
@@ -4161,9 +4161,9 @@ c_Pigarov            if (iy = 2) write(*,*) "recompute recyrb", recyrb(2,1,1)
             enddo
           enddo
         enddo     
-      enddo  # loop over jx X-pts
+      enddo  ! loop over jx X-pts
 
-#...  Set tot recycling arrays for private flux (wi) and outer wall (wo)
+!...  Set tot recycling arrays for private flux (wi) and outer wall (wo)
       do igsp = 1, ngsp
         do ix = 0, nx+1
           recycwot(ix,igsp) = recycw(igsp) + recywall_use(ix,igsp)
@@ -4187,19 +4187,19 @@ c        jsate = electron saturation current
 c        j     = net electrical current
 c     Sign convention is current  > 0 for flow from the plasma into the plate.
 
+            use Dim 
+            use Bcond     ! kappa0, kappamx
+            use Parallv   ! nxg,nyg
+
+c     local variables
       implicit none
 c     input arguments
       real jsati, jsate, j
 c     common blocks
-      Use(Dim)
-      Use(Bcond)    # kappa0, kappamx
-      Use(Parallv)  # nxg,nyg
-
-c     local variables
       real d, d0, fac, facmin
 
-      d0 = exp(-kappa0)          # defines transition between forms
-      facmin = exp(-kappamx)     # imposes an upper limit on kappa
+      d0 = exp(-kappa0)          ! defines transition between forms
+      facmin = exp(-kappamx)     ! imposes an upper limit on kappa
 
       d = (jsati-j)/jsate
       if (d .ge. d0) then
@@ -4223,16 +4223,16 @@ c    returns the flux surface average of 2D inarray (dimensioned nx by ny)
 c       at the core boundary, averaged over
 c     the core flux surface
 
+            use Dim                   ! nx,ny
+            use Xpoint_indices        ! ixpt1, ixpt2
+            use Indices_domain_dcl    ! iymnbcl, nx_loc,ny_loc
+            use Npes_mpi              ! npes
+            use Comgeo                ! vol, volv
+
       implicit none
 
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-      Use(Dim)                  # nx,ny
-      Use(Xpoint_indices)       # ixpt1, ixpt2
-      Use(Indices_domain_dcl)   # iymnbcl, nx_loc,ny_loc
-      Use(Npes_mpi)             # npes
-      Use(Comgeo)               # vol, volv
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+      integer ifake  !forces Forthon scripts to put implicit none above here
 CC c_mpi      include 'mpif.h'
 
 c_mpi      integer typeind, ierr, status(MPI_STATUS_SIZE)
@@ -4282,16 +4282,16 @@ c       at the core boundary, averaged over the core flux surface
 c    For running in parallel, the array runs from ixpt1(1)+1 to iend = min(ixpt2(1),nx).
 c    Coding below uses current convention that ixpt1 = 0 if x point is to left of this domain
 
+            use Dim                   ! nx,ny
+            use Indices_domain_dcl    ! iymnbcl, nx_loc,ny_loc
+            use Xpoint_indices        ! ixpt1, ixpt2
+            use Npes_mpi              ! npes
+            use Comgeo                ! vol, volv
+
       implicit none
 
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-      Use(Dim)                  # nx,ny
-      Use(Indices_domain_dcl)   # iymnbcl, nx_loc,ny_loc
-      Use(Xpoint_indices)       # ixpt1, ixpt2
-      Use(Npes_mpi)             # npes
-      Use(Comgeo)               # vol, volv
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
+      integer ifake  !forces Forthon scripts to put implicit none above here
 CC c_mpi      include 'mpif.h'
 c_mpi      integer typeind, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typeind/1/
@@ -4338,30 +4338,30 @@ c------------------------------------------------------------------------
 ***   Computes particle and energy fluxes that can be passed to a
 ***   wall-response code like WallPSI
 
-      implicit none
+            use Dim       ! nx,ny,nhsp,ngsp,nxpt
+            use Comgeo    ! sx,sy
+            use Noggeo    ! angfx
+            use Phyvar    ! qe,pi
+            use UEpar     ! ebind
+            use Comflo    ! fqx,fqy,fnix,fniy,feex,feey,feix,feiy,fngx,fngy
+            use Xpoint_indices   ! ixlb,ixrb,ixpt1,ixpt2
+            use Selec     ! ixm1
+            use Outpwall  ! ue_part_fluxelb, etc.
+            use Compla    ! mg,te,ng
+            use Poten     ! kappalb,kapparb
 
-      Use(Dim)      # nx,ny,nhsp,ngsp,nxpt
-      Use(Comgeo)   # sx,sy
-      Use(Noggeo)   # angfx
-      Use(Phyvar)   # qe,pi
-      Use(UEpar)    # ebind
-      Use(Comflo)   # fqx,fqy,fnix,fniy,feex,feey,feix,feiy,fngx,fngy
-      Use(Xpoint_indices)  # ixlb,ixrb,ixpt1,ixpt2
-      Use(Selec)    # ixm1
-      Use(Outpwall) # ue_part_fluxelb, etc.
-      Use(Compla)   # mg,te,ng
-      Use(Poten)    # kappalb,kapparb
+      implicit none
 
 *  -- local scalars --
       integer ix, iy, ifld, igsp, ipf, jx, ixs, ixe, nxt, nxt1
       real sxcos, syu, ue_ion_flux_sum
 
 c   Compute fluxes along left (inner divertor - need to change sign)
-      do jx = 1, nxpt  #number of x-points; =1 for single null
+      do jx = 1, nxpt  !number of x-points; =1 for single null
         do iy = 1, ny
           sxcos = sx(ixlb(jx),iy)*cos(angfx(ixlb(jx),iy))
           ue_ion_flux_sum = 0.
-          do ifld = 1, 1  #placeholder; needs extension for impurities
+          do ifld = 1, 1  !placeholder; needs extension for impurities
             ue_part_fluxh2p1lb(iy,jx) = -fnix(ixlb(jx),iy,1)/sxcos
             ue_ion_flux_sum = ue_ion_flux_sum-fnix(ixlb(jx),iy,ifld)/sxcos
           enddo
@@ -4386,13 +4386,13 @@ c   Compute fluxes along left (inner divertor - need to change sign)
       enddo
 
 c   Compute fluxes along right (outer divertor)
-      do jx = 1, nxpt  #number of x-points; =1 for single null
-        nxt = ixrb(jx)-1   #effec nx
-        nxt1 = ixrb(jx)    #effec nx+1
+      do jx = 1, nxpt  !number of x-points; =1 for single null
+        nxt = ixrb(jx)-1   !effec nx
+        nxt1 = ixrb(jx)    !effec nx+1
         do iy = 1, ny
           sxcos = sx(nxt,iy)*cos(angfx(nxt,iy))
           ue_ion_flux_sum = 0.
-          do ifld = 1, 1  #placeholder; needs extension for impurities
+          do ifld = 1, 1  !placeholder; needs extension for impurities
             ue_part_fluxh2p1rb(iy,jx) = fnix(nxt,iy,1)/sxcos
             ue_ion_flux_sum = ue_ion_flux_sum + fnix(nxt,iy,ifld)/sxcos
           enddo
@@ -4419,7 +4419,7 @@ c   Compute fluxes along outer wall
       do ix = 1, nx
         syu = sy(ix,ny)
         ue_ion_flux_sum = 0.
-        do ifld = 1, 1  #needs extension to ifld -> nfsp for impurities
+        do ifld = 1, 1  !needs extension to ifld -> nfsp for impurities
           ue_part_fluxh2p1yo(ix) = fniy(ix,ny,ifld)/syu
           ue_ion_flux_sum = ue_ion_flux_sum + fniy(ix,ny,ifld)/syu
         enddo
@@ -4453,7 +4453,7 @@ c   Compute fluxes along inner wall (need to change sign; some segms are core)
         do ix = ixs, ixe
           syu = sy(ix,0)
           ue_ion_flux_sum = 0.  
-          do ifld = 1, 1  #needs extension to ifld -> nfsp for impurities
+          do ifld = 1, 1  !needs extension to ifld -> nfsp for impurities
             ue_part_fluxh2p1yi(ix) = -fniy(ix,0,ifld)/syu
             ue_ion_flux_sum = ue_ion_flux_sum + fniy(ix,0,ifld)/syu
           enddo
@@ -4472,8 +4472,8 @@ c   Compute fluxes along inner wall (need to change sign; some segms are core)
           ue_mean_engh2yi(ix) =  ue_heat_fluxh2yi(ix)/
      .                                         ue_part_fluxh2yi(ix)
           ue_pot_engh2p1yi(ix) = -ebind*ue_part_fluxh2p1yi(ix)
-        enddo   # assocated with poloidal index ix
-        enddo   # associated with private flux index ipf
+        enddo   ! assocated with poloidal index ix
+        enddo   ! associated with private flux index ipf
       enddo
 
       return

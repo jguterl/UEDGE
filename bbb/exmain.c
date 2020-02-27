@@ -34,7 +34,7 @@ void int_handler() {
    printf("or a single line to be evaluated by Python.\n");
    while(1){
 #ifdef HAS_READLINE
-       ret = readline("Debug>>> ");
+       ret = readline("RDebug>>> ");
        if(ret == (char *)NULL)return;
        add_history(ret); 
        strncpy(mymyline,ret,sizeof(mymyline)-1); 
