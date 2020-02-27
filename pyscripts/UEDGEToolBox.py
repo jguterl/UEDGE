@@ -5,7 +5,9 @@ Created on Wed Feb 19 10:46:09 2020
 
 @author: jguterl
 """
-
+import uedge
+from uedge import *
+    
 def GetListPackage()->list:
     import pkgutil
     import uedge
@@ -18,3 +20,6 @@ def GetListPackage()->list:
             ListPkgUEDGE.append(PkgName[:-2])
    
     return ListPkgUEDGE
+
+
+    

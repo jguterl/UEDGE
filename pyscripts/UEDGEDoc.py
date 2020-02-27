@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """
 Created on Mon Jan 27 02:17:25 2020
-
 @author: jguterl
 """
 
@@ -193,5 +192,3 @@ def Search(Str,exact=False,OnlyVar=False):
         
 def SearchDoc(Str,OnlyVar=False):
     Doc.SearchDoc(Str,OnlyVar)
-
-    

@@ -46,7 +46,8 @@ else:
     from aphpy import *
     from compy import *
     
-from .UEDGEDoc import *
+    
+
 
 import time
 import os.path
