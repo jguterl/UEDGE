@@ -9,12 +9,15 @@ Welcome to UEDGE_doc's documentation!
 .. toctree::
    :maxdepth: 1
    :caption: Contents:
-	     
+
    Quickstart <usage/quickstart.rst>
-   Installation <usage/installation.rst>
-   The The UEDGE 2-D Transport Code <uedge_description.rst>
-   PyUEDGE references <uedge.rst>
-   UEDGE fortran references <uedge_references.rst>  
+   UEDGE packages references <uedge_package.rst>
+   bbbDoc.rst
+..   Installation <usage/installation.rst>
+..   The UEDGE 2-D Transport Code <uedge_description.rst>
+..   PyUEDGE references <uedge.rst>
+
+..   UEDGE fortran references <uedge_references.rst>  
    License <license.rst>
    Disclaimer <disclaimer.rst>
 	       

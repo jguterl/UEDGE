@@ -1,7 +1,7 @@
-uedge
+DocPy
 =====
 
 .. toctree::
    :maxdepth: 4
 
-   uedge
+   DocPy

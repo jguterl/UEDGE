@@ -158,7 +158,7 @@ c     Read mesh parameters from a UEDGE code grid data file
       open (nuno, file=fname, form='formatted', iostat=ios,
      &      status='old')
       if (ios .ne. 0) then
-         call xerrab("**** requested grid data file not found")
+			call xerrab("**** requested grid data file not found__"//fname)
       endif
 
       if (geometry=="dnull" .or. geometry=="snowflake15" .or.
@@ -201,7 +201,9 @@ c     Read a UEDGE code grid data file
       open (nuno, file=fname, form='formatted', iostat=ios,
      &      status='old')
       if (ios .ne. 0) then
-         call xerrab("**** requested grid data file not found")
+	write(STDOUT,*) "**** ios=",ios
+	write(STDOUT,*) "fname=",fname
+	call xerrab("**** requested grid data file not found_"//fname)
       endif
 
       if (geometry=="dnull" .or. geometry=="snowflake15" .or.

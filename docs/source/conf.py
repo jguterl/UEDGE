@@ -14,6 +14,8 @@ import os
 import sys
 sys.path.insert(0,'/Users/guterl/opt/anaconda3/lib/python3.7/site-packages/')
 sys.path.insert(0,'/Users/guterl/opt/anaconda3/lib/python3.7/site-packages/')
+sys.path.insert(0,'/home/jguterl/UEDGE/docs/source/')
+#sys.path.insert(0,'/home/jguterl/UEDGE/docs/source/DocPy/')
 #sys.path.insert(0, os.path.abspath('../../pyscripts/'))
 print(sys.path)
 
