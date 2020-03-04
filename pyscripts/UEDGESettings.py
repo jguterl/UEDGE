@@ -17,30 +17,34 @@ class UEDGESettings():
     def __init__(self):
         print(' # Loading UEDGE settings...')
         self.Platform=self.GetPlatform()
-        self.config=self.CheckUEDGEConfig()
-        UserName=self.config['UEDGE'].get('UserName')
-        if UserName is None:
-           self.UserName='unknown'
-        else:
-            self.UserName=UserName
-        
-        RunDir=self.config['UEDGE'].get('RunDir')    
-        if RunDir is None:
-           self.RunDir=os.getcwd()
-        else:
-            self.RunDir=RunDir
-        
-        SaveDir=self.config['UEDGE'].get('SaveDir')    
-        if SaveDir is None:
-           self.SaveDir=os.getcwd()
-        else:
-            self.SaveDir=SaveDir  
+        try: 
+            self.config=self.CheckUEDGEConfig()
+        except Exception as e:
+            print(repr(e))
+        finally:
+            UserName=self.config['UEDGE'].get('UserName')
+            if UserName is None:
+               self.UserName='unknown'
+            else:
+                self.UserName=UserName
             
-        InputDir=self.config['UEDGE'].get('InputDir')    
-        if InputDir is None:
-           self.InputDir=os.getcwd()
-        else:
-            self.InputDir=InputDir  
+            RunDir=self.config['UEDGE'].get('RunDir')    
+            if RunDir is None:
+               self.RunDir=os.getcwd()
+            else:
+                self.RunDir=RunDir
+            
+            SaveDir=self.config['UEDGE'].get('SaveDir')    
+            if SaveDir is None:
+               self.SaveDir=os.getcwd()
+            else:
+                self.SaveDir=SaveDir  
+                
+            InputDir=self.config['UEDGE'].get('InputDir')    
+            if InputDir is None:
+               self.InputDir=os.getcwd()
+            else:
+                self.InputDir=InputDir  
    
     def GetPlatform(self):
         PF={}
