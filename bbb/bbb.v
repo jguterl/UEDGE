@@ -1462,7 +1462,7 @@ tstor_e  	real /4.e-2/	# ending time for storing solution
 ipt 		integer /1/	# index of variable printed at each out timestep
 savefname       character*5 /"it333"/ # name of pfb save file pfdt_"savefname"
 iprtrundt       integer /1/     # =1, then print rundt diag; .ne.1, no printing
-
+  
 ***** Compla:
 #Variables in common -- plasma parameters
 mi(1:nisp)         _real [kg] /1.67e-27/ #ion mass in kg, calculated from minu

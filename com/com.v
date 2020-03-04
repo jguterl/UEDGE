@@ -499,7 +499,7 @@ ttngxlog   real            /0./   # time spent for fngx in neudifpg
 ttngylog   real            /0./   # time spent for fngy in neudifpg
 ttngfd2    real            /0./   # time spent in fd2tra for neudifpg
 ttngfxy    real            /0./   # time spent for fngxy in neudifpg
-
+DebugTime  integer         /0/    # Display execution times of various subroutines
 ***** Linkbbb:
 # information shared by bbb and wdf packages
 nxbbb	integer

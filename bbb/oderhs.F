@@ -8358,12 +8358,12 @@ c ... Input arguments:
 
 c ... Work-array argument:
       real wk(neq)     ! work space available to this subroutine
-
+      real,allocatable,save::wk_(:),igyl_(:,:),yl_(:)
 c ... Output arguments:
       real jac(nnzmx)     ! nonzero Jacobian elements
       integer ja(nnzmx)   ! col indices of nonzero Jacobian elements
       integer ia(neq+1)   ! pointers to beginning of each row in jac,ja
-
+      
       logical tstguardc
       real(kind=4):: gettime
 cc      real(kind=4):: ranf
@@ -8371,10 +8371,32 @@ cc      real(kind=4):: ranf
 c ... Local variables:
       integer nnz, ii, iv, ii1, ii2, xc, yc, ix, iy
       real yold, dyl, jacelem
-      real(kind=4):: sec4, tsjstor, tsimpjf, dtimpjf
+      real(kind=4):: sec4, tsjstor, tsimpjf, dtimpjf,time0,time1
+      INTEGER :: NTHREADS, TID, OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
+      common /locals/ ii, ii1, ii2, xc, yc, ix, iy,yold,dyl,jacelem
+cc$OMP THREADPRIVATE(/locals/)
+      allocate(wk_(neq))
+      allocate(igyl_(neq,2))
+      allocate(yl_(neq))
+      igyl_(1:neq,1:2)=igyl(1:neq,1:2)
+       wk_(1:neq)=wk(1:neq)
+       yl_(1:neq)=yl(1:neq)
+c$OMP PARALLEL PRIVATE(NTHREADS, TID)
 
+c Obtain thread number
+      TID = OMP_GET_THREAD_NUM()
+      write(*,*) 'Hello World from thread = ', TID
+
+c Only master thread does this
+      IF (TID .EQ. 0) THEN
+      NTHREADS = OMP_GET_NUM_THREADS()
+      write(*,*) 'Number of threads = ', NTHREADS
+      END IF
+
+c All threads join master thread and disband
+c$OMP END PARALLEL
 ccc      save
-
+      
 c ... Get initial value of system cpu timer.
       if (istimingon .eq. 1) tsjstor = gettime(sec4)
 
@@ -8397,13 +8419,25 @@ c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 c ... Begin loop over dependent variables.
 c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       nnz = 1
+cJG target does not work with current gcc version. But it would make sense to test it with a gpu (maybe summit 1 at GA?)
+c So let implement a classical omp parallel do loop  
+c$OMP target map(to:time0,TID,ii1,ii2,yldot00,wk,igyl)
+c,yold,yl(1:neq),dyl,del,dylconst,suscal)
+cccc$OMP& map(from:jcsc)
+c wk_(1:neq),igyl_(1:neq,1:2)
+c map(from: jcsc(1:neq))
+c$OMP PARALLEL DO 
+cDEFAULT(PRIVATE),COPYIN(wk_,igyl_)
       do iv = 1, neq
-
+              time0=gettime(sec4)
+        TID = OMP_GET_THREAD_NUM()
+        write(*,*) 'Hello World iv=',iv, 'from thread = ', TID
 ccc ... Only perturb variables that are being solved for (for Daspk option)
 ccc      if (iseqon(iv) .eq. 0) goto 18
-
+        
 c ... Set beginning and ending indices of right-hand sides that might be
 c     perturbed.
+         write(*,*) 'Setting up range ', 'from thread = ', TID
          ii1 = max(iv-mu, 1)
          ii2 = min(iv+ml, neq)
 c ... Reset range if this is a potential perturbation with isnewpot=1
@@ -8417,37 +8451,41 @@ c ... Reset range if extrapolation boundary conditions are used
             ii1 = max(iv-2*numvar*(nx+3), 1)      ! guess to include extrap. bc
             ii2 = min(iv+2*numvar*(nx+3), neq)    ! guess to include extrap. bc
          endif
-
+      write(*,*) 'iii1,ii2 ',ii1,ii2, ' from thread = ', TID
 c ... Initialize all of those right-hand sides to their unperturbed
 c     values.
+         write(*,*) 'Getting worker ', 'from thread = ', TID
          do ii = ii1, ii2   ! below wk is reset, but only over limited range
             wk(ii) = yldot00(ii)
          enddo
-
+      write(*,*) 'Getting xc,yc from thread = ', TID
 c ... Set spatial-location indices for this dependent variable.
          xc = igyl(iv,1)
          yc = igyl(iv,2)
-
+cJG1      write(*,*) 'xc,yc',xc,yc, 'from thread = ', TID
 c ... Save value of dependent variable, then perturb it.
 c     The perturbation to the variable is proportional to parameter
 c     del and to a measure of the size of the variable.  That measure
 c     increases with the absolute value of the variable if it exceeds
 c     the typical size given by dylconst/suscal but can never be less
 c     than that typical size.
-         yold = yl(iv)
-         dyl = del * (abs(yold) + dylconst / suscal(iv))
-         yl(iv) = yold + dyl
-
+cJG1         yold = yl(iv)
+cJG1         dyl = del * (abs(yold) + dylconst / suscal(iv))
+cJG1         yl(iv) = yold + dyl
+         write(*,*) 'yl',yl(iv), 'from thread = ', TID
 c ... Calculate right-hand sides near location of perturbed variable.
 ccc         call convsr_vo (xc, yc, yl)  ! test new convsr placement
 ccc         call convsr_aux (xc, yc, yl) ! test new convsr placement
+         write(*,*) 'calling pandf1 ', 'from thread = ', TID
          call pandf1 (xc, yc, iv, neq, t, yl, wk)
 ccc         yl(iv) = yold - dyl    ! for 2nd order Jac 
 ccc         call pandf1 (xc, yc, iv, neq, t, yl, yldot0) ! for 2nd order Jac 
 c ... Calculate possibly nonzero Jacobian elements for this variable,
 c     and store nonzero elements in compressed sparse column format.
+         write(*,*) 'store non-zero elem ', 'from thread = ', TID
          jcsc(iv) = nnz      ! sets index for first Jac. elem. of var. iv
-         do ii = ii1, ii2
+c!!!!!!!!!!!!!!! loop ii
+cJG1         do ii = ii1, ii2
 ccc            if (iondenseqn .eq. "inel") then   ! skip ion cont. eqn
 ccc               ix = igyl(ii,1)               ! (but not for guard cells)
 ccc               iy = igyl(ii,2)
@@ -8455,72 +8493,75 @@ ccc               if (isnion(1) .eq. 1 .and. mod(ii,numvar) .eq. 1 .and.
 ccc     .             .not. tstguardc (ix, iy)) go to 10  !end of iv loop removed
 ccc            endif
 
-            jacelem = (wk(ii) - yldot00(ii)) / dyl
-ccc            jacelem = (wk(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
+cJG1            jacelem = (wk_(ii) - yldot00(ii)) / dyl
+ccc            jacelem = (wk_/(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
 c ...  Add diagonal 1/dt for nksol
-            if (((svrpkg.eq."nksol") .or. (svrpkg.eq."petsc")) .and. iv.eq.ii) then
-              if (iseqalg(iv)*(1-isbcwdt).eq.0) then
-                jacelem = jacelem - 1/dtuse(iv)
-              endif
-              ix = igyl(iv,1)
-              iy = igyl(iv,2)
-              if (idxphi(ix,iy)==iv .and. dtphi<1e10) then !selects phi eqn
-                jacelem = jacelem - 1/dtphi
-              endif
-            endif
+cJG1            if (((svrpkg.eq."nksol") .or. (svrpkg.eq."petsc")) .and. iv.eq.ii) then
+cJG1              if (iseqalg(iv)*(1-isbcwdt).eq.0) then
+cJG1                jacelem = jacelem - 1/dtuse(iv)
+cJG1              endif
+cJG1              ix = igyl(iv,1)
+cJG1              iy = igyl(iv,2)
+cJG1              if (idxphi(ix,iy)==iv .and. dtphi<1e10) then !selects phi eqn
+cJG1                jacelem = jacelem - 1/dtphi
+cJG1              endif
+cJG1            endif
 
 c ...  Add a pseudo timestep to the diagonal !! if eqn is not algebraic
-            if (svrpkg .ne. "cvode" .and. nufak .gt. 0) then
-               if (iv.eq.ii .and. yl(neq+1).eq.1) 
-     .             jacelem = jacelem - nufak  !omit .and. iseqalg(iv).eq.0)
+cJG1            if (svrpkg .ne. "cvode" .and. nufak .gt. 0) then
+cJG1               if (iv.eq.ii .and. yl(neq+1).eq.1) 
+cJG1     .             jacelem = jacelem - nufak  !omit .and. iseqalg(iv).eq.0)
 cc     .                   jacelem = jacelem - nufak*suscal(iv)/sfscal(iv)
-            endif
-            if (abs(jacelem*sfscal(iv)) .gt. jaccliplim) then
-               if (nnz .gt. nnzmx) then
-                  write(STDOUT,*)
-     .             '*** jac_calc -- More storage needed for Jacobian.',
-     .             ' Storage exceeded at (i,j) = (',ii,',',iv,').',
-     .             ' Increase lenpfac.'
-	          call xerrab("")
-               endif
+cJG1            endif
+cJG1            if (abs(jacelem*sfscal(iv)) .gt. jaccliplim) then
+cJG1               if (nnz .gt. nnzmx) then
+cJG1                  write(STDOUT,*)
+cJG1     .             '*** jac_calc -- More storage needed for Jacobian.',
+cJG1     .             ' Storage exceeded at (i,j) = (',ii,',',iv,').',
+cJG1     .             ' Increase lenpfac.'
+cJG1	          call xerrab("")
+cJG1               endif
 cc               if (rdoff.ne.0.e0) jacelem=jacelem*(1.0e0+ranf()*rdoff)
-               rcsc(nnz) = jacelem
-               icsc(nnz) = ii
-               nnz = nnz + 1
-            endif
-           
-            if (istopjac.gt.0 .and. ii.eq.irstop .and. iv.eq.icstop) then
-               yldot_pert(ii) = wk(ii)      ! for diagnostic only
-               if (istopjac == 2) then
-                 yl(iv) = yold
-                 call pandf1 (xc, yc, iv, neq, t, yl, wk)
-               endif
+cJG               rcsc(nnz) = jacelem
+cJG               icsc(nnz) = ii
+cJG               nnz = nnz + 1
+cJG1            endif
+cJG1           
+c            if (istopjac.gt.0 .and. ii.eq.irstop .and. iv.eq.icstop) then
+ccc               yldot_pert(ii) = wk_(ii)      ! for diagnostic only
+c               if (istopjac == 2) then
+c                 yl(iv) = yold
+c                 call pandf1 (xc, yc, iv, neq, t, yl, wk_)
+c               endif
 ccc               call convsr_vo (xc, yc, yl)  ! was one call to convsr
 ccc               call convsr_aux (xc, yc, yl)
-               call remark("***** non-zero jac_elem at irstop,icstop")
-               write(*,*) 'irstop = ', irstop, ', icstop = ', icstop
-               call xerrab("")
-            endif
-
-         enddo  ! end of ii loop over equations
+c               call remark("***** non-zero jac_elem at irstop,icstop")
+c               write(*,*) 'irstop = ', irstop, ', icstop = ', icstop
+c               call xerrab("")
+c            endif
+cJG1
+cJG1         enddo  ! end of ii loop over equations
 
 c ... Restore dependent variable and plasma variables near its location.
-         yl(iv) = yold
+cJG1         yl(iv) = yold
 ccc         call convsr_vo (xc, yc, yl)  ! was one call to convsr
 ccc         call convsr_aux (xc, yc, yl)
-         call pandf1 (xc, yc, iv, neq, t, yl, wk)
+cJG1         call pandf1 (xc, yc, iv, neq, t, yl, wk_)
 
 ccc 18   continue
 c...  If this is the last variable before jumping to new cell, reset pandf 
-         if (mod(iv,numvar).eq.0 .and. isjacreset.ge.1) then
-            call pandf1 (xc, yc, iv, neq, t, yl, wk)
-         endif
-   
+cJG1         if (mod(iv,numvar).eq.0 .and. isjacreset.ge.1) then
+cJG1            call pandf1 (xc, yc, iv, neq, t, yl, wk_)
+cJG1         endif
+cJG1      yldot_pert(iv)=gettime(sec4)-time0
 c ... End loop over dependent variables and finish Jacobian storage.
 c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!      
       enddo             ! end of main loop over yl variables
+ccc$OMP END PARALLEL DO
+      write(*,*) 'target gathering'
+c$omp end target
 c!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
+      time1=gettime(sec4)
       jcsc(neq+1) = nnz
 
 c ... Convert Jacobian from compressed sparse column to compressed
@@ -8546,9 +8587,14 @@ ccc            ttimpjf = ttimpjf + dtimpjf
 ccc            ttotjf = ttotjf + dtimpjf
 ccc         endif
 ccc      endif
-
+      if (DebugTime.gt.0) then
+      write(*,*)'Time in calc_jac:',gettime(sec4)-tsjstor
+      endif
 c ... Accumulate cpu time spent here.
       if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
+      if (DebugTime.gt.0) then
+      write(*,*)'Time in calc_jac:',gettime(sec4)-tsjstor
+      endif 
       return
       end
 c-----------------------------------------------------------------------

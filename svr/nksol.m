@@ -9,6 +9,12 @@ c!include "../sptodp.h"
      *                  rwork, lrw, iwork, liw, iopt, iterm, pset,
      *                  psol, mf, mdif, ipflag, icflag, icnstr, rlx,
      *                  epscon1, epscon2, icntnu, adjf1)
+c As call in odesolve.m    
+c     call nksol(neq,yl,yldot,rhsnk,jacvnk,suscal,sfscal,ftol,
+c     .                 stptol,rwork,
+c     .                 lrw,iwork,liw,iopts,iterm,psetnk,psolnk,mfnksol,
+c     .                 mdif,ipflag,icflag,icnstr,rlx,epscon1,epscon2,
+c     .                 icntnunk,adjf1)
 c-----------------------------------------------------------------------
 c this is the august 7, 1995 version of
 c nksol.. a nonlinear krylov solver for nonlinear systems of
@@ -736,6 +742,8 @@ c- icntnu change
 c
       real zero,one,two,three
       logical mxtkn
+      integer DebugTime
+      real(kind=4):: sec4, gettime,time0
 cpetsc      external gettime
 cpetsc      real gettime,sec4
 c+pnb
@@ -779,6 +787,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
 c load values in nks002 common block.
 c-----------------------------------------------------------------------
+      DebugTime=0  
       iprint = 0
       iunit = 6
       iermsg = 0
@@ -811,7 +820,7 @@ ccc      write(*,*) 'epsmch = ', epsmch
 c-----------------------------------------------------------------------
 c     initialize parameters.  check for illegal input.
 c-----------------------------------------------------------------------
-
+      time0=gettime(sec4)
 c:MVU 15-jan-2020      if ( (iabs(mf) .lt. 1) .or. (iabs(mf) .gt. 3) ) then
       if ( (iabs(mf) .lt. 1) .or. (iabs(mf) .gt. 4) ) then
 c illegal value of method flag mf.
@@ -881,6 +890,7 @@ c
       sqteta = zero
       tau = zero
       incpset = 10
+      DebugTime=0
 c check for optional inputs.
       if (iopt .ne. 0) then
 c first check for illegal values.
@@ -919,6 +929,7 @@ c first check for illegal values.
         if (iwork(7) .gt. 0) iermsg = iwork(7)
         if (iwork(8) .gt. 0) itermx = iwork(8)
         if (iwork(9) .gt. 0) incpset = iwork(9)
+        if (iwork(10) .gt. 0) DebugTime = iwork(10)
         if (rwork(1) .gt. zero) stepmx = rwork(1)
         if (rwork(2) .gt. zero) sqteta = sqrt(rwork(2))
         if (rwork(3) .gt. zero) tau = rwork(3)
@@ -1112,6 +1123,9 @@ c-----------------------------------------------------------------------
       rwork(1) = stepmx
       rwork(2) = fnrm
       rwork(3) = tau
+      if (DebugTime.gt.0) then
+      write(iunit,*)'Time in nksol:',gettime(sec4)-time0
+      endif		  
       return
 c----------------------- end of subroutine nksol -----------------------
       end

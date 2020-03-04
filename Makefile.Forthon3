@@ -1,4 +1,4 @@
-DEBUG = -v --fargs "-Ofast -DHAS_READLINE -DFORTHON -cpp" # -g #--fargs "-C=array" #--fargs "-CB -traceback"
+DEBUG = -v --fargs "-Ofast -pg -DHAS_READLINE -DFORTHON -cpp -fopenmp -foffload=-lm -foffload=-lgfortran" # -g #--fargs "-C=array" #--fargs "-CB -traceback"
 
 SO = so
 PUBLICHOME = 
