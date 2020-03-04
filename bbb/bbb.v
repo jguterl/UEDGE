@@ -1462,7 +1462,6 @@ tstor_e  	real /4.e-2/	# ending time for storing solution
 ipt 		integer /1/	# index of variable printed at each out timestep
 savefname       character*5 /"it333"/ # name of pfb save file pfdt_"savefname"
 iprtrundt       integer /1/     # =1, then print rundt diag; .ne.1, no printing
-  
 ***** Compla:
 #Variables in common -- plasma parameters
 mi(1:nisp)         _real [kg] /1.67e-27/ #ion mass in kg, calculated from minu
@@ -2723,7 +2722,7 @@ jaci(neqp1)	_integer	# Nonzero structure of Jacobian matrix jac.
 				# in row i of jac.
 jacj(nnzmx)	_integer	# Column indices of nonzero entries in jac.
 isjacstnlon     integer    /0/  # Compute 9-pt stencil in ivl2gstnl - serial
-
+ParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ***** Jacobian_csc:
 #Jacobian matrix in compressed sparse column format
 rcsc(nnzmx)	_real		# Nonzero entries of the Jacobian matrix.
