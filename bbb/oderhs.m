@@ -8472,18 +8472,18 @@ c     than that typical size.
 cJG1         yold = yl(iv)
 cJG1         dyl = del * (abs(yold) + dylconst / suscal(iv))
 cJG1         yl(iv) = yold + dyl
-         write(*,*) 'yl',yl(iv), 'from thread = ', TID
+cJG1         write(*,*) 'yl',yl(iv), 'from thread = ', TID
 c ... Calculate right-hand sides near location of perturbed variable.
 ccc         call convsr_vo (xc, yc, yl)  # test new convsr placement
 ccc         call convsr_aux (xc, yc, yl) # test new convsr placement
-         write(*,*) 'calling pandf1 ', 'from thread = ', TID
-         call pandf1 (xc, yc, iv, neq, t, yl, wk)
+cJG1         write(*,*) 'calling pandf1 ', 'from thread = ', TID
+cJG1         call pandf1 (xc, yc, iv, neq, t, yl, wk)
 ccc         yl(iv) = yold - dyl    # for 2nd order Jac 
 ccc         call pandf1 (xc, yc, iv, neq, t, yl, yldot0) # for 2nd order Jac 
 c ... Calculate possibly nonzero Jacobian elements for this variable,
 c     and store nonzero elements in compressed sparse column format.
-         write(*,*) 'store non-zero elem ', 'from thread = ', TID
-         jcsc(iv) = nnz      # sets index for first Jac. elem. of var. iv
+cJG1         write(*,*) 'store non-zero elem ', 'from thread = ', TID
+cJG1         jcsc(iv) = nnz      # sets index for first Jac. elem. of var. iv
 c############### loop ii
 cJG1         do ii = ii1, ii2
 ccc            if (iondenseqn .eq. "inel") then   # skip ion cont. eqn
