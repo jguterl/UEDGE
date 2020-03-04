@@ -17,7 +17,7 @@ class UEDGESettings():
     def __init__(self):
         print(' # Loading UEDGE settings...')
         self.Platform=self.GetPlatform()
-        self.config{'UEDGE':{'UserName':None,'RunDir':None,'SaveDir':None,'InputDir':None}}
+        self.config={'UEDGE':{'UserName':None,'RunDir':None,'SaveDir':None,'InputDir':None}}
         try: 
             self.config=self.CheckUEDGEConfig()
         except Exception as e:
