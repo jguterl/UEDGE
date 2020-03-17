@@ -1,12 +1,16 @@
 com   # Data and routines used in multiple packages
 {
-MXMISO=5        # maximum number of charged isotopes; also must set in api.v
-ngspmx = 6	# maximum number of gas species; also must set in bbb.v
+MXMISO=16        # maximum number of charged isotopes; also must set in api.v
+ngspmx = 4	# maximum number of gas species; also must set in bbb.v
 }
 
 ***** OMFIT:
 iomfit  integer /1/     # switch used by OMFIT
 
+***** OmpOptions:
+OMPAllocDebug integer /0/ #Print info on allocation and association of variables
+OMPDebug integer /1/ #Print debug info for omp constructs
+OMPCopyDebug integer /0/ #Print debug info for omp constructs
 
 ***** COMroutines:
 glbwrlog(ioun)          function
@@ -20,12 +24,12 @@ nxm	integer	/8/	# total number of cells in x direc.; nxm = nx+|nxomit|
 nym     integer /4/     # total number of cells in y direc.; nym = ny+nyomitmx
 nxpt	integer /1/	# number of x-points in (R,Z) simulation domain
 nhsp	integer	/1/	# number of hydrogenic species
-nzsp(1:ngspmx-1) integer /5*0/ # number of impurity species per gas species
-nzspt   integer         # total number of impurity species
+nzsp(1:ngspmx-1) integer /(ngspmx-1)*0/ # number of impurity species per gas species
+nzspt   integer /1/        # total number of impurity species
 nzspmx  integer	   /10/	# maximum of nzsp(igsp) used for storage allocation
 nisp	integer	/1/	# number of ion species
-nusp	integer		# number of parallel momentum equations
-nfsp	integer		# number of cont. eqns or flux species (calc internal)
+nusp	integer /1/		# number of parallel momentum equations
+nfsp	integer	 /1/	# number of cont. eqns or flux species (calc internal)
 ngsp	integer	/1/ +restart +regrid	# number of gas species
 nhgsp   integer /1/     # number of hydrogen gas species (prepare for tritium)
 imx     integer /50/    # size in x of Zagorski arrays
@@ -101,7 +105,7 @@ xlim(nlim)      _real   [m]
 ylim(nlim)      _real   [m]
      # vertical coordinates of limiter/vessel boundary from EFIT
 bscoef(nxefit,nyefit)    _real
-     # 2-d spline coefficients 
+     # 2-d spline coefficients
 kxord	integer	/4/
      # order of the 2-d spline in the x-direction
 kyord	integer	/4/
@@ -138,9 +142,9 @@ ycurve(npts,jdim)       _real    [m]
      # vertical position of nth data point on jth contour segment
 npoint(jdim)    _integer
      # number of data points on jth contour segment
-geqdskfname  character*128 /'neqdsk'/ 
+geqdskfname  character*128 /'neqdsk'/
      #File name for geqdsk/neqdsk EFIT file
-  
+
 ***** Aeqflxgrd:
      # information read from the A-file produced by the EFIT code
 vmonth	integer		# EFIT version month
@@ -174,11 +178,11 @@ mco2v	integer	/3/
      # number of vertical co2 chords
 mco2r	integer	/1/
      # number of radial co2 chords
-rco2v(mco2v)	_real	
+rco2v(mco2v)	_real
      # radial positions of vertical co2 chords
 dco2v(mco2v)	_real
      # densities for vertical co2 chords
-rco2r(mco2r)	_real	
+rco2r(mco2r)	_real
      # vertical positions of radial co2 chords
 dco2r(mco2r)	_real
      # densities for radial co2 chords
@@ -198,7 +202,7 @@ nesum	integer	/2/
      # number of e-coils
 eccurt(nesum)	_real
      # data from e-coils
-aeqdskfname  character*128 /'aeqdsk'/ 
+aeqdskfname  character*128 /'aeqdsk'/
      #File name for aeqdsk EFIT file
 
 ***** RZ_grid_info:
@@ -664,13 +668,13 @@ eprofile_fit(num_elem) _real /0./ #expt profile values at epsi_fit
 xerrab(msg:string)                  subroutine
         # interface to remark and kaboom
 readne_dat(fname:string)			subroutine
-        # reads tanh coeffs for radial elec density profile fits 
+        # reads tanh coeffs for radial elec density profile fits
         # in fname   the filename
 readte_dat(fname:string)			subroutine
-        # reads tanh coeffs for radial elec temp profile fits 
+        # reads tanh coeffs for radial elec temp profile fits
         # in fname   the filename
 readti_dat(fname:string)			subroutine
-        # reads spline coeffs for radial ion temp profile fits 
+        # reads spline coeffs for radial ion temp profile fits
         # in fname   the filename
 fit_neteti()                                    subroutine
         # fits ne and te to radial tanh profile; ti to radial spline

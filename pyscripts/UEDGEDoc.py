@@ -28,11 +28,18 @@ class UedgeDoc(object):
             print('# Setup documentation of UEDGE')
             self.SetupDoc()
     #---------------------------------------------------------------------------
-    def ListGroup(self,OnlyVar=True):
-        ListG=list(self.DocGrp.keys())
-        ListG.sort()
-        for G in ListG:
-            self.PrintGrpInfo(G)
+    def ListGrp(self,Str=None,OnlyVar=True):
+        if Str is None:
+            ListG=list(self.DocGrp.keys())
+            ListG.sort()
+            for G in ListG:
+                self.PrintGrpInfo(G)
+        else:
+            print('Group in package:',Str)
+            ListG=[g for g in list(self.DocGrp.keys()) if g['Package']==Str]
+            ListG.sort()
+            for G in ListG:
+                self.PrintGrpInfo(G)
             
     #---------------------------------------------------------------------------
     def ListPkg(self,OnlyVar=True):
@@ -129,6 +136,19 @@ class UedgeDoc(object):
                 else:
                     if Str in k: 
                         self.PrintVarInfo(Dic[k],OnlyVar) 
+    #---------------------------------------------------------------------------                    
+    def GetVarInfo(self,Str,exact=True):
+        L=[]
+        for pkg in self.ListPkg:
+            Dic=self.DocPkg[pkg]
+            for k in Dic.keys():
+                if exact:
+                    if Str==k:
+                     L.append(D[k])
+                else:
+                    if Str in k: 
+                     L.append(D[k])
+        return L
     #---------------------------------------------------------------------------                     
     def SetupDoc(self):
         for pkg in self.ListPkg:
@@ -165,17 +185,27 @@ class UedgeDoc(object):
                     if not D['Group'] in self.DocGrp.keys():
                         self.DocGrp[D['Group']]={}
                     self.DocGrp[D['Group']][V]=D
+                    self.DocGrp[D['Group']]['Package']=pkg
     #---------------------------------------------------------------------------
     def ToggleVarInfo(self):
-        self._OnlyVar=not self._OnlyVar                    
+        self._OnlyVar=not self._OnlyVar
+    
+    def HelpDoc(self):
+        print('****** UEDGE Documentation ***** ')
+        print('*** Documentation command ***')
+        print('- ListGrp()')
+        print('- ListPkg()')
+        print('- ListVar(): list variable in package or group')
+        print('- Search()')
+        print('- SearchDoc()')                     
 #---------------------------------------------------------------------------                
 #---------------------------------------------------------------------------
                     
 Doc=UedgeDoc(Verbose=False,Debug=False)
  
 #---------------------------------------------------------------------------
-def ListGrp(OnlyVar=True):
-    Doc.ListGrp(OnlyVar=True)
+def ListGrp(Str=None,OnlyVar=True):
+    Doc.ListGrp(Str,OnlyVar)
     
 #---------------------------------------------------------------------------
 def ListPkg(Str,OnlyVar=True):
@@ -183,7 +213,7 @@ def ListPkg(Str,OnlyVar=True):
     
 #---------------------------------------------------------------------------
 def ListVar(Str,InStr='',OnlyVar=True):
-    Doc.ListVar(Str,InStr,OnlyVar=True)
+    Doc.ListVar(Str,InStr,OnlyVar)
     
 #---------------------------------------------------------------------------
 def Search(Str,exact=False,OnlyVar=False):
@@ -192,3 +222,6 @@ def Search(Str,exact=False,OnlyVar=False):
         
 def SearchDoc(Str,OnlyVar=False):
     Doc.SearchDoc(Str,OnlyVar)
+
+def HelpDoc():
+    Doc.HelpDoc()

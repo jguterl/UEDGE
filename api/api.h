@@ -6,7 +6,7 @@
 #define NCASENT 40
 #define NZSORMX 10
       ! maximum number of impurity sources
-#define MXMISO 5
+#define MXMISO 16
        ! maximum number of charged isotopes; also must set in com.v
 #define MXNZCH 26
       ! maximum number of charge states for any isotope

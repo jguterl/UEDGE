@@ -1,13 +1,17 @@
-DEBUG = -v --fargs "-Ofast -pg -DHAS_READLINE -DFORTHON -cpp -fopenmp -foffload=-lm -foffload=-lgfortran" # -g #--fargs "-C=array" #--fargs "-CB -traceback"
+DEBUG = -v --fargs "-fmax-errors=15 -Og -pg -DHAS_READLINE -DFORTHON -cpp -fopenmp  -Wconversion -fimplicit-none -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=nan " --cargs "-fopenmp" # -g #--fargs "-C=array" #--fargs "-CB -traceback" #-Wall -Wextra -Warray-temporaries
 
 SO = so
 PUBLICHOME = 
-BUILDDIR = build
+BUILDDIR = /home/jguterl/Dropbox/UEDGEdev/build
 DIRLIST = com aph api bbb flx grd svr wdf
-MYPYTHON = python3
+#MYPYTHON = /home/jguterl/python377/bin/python3
+#FORTHON = /home/jguterl/python377/bin/Forthon3
+MYPYTHON = python
 FORTHON = Forthon3
 BUILDBASE = -v --build-base $(BUILDDIR)
-INSTALLARGS = --pkgbase uedge $(BUILDBASE) 
+OMPVARLIST=/home/jguterl/Dropbox/python/TestPython/ListVariableThreadPrivate.txt
+OMPPKGLIST=bbb,com,grd,api,flx
+INSTALLARGS = --pkgbase uedge $(BUILDBASE) --omppkg $(OMPPKGLIST) --ompvarlistfile $(OMPVARLIST) 
 ##MYPYTHON = /home1/rognlien/Python2/Python-2.4.2/python
 
 # Following 2 variables set in Makefile.PETSc, if used (if unset, ignored)
@@ -15,7 +19,7 @@ INSTALLARGS = --pkgbase uedge $(BUILDBASE)
 # PETSC-UEDGE =
 # PETSC-COM =
 
-all: mppl2f90 $(BUILDDIR)/compydep $(BUILDDIR)/aphpydep $(BUILDDIR)/apipydep $(BUILDDIR)/bbbpydep $(BUILDDIR)/flxpydep $(BUILDDIR)/grdpydep $(BUILDDIR)/svrpydep $(BUILDDIR)/wdfpydep
+all: mppl2f90 $(BUILDDIR)/compydep $(BUILDDIR)/aphpydep $(BUILDDIR)/apipydep $(BUILDDIR)/grdpydep $(BUILDDIR)/flxpydep $(BUILDDIR)/bbbpydep   $(BUILDDIR)/svrpydep $(BUILDDIR)/wdfpydep
 	rm -f uedgeC.so
 
 mppl2f90:
@@ -33,8 +37,8 @@ $(BUILDDIR)/apipydep: $(BUILDDIR)/compydep api/apifcn.F api/apip93.F api/apisorc
 	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) $(DEBUG) --interfacefile api/api.v -d com -f api/apifcn.F api api/apip93.F api/apisorc.F api/fimp.F api/fmombal.F api/inelrates.F api/sputt.F
 	touch $@
 
-$(BUILDDIR)/bbbpydep: $(BUILDDIR)/compydep bbb/boundary.F bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F bbb/bbb.v com/com.v 
-	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) --interfacefile bbb/bbb.v $(DEBUG) --macros com/com.v $(READLINE) -d com -f bbb/boundary.F bbb bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F 
+$(BUILDDIR)/bbbpydep: $(BUILDDIR)/compydep bbb/boundary.F bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/odepandf.F bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F bbb/bbb.v com/com.v 
+	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) --interfacefile bbb/bbb.v $(DEBUG) --macros com/com.v $(READLINE) -d com -f bbb/boundary.F bbb bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/odepandf.F bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F 
 	touch $@
 
 $(BUILDDIR)/flxpydep: $(BUILDDIR)/compydep flx/flxcomp.F flx/flxdriv.F flx/flxread.F flx/flxwrit.F flx/flx.v com/com.v

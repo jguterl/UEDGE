@@ -168,12 +168,13 @@ with open('pyscripts/__version__.py','w') as ff:
 define_macros=[("WITH_NUMERIC", "0"),
                ("FORTHON_PKGNAME", '\"uedgeC\"'),
                ("FORTHON","1")]
+             
 
 # check for readline
 rlncom = "echo \"int main(){}\" | gcc -x c -lreadline - "
 rln = os.system(rlncom)
 if rln == 0: 
-   define_macros = define_macros + [("HAS_READLINE","1")]
+   define_macros = define_macros + [("HAS_READLINE","1")] +[]
    os.environ["READLINE"] = "-l readline"
    libraries = ['readline'] + libraries
 
@@ -192,7 +193,7 @@ setup(name="uedge",
       scripts=['pyscripts/pdb2hdf5', 'pyscripts/bas2py', 'pyscripts/hdf52pdb'],
       ext_modules=[Extension('uedge.uedgeC',
                              ['uedgeC_Forthon.c',
-                              os.path.join(builddir, 'Forthon.c'),
+                              os.path.join(builddir,'Forthon.c'),
                               'com/handlers.c', 'com/vector.c','bbb/exmain.c'],
                              include_dirs=[builddir, numpy.get_include()],
                              library_dirs=library_dirs,

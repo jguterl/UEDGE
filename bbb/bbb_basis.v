@@ -9,6 +9,8 @@ ndcsmx = nispmx*nxptmx	# data dimension for csfaclb and csfacrb
 nispmxngspmx = nispmx*ngspmx # tot numb ion*gas species
 nstramx = 10 # maximum number of strata for MC neutrals code
 }
+***** OmpOptions:
+OMPAllocateDebug integer /0/ #Print info on allocation and association of variables
 
 ***** Dim_vars hidden:
 # Dimension variables for automatically written routines bbbdata & bbbwake.

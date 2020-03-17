@@ -54,10 +54,10 @@ tnoty   real      /0./      #shift if r(t)~del_r*tanh radial mesh profile
 sratiopf real      /0./     #ratio of effec. alfyt in priv. flux region; calc
                             #internally to give same expans. rate if =0.
 alfxt   real      /4.0/     #exponent coeff. for x (axial) grid nonuiformity
-isadjalfxt integer /0/      #=1 changes alfxt slightly for smooth dx at ixpt2 
+isadjalfxt integer /0/      #=1 changes alfxt slightly for smooth dx at ixpt2
 tctr    real      /0./      #relative location of dx maximum;0, left; 1., right
 bpolfix real [T]   /.3/     #poloidal B-field for cartesian grid
-btfix   real [T]   /5./     #total B-field for cartesian grid 
+btfix   real [T]   /5./     #total B-field for cartesian grid
 isgdistort integer /0/      #switch to distort poloidal grid
 agsindx real       /0./     #max amplitude shift of poloidal cell face linear
  			    #linear in radial index iy
@@ -77,7 +77,7 @@ btor0   real [T]   /2./     #toroidal B-field for mhdgeo=2 on axis
 radf(0:nym+1,0:4) _real [m] # minor radius of cells for mhdgeo=2
 thpf(1:nxm,0:4)   _real [m] # poloidal angle of cells for mhdgeo=2
 ibpmodel integer   /0/      #=0, Bpol=bpol0; =1, Bpol=bpol0*rm0/R
- 
+
 ***** Magmirror:
 zu(1:nxm,1:nym,0:4)   _real [m] #axial postions of vertices & center (0)
 ru(1:nxm,1:nym,0:4)   _real [m] #radial postions of vertices & center (0)
@@ -175,9 +175,9 @@ nord		integer	/4/
 # order of spline fit (=4 for cubic splines)
 bkpt(npts)	_real
 # breakpoint array in SLATEC spline routine FC
-xconst(nconst)	_real
+xconst(nconst) _real	 /0.0/
 # x data for constraints in SLATEC spline routine FC
-yconst(nconst)	_real
+yconst(nconst)	_real /0.0/
 # y data for constraints in SLATEC spline routine FC
 nderiv(nconst)	_integer
 # identifies type of constraints in SLATEC spline routine FC
@@ -209,7 +209,7 @@ rtpnew(1:2)	real	[m]
 ztpnew(1:2)	real	[m]
 	# vertical position of first inboard:outboard seed point
 istptest(1:2)	     integer	/2*0/
-	# flag for algorithm that defines top-of-mesh on inboard, (1), 
+	# flag for algorithm that defines top-of-mesh on inboard, (1),
 	# and outboard, (2), separatrix flux contours:
 	# = 0  -->  test on R only
 	# = 1  -->  test on R and Z
@@ -221,7 +221,7 @@ seedxp(idim,noregs)     _real
 	# measured from first seed point (=0.) to x-point (=100.)
 seedxpxl(idim,noregs)   _real
 	# normalized distance along divertor leg of separatrix measured from
-	# x-point (=0.) to last seed point (=100.) 
+	# x-point (=0.) to last seed point (=100.)
 seed(idim,noregs)	_real
 	# absolute distance along separatrix, measured from top of region,
 	# to each angle-like mesh point
@@ -243,7 +243,7 @@ y0g(noregs)      _real
 ylast(noregs)      _real
 	# vertical position of the last seed point on the separatrix
 isztest(1:2)	     integer	/2*0/
-	# flag for algorithm that defines end-of-mesh on inboard, (1), 
+	# flag for algorithm that defines end-of-mesh on inboard, (1),
 	# and outboard, (2), separatrix flux contours:
 	# = 0  -->  test on R only
 	# = 1  -->  test on R and Z
@@ -304,7 +304,7 @@ cmeshy0(idim,jdim)       _real	[m]
 	# working copy of orthogonal mesh, used by meshmod3 (for ismmon=3)
 dsc(npts)	_real
 	# temporary array for subroutine meshmod
-	# distance (along x,ycurve) downstream from top-of-mesh 
+	# distance (along x,ycurve) downstream from top-of-mesh
 	# to each flux surface data point
 xcrv(npts)           _real
 	# temporary array for x-coordinates in subroutine meshmod
@@ -461,7 +461,7 @@ nsmooth	integer	/2/
 	# number of times to apply the smoothing algorithm to each
 	# angle-like surface after non-orthogonal plate construction
 fuzzm	real	[m]	/1.0e-08/
-	# a measure of the "fuzziness" in meshpoint coordinates  
+	# a measure of the "fuzziness" in meshpoint coordinates
 delmax	real	[m]	/1.0e-08/
 	# estimated maximum deviation of mesh points from exact flux
 	# surfaces (used only in subroutine smooth)
@@ -474,9 +474,9 @@ wtm1(idim)	_real
 	# with original (unmodified) mesh
 dmix0	real	/0./
 	# normalized poloidal mixing length for combining mesh0 with mesh12
-	# =0. --> abrupt  change from orthogonal mesh to mesh12 at upstream 
+	# =0. --> abrupt  change from orthogonal mesh to mesh12 at upstream
         #         position
-	# =1. --> gradual change from orthogonal mesh to mesh12 between 
+	# =1. --> gradual change from orthogonal mesh to mesh12 between
         #         upstream and downstream positions
 cmeshx3(idim,jdim)       _real	[m]
 	# reference mesh for flamefront modifications
@@ -575,17 +575,17 @@ nxmod	integer	/2/
 alfxptl real /1./	# use as alfxpt for cells below(l) the x-pt;
         # frac=(i/(nxxpt+nxmod))**alfxpt for extra x-pt grid spacing below x-pt
 alfxpt2l real /1./	# use as alfxpt2 for cells below(l) the x-pt;
-        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth & 
+        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth &
 	# flux-surface length in adding extra x-pt cells below x-pt
-alfxptu real /1./	# use as alfxpt for cells above(u) the x-pt;	
+alfxptu real /1./	# use as alfxpt for cells above(u) the x-pt;
         # frac=(i/(nxxpt+nxmod))**alfxpt for extra x-pt grid spacing above x-pt
-alfxpt2u real /1./	# use as alfxpt2 for cells above(u) the x-pt;	
-        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth & 
+alfxpt2u real /1./	# use as alfxpt2 for cells above(u) the x-pt;
+        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth &
 	# flux-surface length in adding extra x-pt cells above x-pt
 alfxpt  real /1./	# work var for alfxptl,u for below(l)/above(u) x-pt
         # frac=(i/(nxxpt+nxmod))**alfxpt for setting extra x-pt grid spacing
 alfxpt2 real /1./	# work var for alfxptsl,u for below(l)/above(u) x-pt
-        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth & 
+        # frac2=(i/(nxxpt+nxmod-1))**alfxpt2 for mixing fixed lngth &
 	# flux-surface length in adding extra x-pt cells
 rsu(0:nym+2)	_real	[m]
 	# working array (for each quadrant) that contains r-coord's of
@@ -700,7 +700,7 @@ alfxcore(2)   real  /.4,.4/     #exponential factor for cell-size expansion
 shift_seed_leg(2)  real /0.,0./ #shift in seed away from Xpt toward plate
 shift_seed_core(2) real /1.,1./ #shift in seed away from Xpt toward top
 nxlplt(2)   integer     /12,12/ #num poloidal cells in leg-plate region
-nxlxpt(2)   integer     /4,4/   #num pol cells in leg-xpt region; 
+nxlxpt(2)   integer     /4,4/   #num pol cells in leg-xpt region;
 			        #note nxlplt+nxlxpt = nxleg (must check)
 fcorenunif  real        /0.8/   #frac pol core mesh with expon mesh
 

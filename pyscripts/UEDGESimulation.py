@@ -45,8 +45,14 @@ class UEDGESimulation(object):
         f=open(FileName_,'r')
         lines=f.read()
         f.close()
-        print('### Input:{}'.format(lines))
-        exec(lines)    
+        Lines=lines.splitlines()
+        count=1
+        for L in Lines:
+            if not L.strip().startswith('#'):
+                print('{} : {}'.format(count,L))
+                exec(L)
+            count=count+1
+            
         
          
             # except Exception as e:
@@ -303,6 +309,59 @@ class UEDGESimulation(object):
         print("** yl for troublemaker equation:")
         print(bbb.yl[itrouble-1])
         print(" ")
+        
+    def WhichEq(self,itrouble):
+        ''' Function that displays information on the problematic equation '''
+        from numpy import mod,argmax
+        from uedge import bbb
+        # Set scaling factor
+        scalfac = bbb.sfscal
+        if (bbb.svrpkg[0].decode('UTF-8').strip() != "nksol"): scalfac = 1/(bbb.yl + 1.e-30)  # for time-dep calc.
+    
+        # Find the fortran index of the troublemaking equation
+        print("** Fortran index of trouble making equation is:")
+        print(itrouble)
+    
+        # Print equation information
+        print("** Number of equations solved per cell:")
+        print("numvar = {}".format(bbb.numvar))
+        print(" ")
+        iv_t = mod(itrouble-1,bbb.numvar) + 1 # Use basis indexing for equation number
+        print("** Troublemaker equation is:")
+        # Verbose troublemaker equation
+        if abs(bbb.idxte-itrouble).min()==0:
+            print('Electron energy equation: iv_t={}'.format(iv_t))           
+        elif abs(bbb.idxti-itrouble).min()==0:
+            print('Ion energy equation: iv_t={}'.format(iv_t))   
+        elif abs(bbb.idxphi-itrouble).min()==0:
+            print('Potential equation: iv_t={}'.format(iv_t))   
+        elif abs(bbb.idxu-itrouble).min()==0:
+            for species in range(bbb.idxu.shape[2]):
+                if abs(bbb.idxu[:,:,species]-itrouble).min()==0:
+                    print('Ion momentum equation of species {}: iv_t={}'.format(species, iv_t))   
+        elif abs(bbb.idxn-itrouble).min()==0:
+            for species in range(bbb.idxn.shape[2]):
+                if abs(bbb.idxn[:,:,species]-itrouble).min()==0:
+                    print('Ion density equation of species {}: iv_t={}'.format(species, iv_t))   
+        elif abs(bbb.idxg-itrouble).min()==0:
+            for species in range(bbb.idxg.shape[2]):
+                if abs(bbb.idxg[:,:,species]-itrouble).min()==0:
+                    print('Gas density equation of species {}: iv_t={}'.format(species, iv_t))   
+        elif abs(bbb.idxtg-itrouble).min()==0:
+            for species in range(bbb.idxtg.shape[2]):
+                if abs(bbb.idxtg[:,:,species]-itrouble).min()==0:
+                    print('Gas temperature equation of species {}: iv_t={}'.format(species, iv_t))   
+        # Display additional information about troublemaker cell
+        print(" ")
+        print("** Troublemaker cell (ix,iy) is:")
+        print(bbb.igyl[itrouble-1,])
+        print(" ")
+        print("** Timestep for troublemaker equation:")
+        print(bbb.dtuse[itrouble-1])
+        print(" ")
+        print("** yl for troublemaker equation:")
+        print(bbb.yl[itrouble-1])
+        print(" ")
 Sim=UEDGESimulation()
 
 def RunTime(*arg,**kwargs):
@@ -310,6 +369,9 @@ def RunTime(*arg,**kwargs):
 
 def ReadInput(FileName):
     Sim.ReadInput(FileName)
+    
+def ir():
+    Sim.InitRun()
     
                    
         

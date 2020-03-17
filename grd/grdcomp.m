@@ -142,7 +142,7 @@ c     --------------------------------------------------------------------
       Use(Share)            # nxcore,nxleg,isgrdsym
 
 *  -- local variables
-      real dznl, dznr, dznu, t1x, t2x, t1y, t2y, rixm, adrt, 
+      real dznl, dznr, dznu, t1x, t2x, t1y, t2y, rixm, adrt,
      .     xshift, radmu, ta_r,drn1,drn2,drnu1,drnu2
       character*60 runidl
       integer ix, iy, n, ixm, ixpt2_init
@@ -154,9 +154,9 @@ c     --------------------------------------------------------------------
       ixpt2_init = nxcore(1,2)  # define to allow isgrdsym=1 case to work
       if (iysptrx1(1) .eq. 0) rad0 = radm  #allows old cases without rad0 to run
       if (ixpt2_init .gt. 0) dznu = (zaxpt - za0) / float(ixpt2_init)
-      if (tctr .gt. 0.0000001) dznl = tctr*(zax - zaxpt - za0) / 
+      if (tctr .gt. 0.0000001) dznl = tctr*(zax - zaxpt - za0) /
      .                               (1 - exp(+alfxt*tctr))
-      if (tctr .lt. 0.9999999) dznr = (1 - tctr)*(zax - zaxpt - za0) / 
+      if (tctr .lt. 0.9999999) dznr = (1 - tctr)*(zax - zaxpt - za0) /
      .                               (1 - exp(-alfxt*(1-tctr)))
 cc      write(*,*) 'dznu, dznr =',dznu,dznr
       if (isadjalfxt > 0) then  #change alfxt slightly so dznr=dznu
@@ -167,10 +167,10 @@ cc      write(*,*) 'dznu, dznr =',dznu,dznr
         write(*,*) 'alfxt adjusted, smooth dx at ixpt2: alfxt=',alfxt
         write(*,*) '*****'
       endif
-      
+
       rixm = tctr * float(nxm-ixpt2_init) + .5
       ixm = int(rixm)
-      
+
       do 20 iy = nym, 1, -1
          if (iy .gt. iysptrx1(1)) then
             t1y = float(iy-1-iysptrx1(1)) / float(nym-iysptrx1(1))
@@ -188,15 +188,15 @@ cc      write(*,*) 'dznu, dznr =',dznu,dznr
      .                   (tanh(alfyt*tnoty)+tanh(alfyt*(1-tnoty)))
             endif
          else
-            if (sratiopf .eq. 0.) sratiopf = (rad0-radm)/(radx-rad0)   
+            if (sratiopf .eq. 0.) sratiopf = (rad0-radm)/(radx-rad0)
                                       #gives same expan. rate around sep.
             radmu = rad0
             if (tnoty.eq.0) then
               t1y = -sratiopf*float(iy-1-iysptrx1(1)) / float(iysptrx1(1))
               t2y = -sratiopf*float(iy-iysptrx1(1)) / float(iysptrx1(1))
-              drn1 = (radm - rad0)*(1-exp(-alfyt*t1y)) / 
+              drn1 = (radm - rad0)*(1-exp(-alfyt*t1y)) /
      .                                       (1 - exp(-sratiopf*alfyt))
-              drn2 = (radm - rad0)*(1-exp(-alfyt*t2y)) / 
+              drn2 = (radm - rad0)*(1-exp(-alfyt*t2y)) /
      .                                       (1 - exp(-sratiopf*alfyt))
             else  # new (6/99) generalized form; note, not sratiopf
               drn1 = (rm(1,iysptrx1(1)+1,2)-rm(1,2*iysptrx1(1)+1-iy,3))
@@ -206,12 +206,12 @@ cc      write(*,*) 'dznu, dznr =',dznu,dznr
               drn2 = -drn2*(rad0-radm)/
      .                    (rm(1,iysptrx1(1)+1,2)-rm(1,2*iysptrx1(1),3))
              endif
-         endif          
+         endif
 
          do 10 ix = 1, nxm
             if (ix.le.ixpt2_init .and. iy.le.iysptrx1(1)) then
                drnu1 = rscalcore*drn1  # give diff radial range to core region
-               drnu2 = rscalcore*drn2  
+               drnu2 = rscalcore*drn2
             else
                drnu1 = drn1
                drnu2 = drn2
@@ -229,14 +229,14 @@ cc      write(*,*) 'dznu, dznr =',dznu,dznr
             elseif (ix .gt. ixm) then    # nonuniform grid with decreasing dx
                t1x = float(ix-ixpt2_init-1) / float(nxm-ixpt2_init)
                t2x = float(ix-ixpt2_init) / float(nxm-ixpt2_init)
-               zm(ix,iy,1) = zaxpt + dznr * (1-exp(-alfxt*(t1x-tctr))) 
+               zm(ix,iy,1) = zaxpt + dznr * (1-exp(-alfxt*(t1x-tctr)))
 
-               zm(ix,iy,2) = zaxpt + dznr * (1-exp(-alfxt*(t2x-tctr))) 
+               zm(ix,iy,2) = zaxpt + dznr * (1-exp(-alfxt*(t2x-tctr)))
             else                         # nonuniform grid with increasing dx
                t1x = float(ix-ixpt2_init-1) / float(nxm-ixpt2_init)
                t2x = float(ix-ixpt2_init) / float(nxm-ixpt2_init)
-               zm(ix,iy,1) = zaxpt + dznl * (1-exp(+alfxt*t1x)) 
-               zm(ix,iy,2) = zaxpt + dznl * (1-exp(+alfxt*t2x)) 
+               zm(ix,iy,1) = zaxpt + dznl * (1-exp(+alfxt*t1x))
+               zm(ix,iy,2) = zaxpt + dznl * (1-exp(+alfxt*t2x))
             endif
             zm(ix,iy,3) = zm(ix,iy,1)
             zm(ix,iy,4) = zm(ix,iy,2)
@@ -270,7 +270,7 @@ c...  Tilt the mesh in the poloidal direction from ixsnog if tiltang.ne.0
 c...  Distort mesh poloidally to test nonorthogonal coding/performance
       if (isgdistort .eq. 1) then   # only zm changes, rm the same
          do iy = 1, nym
-            adrt = agsindx*(iy-iynod)/nym + 
+            adrt = agsindx*(iy-iynod)/nym +
      .                            agsrsp*(rm(1,iy,3)-rnod)/rm(1,nym,3)
             do ix = ixdstar, nx
                xshift = adrt*sin((ix-ixdstar+1)*lpi/(nx-ixdstar+1))
@@ -278,13 +278,13 @@ c...  Distort mesh poloidally to test nonorthogonal coding/performance
      .                                     0.1*float(nx-ixdstar)*xshift
             # 0.1*(nx-ixdstar) factor keeps distortion ~same as nx increases
                if (ix.gt.1) zm(ix,iy,3) = zm(ix-1,iy,4)
-               if (iy.gt.1) then 
+               if (iy.gt.1) then
                   zm(ix,iy,1) = zm(ix,iy-1,3)
                   zm(ix,iy,2) = zm(ix,iy-1,4)
                elseif (iy.eq.1) then   # need to do bottom face as iy=0
-                  xshift = ( agsindx*(-iynod)/nym + 
+                  xshift = ( agsindx*(-iynod)/nym +
      .                           agsrsp*(rm(1,1,1)-rnod)/rm(1,nym,3) ) *
-     .                        sin((ix-ixdstar+1)*lpi/(nx-ixdstar+1)) 
+     .                        sin((ix-ixdstar+1)*lpi/(nx-ixdstar+1))
                   zm(ix,1,2) = zm(ix,1,2) + (zm(ix,1,2)-zm(ix,1,1))*
      .                                      0.1*float(nx-ixdstar)*xshift
             # 0.1*(nx-ixdstar) factor keeps distortion ~same as nx increases
@@ -298,7 +298,7 @@ c...  Distort mesh poloidally to test nonorthogonal coding/performance
 
 c...  Make a symmetric grid in zm if isgrdsym=1; redistribute zm's and
       if (isgrdsym .eq. 1) then
-         if ((nxm-1)/2.eq.nxm/2 .or. 
+         if ((nxm-1)/2.eq.nxm/2 .or.
      .                          (ixpt2_init-1)/2.eq.ixpt2_init/2) then
             call xerrab('*** nxm or ixpt2_init odd, cannot use isgrdsym ***')
          endif
@@ -323,18 +323,18 @@ c...  Make a symmetric grid in zm if isgrdsym=1; redistribute zm's and
      .                                zm(ix,iy,3) + zm(ix,iy,4) )
             enddo
          enddo
-      endif          
+      endif
 
 c...  Reset x-point index ixpt2 if the zxpt_reset is positive; used for
 c...  one continuous mesh (zaxpt=0, ncore=0) with no uniform dz region
       if (zxpt_reset .ge. 1.e-10) then
          do ix = 1, nx
-            if (zm(ix,1,1).lt.zxpt_reset .and. 
+            if (zm(ix,1,1).lt.zxpt_reset .and.
      .                                zm(ix,1,2).ge.zxpt_reset) then
                ixpt2(1) = ix
             endif
          enddo
-      endif      
+      endif
 
 c...  Set constant values for B-fields
 
@@ -346,12 +346,12 @@ c...  Set constant values for B-fields
                b   (ix,iy,n) = btfix
                bphi(ix,iy,n) = sqrt( b(ix,iy,n)**2 - bpol(ix,iy,n)**2 )
 # IJ 2016/10/04: radial and vertical components must be set for MCN conversions
-               br  (ix,iy,n) = 0.    
-               bz  (ix,iy,n) = - bpol (ix,iy,n) 
+               br  (ix,iy,n) = 0.
+               bz  (ix,iy,n) = - bpol (ix,iy,n)
  25         continue
  30      continue
  40   continue
- 
+
 c ... Uncomment the following line to write out the data.
 ccc      call writedata ('grididl', runidl)
 
@@ -457,17 +457,17 @@ c ... Compute the poloidal angle and radial position of cell faces
       dely = edgewid/(float(nycore(1)))
       if (islimon==0) then   # bottom of annulus is theta=pi/2; clockwise
         delthp = 2*pi/(float(nxcore(1,1)+nxcore(1,2)))
-	thpf(1,1) = 0.5*pi  
+	thpf(1,1) = 0.5*pi
 	thpf(1,2) = 0.5*pi + delthp
-	thpf(1,3) = 0.5*pi  
+	thpf(1,3) = 0.5*pi
 	thpf(1,4) = 0.5*pi + delthp
 	thpf(1,0) = 0.5*pi + 0.5*delthp
-      else  
-        delthp = 2*(pi-dthlim)/(float(nxcore(1,1)+nxcore(1,2)-2)) 
-        wshf = 2*float(nxcore(1,2)-1)/float(nxcore(1,1)+nxcore(1,2)-2)           
-	thpf(1,1) = 0.5*pi + wshf*dthlim 
+      else
+        delthp = 2*(pi-dthlim)/(float(nxcore(1,1)+nxcore(1,2)-2))
+        wshf = 2*float(nxcore(1,2)-1)/float(nxcore(1,1)+nxcore(1,2)-2)
+	thpf(1,1) = 0.5*pi + wshf*dthlim
 	thpf(1,2) = 0.5*pi + wshf*dthlim + delthp
-	thpf(1,3) = 0.5*pi + wshf*dthlim 
+	thpf(1,3) = 0.5*pi + wshf*dthlim
 	thpf(1,4) = 0.5*pi + wshf*dthlim + delthp
         thpf(1,0) = 0.5*(thpf(1,1)+thpf(1,2))
       endif
@@ -490,7 +490,7 @@ c ... Compute poloidal angles
 c ... Insert limiter angles if switched on
       if (islimon==1) then
         do ix = nxcore(1,1), nxcore(1,1)+1
-          thpf(ix,1) = thpf(ix-1,2) 
+          thpf(ix,1) = thpf(ix-1,2)
           thpf(ix,2) = thpf(ix-1,2) + dthlim
           thpf(ix,3) = thpf(ix-1,4)
           thpf(ix,4) = thpf(ix-1,4) + dthlim
@@ -530,7 +530,7 @@ c...  Set B-fields
           enddo
         enddo
       enddo
- 
+
 c ... Uncomment the following line to write out the data.
       call writedata ('gridue', runtoran)
 
@@ -607,7 +607,7 @@ c...  Set B-fields
           enddo
         enddo
       enddo
- 
+
 c ... Uncomment the following line to write out the data.
       call writedata ('gridue', runmirror)
 
@@ -629,7 +629,7 @@ Use(Transit)
 c     local variables --
       integer region,j,k,l
 
-c     This subroutine clears the output and working arrays used in          
+c     This subroutine clears the output and working arrays used in
 c     construction of the mesh
 
 c     loop over all regions --
@@ -696,6 +696,9 @@ Use(Share)    # cutlo
       real dy		# the "jump" criterion
       integer region	# the inboard/outboard designator
       real alpha1	# the "direction" criterion
+      real, target:: yp(nconst)
+      real,target:: xp(nconst)
+      integer,target:: nderivp(nconst)
 c
       logical jump
       integer ibeg, irun, istart1, iend1, irange, i, k, nkint
@@ -770,7 +773,7 @@ c     Set the starting index for the next spline segment --
 c     Temporary definition of end points for spline data
       istart1 = max(1,ibeg-2)   # extra data points at ibeg-1 and ibeg-2 are
                                 # included (for overlap with previous segment)
-				# unless this is the first segment of the contour 
+				# unless this is the first segment of the contour
       if (jump .or. (irun .gt. npointg(j))) then
          iend1 = irun - 1       # jump occurs at irun-1
                                 # no additional data points are included
@@ -857,6 +860,17 @@ c     Define interior knots --
       mode=1
       iwsla(1)=nwdim
       iwsla(2)=niwdim
+      write(*,*) 'Associating...'
+      if (.not.associated(xconst)) then
+      xconst=>xp
+      endif
+      if (.not.associated(yconst)) then
+      yconst=>yp
+      endif
+      if (.not.associated(nderiv)) then
+      nderiv=>nderivp
+      endif
+
       call fch(ndata,xdatag,ydatag,sddata,nord,nbkpt,bkpt,
      &        nconst,xconst,yconst,nderiv,mode,coeff,wsla,iwsla)
       if (mode .ne. 0) then
@@ -1400,8 +1414,8 @@ c     *** find the rotation angle of the moving system.
 c     *** next go in the direction of smaller j and find the nearest
 c     *** point on the next curve satisfying the orthogonality
 c     *** condition
-c     Finding the first point off the separatrix requires special 
-c     treatment when starting from the x-point because the slope there 
+c     Finding the first point off the separatrix requires special
+c     treatment when starting from the x-point because the slope there
 c     is not uniquely defined => use s.r. orthogx vs orthogrd
       if (jj .gt. jmin(region)) then
         xob=xosptrx
@@ -1638,7 +1652,7 @@ c     Intersection of (cmeshx,y) with upstream reference surface
          endif
 
 c        ensure that separatrix points are not modified above x-point:
-         if ( (j .eq. jsptrx(region)) .and. 
+         if ( (j .eq. jsptrx(region)) .and.
      &        (imu .lt. ixpoint(3,region)) ) then
             imu=ixpoint(3,region)
             xmu=rseps
@@ -1676,7 +1690,7 @@ c     Intersection of (x,ycurveg) with upstream reference surface
          endif
 
 c        ensure that separatrix points are not modified above x-point:
-         if ( (j .eq. jsptrx(region)) .and. 
+         if ( (j .eq. jsptrx(region)) .and.
      &        (icu .lt. ijump(j)) ) then
             icu=ijump(j)
             xcu=rseps
@@ -1751,7 +1765,7 @@ Use(Dimensions)	# nix,idim
 Use(Curves)	# xcurveg,ycurveg
 Use(Inmesh)	# ilmax
 Use(Linkco)	# ixpoint,cmeshx,cmeshy
-Use(Mmod)	# 
+Use(Mmod)	#
 Use(Transfm)	# ijump
       external intersect2, remark, xerrab
 
@@ -1828,7 +1842,7 @@ c     Intersection of reference surface with x,ycurveg
      &                   xcu,ycu,kcu,icu,fuzzm,ierr)
          if (ierr .ne. 0) then
             write (STDOUT,886) j
- 886        format 
+ 886        format
      & ("meshmod2: no reference intersection for x,ycurveg on j=",i3)
             call xerrab("")
          endif
@@ -1844,7 +1858,7 @@ c     Intersection of divertor plate surface with x,ycurveg)
      &                    xcp,ycp,kcp,icp,fuzzm,ierr)
          if (ierr .ne. 0) then
             write (STDOUT,887) j
- 887        format 
+ 887        format
      & ("meshmod2: no plate intersection for x,ycurveg on j=",i3)
             write (STDOUT,889)
  889        format ("*** You may have to extend the plate end points")
@@ -1866,10 +1880,10 @@ c     Total distance from reference surface to divertor plate
 
 c     Normalized distance along the separatrix:
 
-ccc   NOTE: The following assumes that the upstream reference surface 
-ccc         coincides with the i=1 surface in the SOL and the 
-ccc         i=ixpoint(3,region) in the private flux region.  This 
-ccc         may NOT be consistent with the upstream data that the 
+ccc   NOTE: The following assumes that the upstream reference surface
+ccc         coincides with the i=1 surface in the SOL and the
+ccc         i=ixpoint(3,region) in the private flux region.  This
+ccc         may NOT be consistent with the upstream data that the
 ccc         user supplies !!!
 
          if ( (j .ge. jsptrx(1)) .and. (j .le. jsptrx(2)) ) then
@@ -2380,7 +2394,7 @@ c     Combine the 1 & 2 meshes according to weight factor wtmesh1:
 c     Find the index of the mesh point just above the downstream surface
             do i=imt+1,i2msh
                im12d=i-1
-               if ( (dsmesh(i)   .ge. dscd) .and. 
+               if ( (dsmesh(i)   .ge. dscd) .and.
      &              (dsmesh(i-1) .le. dscd) ) break
             enddo
 
@@ -2462,7 +2476,7 @@ c     Temporary variables for (xcurveg,ycurveg) surface data
             xcrv(ii)=xcurveg(ii,j)
             ycrv(ii)=ycurveg(ii,j)
          enddo
-   
+
 c     Straight line between j-1 and j+1 points on angle-like surface
 	 nupstream=2
 	 rupstream(1)=cmeshx(i,j-1)
@@ -2476,7 +2490,7 @@ c     Intersection of straight line with x,ycurveg is (xcu,ycu):
      &                   xcu,ycu,kcu,icu,fuzzm,ierr)
          if (ierr .ne. 0) then
             write (STDOUT,886) j,i
- 886        format 
+ 886        format
      & ("smooth: no intersection for x,ycurveg on j=",i3," with i=",i3)
             call xerrab("")
          endif
@@ -2497,7 +2511,7 @@ c     Intersection of segmented line with x,ycurveg is (xcp,ycp):
      &                   xcp,ycp,kcp,icp,fuzzm,ierr)
          if (ierr .ne. 0) then
             write (STDOUT,887) j,i
- 887        format 
+ 887        format
      & ("smooth: no intersection for x,ycurveg on j=",i3," with i=",i3)
             call xerrab("")
          endif
@@ -2762,7 +2776,7 @@ c     (the x-point) on the j0th flux surface (the separatrix).
 c
 c     On exit,  (xob,yob,alphab) give the (R,Z) coordinates and local
 c     rotation angle for a mesh point on the jth flux surface.
-c     
+c
 c     *** finds the orthogonal set of curves.
 c
 c     *** find the nearest point to (xob,yob), on the xycurveg( ,j).
@@ -3051,7 +3065,7 @@ c     coordinate is tested; for testflag=2, only the vertical
 c     coordinate is tested; for testflag=1, a more stringent test
 c     on both horizontal and vertical coordinates is used to
 c     locate the end-of-mesh.  This is useful when there are multiple
-c     solutions for the test on horizontal position only.  Finally, 
+c     solutions for the test on horizontal position only.  Finally,
 c     the coordinates of the top-of-mesh data point (x0,y0)
 c     are put into the mesh arrays (cmeshx,y) for angle index i and
 c     flux index j.
@@ -3149,7 +3163,7 @@ c     coordinate is tested; for testflag=2, only the vertical
 c     coordinate is tested; for testflag=1, a more stringent test
 c     on both horizontal and vertical coordinates is used to
 c     locate the end-of-mesh.  This is useful when there are multiple
-c     solutions for the test on horizontal position only.  Finally, 
+c     solutions for the test on horizontal position only.  Finally,
 c     the coordinates of the end-of-mesh data point (xl,yl)
 c     are put into the mesh arrays (cmeshx,y) for angle index i and
 c     flux index j.
@@ -3637,17 +3651,17 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 c.. Compute seedxpxl in divertor legs
       rleg2core_len(1) = xfs(ixpt1(1))/(xfs(ixtop) - xfs(ixpt1(1)))
-      rleg2core_len(2) = (xfs(nxm)-xfs(ixpt2(1)))/(xfs(ixpt2(1)) - 
+      rleg2core_len(2) = (xfs(nxm)-xfs(ixpt2(1)))/(xfs(ixpt2(1)) -
      .                                                   xfs(ixtop))
 
 c..  First do mesh near the plate (seeds large, start at 100)
-c  ########################################################### 
+c  ###########################################################
       immax = nxlplt(1) + nxlxpt(1)
       seedxpxl(immax+1,1) = 100.
       do im = immax, nxlxpt(1), -1
         ir = immax - im
         seedxpxl(im,1) = 100. - 100.*fraclplt(1)*
-     .                             (exp(alfxdiv(1)*(ir+1)) - 1) / 
+     .                             (exp(alfxdiv(1)*(ir+1)) - 1) /
      .                             (exp(alfxdiv(1)*nxlplt(1)) - 1)
       enddo
       immax = nxlplt(2) + nxlxpt(2)
@@ -3655,7 +3669,7 @@ c  ###########################################################
       do im = immax, nxlxpt(2), -1
         ir = immax - im
         seedxpxl(im,2) = 100. - 100.*fraclplt(2)*
-     .                             (exp(alfxdiv(2)*(ir+1)) - 1) / 
+     .                             (exp(alfxdiv(2)*(ir+1)) - 1) /
      .                             (exp(alfxdiv(2)*nxlplt(2)) - 1)
       enddo
 
@@ -3664,16 +3678,16 @@ c  #############################################################
       seedxpxl(1,1) = 0.
       do im = 2, nxlxpt(1)
         seedxpxl(im,1) = shift_seed_leg(1) + \
-                     (100.*(1.-fraclplt(1)) - shift_seed_leg(1))* 
-     .                              (exp(alfxdiv(1)*(im-1)) - 1) / 
+                     (100.*(1.-fraclplt(1)) - shift_seed_leg(1))*
+     .                              (exp(alfxdiv(1)*(im-1)) - 1) /
      .                              (exp(alfxdiv(1)*nxlxpt(1)) - 1)
       enddo
 
       seedxpxl(1,2) =0.
       do im = 2, nxlxpt(2)
         seedxpxl(im,2) = shift_seed_leg(2) + \
-                     (100.*(1.-fraclplt(2)) - shift_seed_leg(2))* 
-     .                              (exp(alfxdiv(2)*(im-1)) - 1) / 
+                     (100.*(1.-fraclplt(2)) - shift_seed_leg(2))*
+     .                              (exp(alfxdiv(2)*(im-1)) - 1) /
      .                              (exp(alfxdiv(2)*nxlxpt(2)) - 1)
       enddo
 
@@ -3686,8 +3700,8 @@ c  ###########################################################
       isunifm = 0
       do im = nxcore_use(1)-1, 2, -1
         if (isunifm == 0) then
-          seedxp(im,1) = 100. - (100. - seedxp(im+1,1)) - 
-     .                          rleg2core_len(1)*seedxpxl(2,1)* 
+          seedxp(im,1) = 100. - (100. - seedxp(im+1,1)) -
+     .                          rleg2core_len(1)*seedxpxl(2,1)*
      .                         exp(alfxcore(1)*float(nxcore_use(1)-im))
           seedunifm = seedxp(im,1)/float(im-1)
           if (seedxp(im+1,1)-seedxp(im,1)>fcorenunif*seedunifm) isunifm=1
@@ -3698,13 +3712,13 @@ c  ###########################################################
       enddo
 
       seedxp(nxcore_use(2)+1,2) = 100.
-      seedxp(nxcore_use(2),2) = 100. - rleg2core_len(2)*seedxpxl(2,2) - 
+      seedxp(nxcore_use(2),2) = 100. - rleg2core_len(2)*seedxpxl(2,2) -
      .                                      shift_seed_core(2)
       isunifm = 0
       do im = nxcore_use(2)-1, 2, -1
         if (isunifm == 0) then
-          seedxp(im,2) = 100. - (100. - seedxp(im+1,2)) - 
-     .                          rleg2core_len(2)*seedxpxl(2,2)* 
+          seedxp(im,2) = 100. - (100. - seedxp(im+1,2)) -
+     .                          rleg2core_len(2)*seedxpxl(2,2)*
      .                         exp(alfxcore(2)*float(nxcore_use(2)-im))
           seedunifm = seedxp(im,2)/float(im-1)
           if (seedxp(im+1,1)-seedxp(im,1)>fcorenunif*seedunifm) isunifm=1
@@ -4103,7 +4117,7 @@ c     use exponential form --
 c     Find the intersection of the two segmented curves :
 c        (x1(i),y1(i)) i=i1min,i1max and (x2(i),y2(i)) i=i2min,i2max
 c     Return the intersection point (xc,yc) and the node indices i1c
-c     and i2c such that the intersection point lies between nodes 
+c     and i2c such that the intersection point lies between nodes
 c     i1c and i1c+1 of curve 1 and nodes ic2 and ic2+1 of curve 2.
 c     Uncertainty in data points is specified by input parameter fuzz.
 c     Return error flag ierr=1 if no intersection is found
@@ -4182,7 +4196,7 @@ c                 # test for actual intersection
 
       return
       end
- 
+
 #----------------------------------------------------------------------#
 
       logical function twixt(x1,xc,x2,dx)
@@ -4893,7 +4907,7 @@ c     In the future this may be modified to include outboard surfaces.
       do n=1,ndxleft
          rleft=rleft-dxleft	# increment left radial limit
 
-c     Extrapolate the separatrix: 
+c     Extrapolate the separatrix:
          j=jsptrx(1)
          npt=npointg(j)
          dx=rleft-xcurveg(npt,j)
@@ -5923,7 +5937,7 @@ Use(Limiter) # dslims
 
 # Starting at the innermost core flux surface, search radially
 # outward for the index of the first flux surface that has a poloidal
-# gap at the inboard/outboard mesh interface.  This defines the 
+# gap at the inboard/outboard mesh interface.  This defines the
 # starting index iy=iy_lims for limiter recycling boundary conditions.
       do j=jmin(2),jmax(2)
          jj = j - jmin(2)

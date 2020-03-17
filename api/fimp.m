@@ -95,7 +95,7 @@ c
       real tmpenonz,tmpinonz,xte,xti,dlogt,fxte,fxti,lrion,lrrec
 c
       real rcxr_zn6, rcxr_zn6b
-      external rcxr_zn6, rcxr_zn6b 
+      external rcxr_zn6, rcxr_zn6b
 c
       rion = 0.
       rrec = 0.
@@ -107,7 +107,7 @@ c
       xti = log(tmpinonz/ev2)
       dlogt = rtlt(1) - rtlt(0)
 c
-c ... Find index i1 in temperature table such that 
+c ... Find index i1 in temperature table such that
 c                 rtlt(i1) .le. xt .lt. rtlt(i1+1)
 c     or, equivalently,
 c                  rtt(i1) .le. tmp .lt. rtt(i1+1).
@@ -154,6 +154,7 @@ c ... For given za and zn, find the species index, ii, in the table.
 c
       ii = -1
       do i=0,rtnsd-1
+c        write(*,*) 'rtzn(i),rtza(i)',rtzn(i),rtza(i),zn,za
          if ((zn .eq. nint(rtzn(i))) .and. (za .eq. nint(rtza(i)))) then
             ii = i
             break
@@ -168,13 +169,13 @@ c
 c     Compute rate parameters for transitions from table species ii.
 c
       if (za .lt. zamax) then
-         lrion = 
+         lrion =
      .     (  fy)*((1-fxte)*rtlsa(i1e,j1+1,ii)+fxte*rtlsa(i1e+1,j1+1,ii))
      .   + (1-fy)*((1-fxte)*rtlsa(i1e,j1  ,ii)+fxte*rtlsa(i1e+1,j1  ,ii))
          rion = exp(lrion)
          if (za .eq. 0) return
       endif
-         lrrec = 
+         lrrec =
      .     (  fy)*((1-fxte)*rtlra(i1e,j1+1,ii)+fxte*rtlra(i1e+1,j1+1,ii))
      .   + (1-fy)*((1-fxte)*rtlra(i1e,j1  ,ii)+fxte*rtlra(i1e+1,j1  ,ii))
          rrec = exp(lrrec)
@@ -185,7 +186,7 @@ c
       if ( (iscxfit .gt. 0) .and.
      .     (zn .eq. 6) .and. (za .le. zamax) ) then
          if (iscxfit.ge.1. .and. iscxfit.le.2.) then
-            rcxr = (2.-iscxfit)*rcxr_zn6 (tmpi, za) + 
+            rcxr = (2.-iscxfit)*rcxr_zn6 (tmpi, za) +
      .             (iscxfit-1.)*rcxr_zn6b(tmpi, za)
          endif
 ccc         if (iscxfit .eq. 1) rcxr = rcxr_zn6 (tmpi, za)
@@ -241,8 +242,8 @@ c     Initial carbon charge state is za.
 c     Output rate parameter (sigma-v) is in [m**3/sec].
 c
 c     This is a modified of the function rcxr_zn6; only za=1 case is
-c     changed to use a (lower) fit guided by plots from A. Pigarov.  
-c     Other za's same as for rxcr_zn6 from thesis by C.F. Maggi (fit 
+c     changed to use a (lower) fit guided by plots from A. Pigarov.
+c     Other za's same as for rxcr_zn6 from thesis by C.F. Maggi (fit
 c     by T. Rognlien)
 c
 c     local variables --
@@ -307,12 +308,12 @@ c----------------------------------------------------------------------c
 c     read header --
 *     un*formatted read for header data
       read (nget,'(2a8,i12,4x,a32)') idcod, idtyp, n, id1
-      if (n .lt. 0 .and. iprt_imp_file == 1) then  
-        write(*,*) '***Impurity file using new 2012 format is ',mcfilename(i)
+      if (n .lt. 0 .and. iprt_imp_file == 1) then
+c        write(*,*) '***Impurity file using new 2012 format is ',mcfilename(i)
         mcfformat(i) = 1
         iprt_imp_file = 0
       elseif (iprt_imp_file == 1) then
-        write(*,*) '***Impurity file using pre-2012 format is ',mcfilename(i)
+c        write(*,*) '***Impurity file using pre-2012 format is ',mcfilename(i)
         mcfformat(i) = 0
         iprt_imp_file = 0
       endif
@@ -420,7 +421,7 @@ c ... output args
       real radz(0:zmax)
 c
 c ... Compute the radiation rates, radz(0:zmax), for all charge states
-c     of an impurity with nuclear charge, znuc, and return the total 
+c     of an impurity with nuclear charge, znuc, and return the total
 c     electron energy loss rate, radmc, including both the radiation
 c     and binding energy contributions.
 c
@@ -522,7 +523,7 @@ c     First, find the species index of the neutral impurity atom
      .  (  fy)*((1-fxt)*rtlqa(i1,j1+1,k0+k)+fxt*rtlqa(i1+1,j1+1,k0+k))
      .+ (1-fy)*((1-fxt)*rtlqa(i1,j1  ,k0+k)+fxt*rtlqa(i1+1,j1  ,k0+k))
          keelz = exp(leelz)
-         fac_rad = 1. 
+         fac_rad = 1.
          if(ispradextrap==1 .and. k==0 .and. te<temintab) then  #extrap below min Te
            fac_rad = (te/(temintab))**6
          endif

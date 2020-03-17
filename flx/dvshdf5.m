@@ -724,41 +724,38 @@ c ------------------------------------------------------------------------
 c     This is from uefacets.py.
 c ------------------------------------------------------------------------
       subroutine common_setup(in_restart)
-      Use(Ueint)       # zmagx
- c_mpi     Use(Npes_mpi)       # zmagx
-      implicit none
-      integer, intent(in) :: in_restart
-*  ---------------------------------------------------------------------
-*     Setup and initialization
-*  ---------------------------------------------------------------------
-
-*     Set up mass and charge arrays and flux surface average arrays needed
-*     for the variable setting methods.  Must have arrays allocated and so must
-*     be called after buildData.  Must know whether this is a restart,
-*     to set bbb.restart in order to be able to call this from
-*     initialize() or from restore()
-      restart=in_restart
-
-      if (ismpion==1 .and. restart == 1) then
-        write(*,*)  "WARNING: For parallel run, averages "
-        write(*,*)  "are NOT computed by commonsetup."
-cc        return
-      endif
-
-* If bbb.ueinit is here, then uedge runs
-      if (ismpion == 0) then
-        call ueinit
-      elseif (mype == 0) then
-        call globalmesh
-      endif
-
-* SEK: There was a lot of stuff here that is confusing me.
-* I don't think it was needed, but who knows
-
-* In above, making use of thin-ness of guard cell so  needn't worry
-*  abut using centered cell value of r.
-
-      return
+%      Use(Ueint)       # zmagx
+% c_mpi     Use(Npes_mpi)       # zmagx
+%      implicit none
+%      integer, intent(in) :: in_restart
+%
+%c     Set up mass and charge arrays and flux surface average arrays needed
+%c     for the variable setting methods.  Must have arrays allocated and so must
+%c     be called after buildData.  Must know whether this is a restart,
+%c     to set bbb.restart in order to be able to call this from
+%c     initialize() or from restore()
+%      restart=in_restart
+%
+%      if (ismpion==1 .and. restart == 1) then
+%        write(*,*)  "WARNING: For parallel run, averages "
+%        write(*,*)  "are NOT computed by commonsetup."
+%cc        return
+%      endif
+%
+%c If bbb.ueinit is here, then uedge runs
+%      if (ismpion == 0) then
+%        call ueinit
+%      elseif (mype == 0) then
+%        call globalmesh
+%      endif
+%
+%c SEK: There was a lot of stuff here that is confusing me.
+%c I don't think it was needed, but who knows
+%
+%c In above, making use of thin-ness of guard cell so  needn't worry
+%c  abut using centered cell value of r.
+%
+%      return
       end
 c****** end of subroutine common_setup *********************
 c ------------------------------------------------------------------------
