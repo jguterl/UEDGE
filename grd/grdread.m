@@ -156,7 +156,7 @@ c     Read mesh parameters from a UEDGE code grid data file
 
       call freeus (nuno)
       write(*,*) 'Reading grid file:',fname
-      open (nuno, file=fname, form='formatted', iostat=ios,
+      open (nuno, file=trim(fname), form='formatted', iostat=ios,
      &      status='old')
       if (ios .ne. 0) then
 			call xerrab("**** requested grid data file not found__"//fname)

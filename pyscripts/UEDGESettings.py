@@ -22,7 +22,7 @@ class UEDGESettings():
         if self.config is None:
             print('Using default settings. Run InitConfig() to set the configuration...')
             self.UserName=getpass.getuser()
-            self.RunDir==os.getcwd()
+            self.RunDir=os.getcwd()
             self.SaveDir=os.getcwd()
             self.InputDir=os.getcwd() 
         else:
