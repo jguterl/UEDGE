@@ -10,42 +10,28 @@ import sys,os
 import easygui
 import platform,inspect
 import configparser
-
+import getpass
 
 import numpy as np
 class UEDGESettings():
     def __init__(self):
-        print(' # Loading UEDGE settings...')
+        
         self.Platform=self.GetPlatform()
         self.config={'UEDGE':{'UserName':None,'RunDir':None,'SaveDir':None,'InputDir':None}}
-        try: 
-            self.config=self.CheckUEDGEConfig()
-        except Exception as e:
-            print(repr(e))
-        finally:
-            UserName=self.config['UEDGE'].get('UserName')
-            if UserName is None:
-               self.UserName='unknown'
-            else:
-                self.UserName=UserName
-            
-            RunDir=self.config['UEDGE'].get('RunDir')    
-            if RunDir is None:
-               self.RunDir=os.getcwd()
-            else:
-                self.RunDir=RunDir
-            
-            SaveDir=self.config['UEDGE'].get('SaveDir')    
-            if SaveDir is None:
-               self.SaveDir=os.getcwd()
-            else:
-                self.SaveDir=SaveDir  
-                
-            InputDir=self.config['UEDGE'].get('InputDir')    
-            if InputDir is None:
-               self.InputDir=os.getcwd()
-            else:
-                self.InputDir=InputDir  
+        self.config=self.CheckUEDGEConfig()
+        if self.config is None:
+            print('Using default settings. Run InitConfig() to set the configuration...')
+            self.UserName=getpass.getuser()
+            self.RunDir==os.getcwd()
+            self.SaveDir=os.getcwd()
+            self.InputDir=os.getcwd() 
+        else:
+            print(' # Loading UEDGE settings from {}'.format(self.ConfigFileName))
+            self.UserName=self.config['UEDGE'].get('UserName')
+            self.RunDir==self.config['UEDGE'].get('RunDir')
+            self.SaveDir=self.config['UEDGE'].get('SaveDir')
+            self.InputDir=self.config['UEDGE'].get('InputDir') 
+
     def Config(self):
         '''Print current UEDGE configuration'''
         print('******** UEDGE configuration ********')
@@ -65,16 +51,17 @@ class UEDGESettings():
         return PF
     
     def CheckUEDGEConfig(self):
-        FileName=os.path.join(os.path.expanduser("~"),'.UedgeSettings')
-        if not os.path.exists(FileName):
-            raise IOError('Cannot find the file: ' + FileName +'. Run CreateUEDGESettingsFile first....')
+        self.ConfigFileName=os.path.join(os.path.expanduser("~"),'.UedgeSettings')
+        if not os.path.exists(self.ConfigFileName):
+            print ('Cannot find the config file ' + self.ConfigFileName +'....')
+            return None
         config = configparser.ConfigParser()
         try:
-            config.read(FileName)
+            config.read(self.ConfigFileName)
             return config
         except: 
-            raise IOError('Cannot read the config file:',FileName)
-            
+            print('Cannot parse the config file:',self.ConfigFileName)
+            return None
     def CreateStamp(self): 
             from uedge import bbb
             Stamp={}
@@ -115,10 +102,10 @@ def CreateUEDGESettingsFile():
                config['UEDGE']['RunDir']=RunDir
                config['UEDGE']['SaveDir']=SaveDir
                config['UEDGE']['InputDir']=InputDir
-               FileName=os.path.join(os.path.expanduser("~"),'.UedgeSettings')
-               with open(FileName, 'w') as f:
+               ConfigFileName=os.path.join(os.path.expanduser("~"),'.UedgeSettings')
+               with open(ConfigFileName, 'w') as f:
                    config.write(f)
-               print(' # Creation of the config file:'+FileName)
+               print(' # Creation of the config file:'+ConfigFileName)
                GetInput=False
                return
             elif not QueryYesNo('Enter the settings again?'):
@@ -177,6 +164,9 @@ def CdInputDir():
     os.chdir(Settings.InputDir)
     print('Current working directory:',os.getcwd())
 def Config():
-    Settings.Config()    
+    Settings.Config() 
+    
+def InitConfig():
+    CreateUEDGESettingsFile()  
 # start into the run folder
 CdRunDir()    
