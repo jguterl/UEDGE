@@ -46,7 +46,13 @@ class UEDGESettings():
                self.InputDir=os.getcwd()
             else:
                 self.InputDir=InputDir  
-   
+    def Config():
+        '''Print current UEDGE configuration'''
+        print('******** UEDGE configuration ********')
+        print('Username:',self.UserName)
+        print('RunDir:',self.RunDir)
+        print('SaveDir:',self.SaveDir)
+        print('InputDir:',self.InputDir)
     def GetPlatform(self):
         PF={}
         AllFunctions = inspect.getmembers(platform, inspect.isfunction)
@@ -170,5 +176,7 @@ def CdSaveDir():
 def CdInputDir():
     os.chdir(Settings.InputDir)
     print('Current working directory:',os.getcwd())
+def Config():
+    Settings.Config()    
 # start into the run folder
 CdRunDir()    
