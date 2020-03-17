@@ -46,7 +46,7 @@ class UEDGESettings():
                self.InputDir=os.getcwd()
             else:
                 self.InputDir=InputDir  
-    def Config():
+    def Config(self):
         '''Print current UEDGE configuration'''
         print('******** UEDGE configuration ********')
         print('Username:',self.UserName)
