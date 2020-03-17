@@ -59,7 +59,7 @@ c     read dimensioning parameters and allot storage space for arrays --
 
       read(iunit) nxefit,nyefit
 c     set length for 2-d spline workspace --
-      nwork = nxefit*nyefit + 
+      nwork = nxefit*nyefit +
      .         2*max(kxord*(nxefit+1),kyord*(nyefit+1))
       call gallot("Comflxgrd",0)
       call rdflx2(iunit)
@@ -155,6 +155,7 @@ Use(Xpoint_indices)   # ixlb,ixpt1,ixmdp,ixpt2,ixrb,iysptrx1,iysptrx2
 c     Read mesh parameters from a UEDGE code grid data file
 
       call freeus (nuno)
+      write(*,*) 'Reading grid file:',fname
       open (nuno, file=fname, form='formatted', iostat=ios,
      &      status='old')
       if (ios .ne. 0) then
@@ -271,7 +272,7 @@ ifelse([WORDSIZE],64,\
       end
 
 #----------------------------------------------------------------------#
- 
+
       subroutine setidim
       implicit none
 Use(Dimflxgrd)	#jdim,npts,noregs
@@ -283,9 +284,9 @@ Use(Mmod)
 Use(Xmesh)
       integer region
       external gchange
- 
+
 c     Set angle-like parameters and allocate space for arrays --
- 
+
       if ( (geometry .eq. "dnbot") .or. (geometry .eq. "dnull") .or.
      .     (geometry == "isoleg") .or. (islimon .ne. 0) ) then
          nxuse(1) = max(0,nxcore(igrid,1)-1)  # nxcore includes guard cells
@@ -294,7 +295,7 @@ c     Set angle-like parameters and allocate space for arrays --
          nxuse(1) = nxcore(igrid,1)           # nxcore specifies the number
          nxuse(2) = nxcore(igrid,2)           # of finite-size cells
       endif
- 
+
 c     Set some angle-surface parameters --
       idim=0
       do region=1,noregs
@@ -304,12 +305,12 @@ c     Set some angle-surface parameters --
          ilmax(region) = ixpoint(3,region) + nxleg(igrid,region)
          idim = max( idim, ilmax(region) )
       enddo
- 
+
 c     Allocate space for angle-dependent arrays --
          call gchange("Linkco",0)
          call gchange("Inmesh",0)
          call gchange("Mmod",0)
- 
+
 c     and for poloidal mesh distribution data --
          call gchange("Xmesh",0)
 
