@@ -28,7 +28,7 @@ class UEDGESettings():
         else:
             print(' # Loading UEDGE settings from {}'.format(self.ConfigFileName))
             self.UserName=self.config['UEDGE'].get('UserName')
-            self.RunDir==self.config['UEDGE'].get('RunDir')
+            self.RunDir=self.config['UEDGE'].get('RunDir')
             self.SaveDir=self.config['UEDGE'].get('SaveDir')
             self.InputDir=self.config['UEDGE'].get('InputDir') 
 
