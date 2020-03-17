@@ -3489,10 +3489,11 @@ cc      real(kind=4):: ranf
 
 c ... Local variables:
       integer i,Nsize,R,thread
+      integer,parameter:: Nthreadmax=256
       integer,allocatable::nnz(:),nnzcum(:)
       integer,allocatable,dimension(:,:) ::iJacCol,iJacRow
       real,allocatable,dimension(:,:) ::rJacElem
-      integer ivmax(16),ivmin(16)
+      integer ivmax(Nthreadmax),ivmin(Nthreadmax)
       real(kind=4):: sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,TimeBuild
       real(kind=4):: TimeReduce
       INTEGER :: NTHREADS, TID, OMP_GET_NUM_THREADS, OMP_GET_THREAD_NUM
@@ -3505,7 +3506,7 @@ c$omp PARALLEL PRIVATE(TID)
         NTHREADS = OMP_GET_NUM_THREADS()
       END IF
 c$omp END PARALLEL
-
+       
 cJG Then we obtain the range of iv index per thread
        neq_=neq
        Nsize=neq_/Nthreads
@@ -3557,6 +3558,7 @@ cJG Then we obtain the range of iv index per thread
       write(*,*) 'Inialization rJacElem done....'
       iJacRow(1:neq,1:Nthreads)=0
       write(*,*) 'Inialization iJacRow done....'
+      nnzmxperthread=nnzmxperthread
 
 
 
@@ -3773,12 +3775,8 @@ c ... Work-array argument:
 
           integer:: ith,omp_get_thread_num,tid,nnzlocal
 
-      iJacColCopy(1:nnzmx)=0
-      rJacElemCopy(1:nnzmx)=0.0
-
-      ylcopy(1:neqmx)=0.0
-      ylcopy(1:neq+1)=yl(1:neq+1) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
-      wkcopy(1:neq)=wk(1:neq)
+      
+      
 
       if (OMPDebug.gt.0) then
       write(*,*) '**** Copying data....'
@@ -3796,14 +3794,24 @@ c ... Work-array argument:
       call OmpCopyPointerflx
       call OmpCopyScalarflx
 
-
+      iJacColCopy(1:nnzmx)=0
+      rJacElemCopy(1:nnzmx)=0.0
+      iJacRowCopy(1:neq)=0     
+      ylcopy(1:neq+1)=0.0
+      ylcopy(1:neq+1)=yl(1:neq+1) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
+      wkcopy(1:neq)=wk(1:neq)
+  
       if (OMPDebug.gt.0) then
       write(*,*) '**** Starting parallel loop....'
       endif
       tid=-1
        nnzlocal=-10000
-c$omp parallel do firstprivate(ivmin,ivmax,tid,nnzlocal,ylcopy,wkcopy)
-c$omp& default(none) firstprivate(iJacColCopy,rJacElemCopy,iJacRowCopy)
+      write(*,*) 'nnzmx=',nnzmx
+c$omp parallel do default(none)
+c$omp& firstprivate(ivmin,ivmax,tid,nnzlocal,ylcopy,wkcopy)
+c$omp& firstprivate(iJacRowCopy)
+c$omp& firstprivate(iJacColCopy)
+c$omp& firstprivate(rJacElemCopy)
 c$omp& shared(nnz,nnzmx,nthreads,neq,t,yldot00,ml,mu,iJacCol,rJacElem,iJacRow)
         do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
         tid=omp_get_thread_num()

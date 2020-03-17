@@ -2,14 +2,14 @@ DEBUG = -v --fargs "-fmax-errors=15 -Og -pg -DHAS_READLINE -DFORTHON -cpp -fopen
 
 SO = so
 PUBLICHOME = 
-BUILDDIR = /home/jguterl/Dropbox/UEDGEdev/build
+BUILDDIR = build
 DIRLIST = com aph api bbb flx grd svr wdf
-#MYPYTHON = /home/jguterl/python377/bin/python3
-#FORTHON = /home/jguterl/python377/bin/Forthon3
-MYPYTHON = python
-FORTHON = Forthon3
+MYPYTHON = /home/guterlj/boundary/anaconda3/bin/python3
+FORTHON =  /home/guterlj/boundary/anaconda3/bin/Forthon3
+#MYPYTHON = python
+#FORTHON = Forthon3
 BUILDBASE = -v --build-base $(BUILDDIR)
-OMPVARLIST=/home/jguterl/Dropbox/python/TestPython/ListVariableThreadPrivate.txt
+OMPVARLIST=/home/guterlj/boundary/simulations/UEDGE/InputDir/ListVariableThreadPrivate.txt
 OMPPKGLIST=bbb,com,grd,api,flx
 INSTALLARGS = --pkgbase uedge $(BUILDBASE) --omppkg $(OMPPKGLIST) --ompvarlistfile $(OMPVARLIST) 
 ##MYPYTHON = /home1/rognlien/Python2/Python-2.4.2/python
