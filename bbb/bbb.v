@@ -213,14 +213,14 @@ isnewpot  integer  /0/ #user:turns on (=1) new potential; J_r from tor. mom. bal
                        #=-2 sets phi constant on core boundary with
                        #total core current = icoreelec
 isnionxy(0:nx+1,0:ny+1,nisp)  _integer   #calc:=1 for ni eqn on; =0 for eqn off
-isuponxy(0:nx+1,0:ny+1,nusp)  _integer   #calc:=1 for up eqn on; =0 for eqn off
+isuponxy(0:nx+1,0:ny+1,nisp)  _integer   #calc:=1 for up eqn on; =0 for eqn off
 isteonxy(0:nx+1,0:ny+1)	      _integer   #calc:=1 for te eqn on; =0 for eqn off
 istionxy(0:nx+1,0:ny+1)	      _integer   #calc:=1 for ti eqn on; =0 for eqn off
 isngonxy(0:nx+1,0:ny+1,ngsp)  _integer   #calc:=1 for ng eqn on; =0 for eqn off
 istgonxy(0:nx+1,0:ny+1,ngsp)  _integer   #calc:=1 for tg eqn on; =0 for eqn off
 isphionxy(0:nx+1,0:ny+1)      _integer   #calc:=1 for phi eqn on; =0 for eqn off
 isnioffxy(0:nx+1,0:ny+1,nisp) _integer /0/ #user:=1, ni eqn off; =0 for eqn on
-isupoffxy(0:nx+1,0:ny+1,nusp) _integer /0/ #user:=1, up eqn off; =0 for eqn on
+isupoffxy(0:nx+1,0:ny+1,nisp) _integer /0/ #user:=1, up eqn off; =0 for eqn on
 isteoffxy(0:nx+1,0:ny+1)      _integer /0/ #user:=1, te eqn off; =0 for eqn on
 istioffxy(0:nx+1,0:ny+1)      _integer /0/ #user:=1, ti eqn off; =0 for eqn on
 isngoffxy(0:nx+1,0:ny+1,ngsp) _integer /0/ #user:=1, ng eqn off; =0 for eqn on
@@ -1895,8 +1895,8 @@ cfkincor            real     [ ] /0.5/ # factor for kincorlb,rb denom. factor
 ex(0:nx+1,0:ny+1)           _real  [V/m]  #poloidal electric field
 ey(0:nx+1,0:ny+1)           _real  [V/m]  #radial electric field
 einduc			     real  [V/m]  #inductive tor. E-field - input
-gpix(0:nx+1,0:ny+1,1:nusp)  _real  [Pa/m] #X-gradient of ion pressure
-gpiy(0:nx+1,0:ny+1,1:nusp)  _real  [Pa/m] #Y-gradient of ion pressure
+gpix(0:nx+1,0:ny+1,1:nisp)  _real  [Pa/m] #X-gradient of ion pressure
+gpiy(0:nx+1,0:ny+1,1:nisp)  _real  [Pa/m] #Y-gradient of ion pressure
 gpex(0:nx+1,0:ny+1)         _real  [Pa/m] #X-gradient of el. pressure
 gpey(0:nx+1,0:ny+1)         _real  [Pa/m] #Y-gradient of el. pressure
 gprx(0:nx+1,0:ny+1)         _real  [Pa/m] #X-gradient of total pressure

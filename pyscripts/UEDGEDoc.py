@@ -144,10 +144,10 @@ class UedgeDoc(object):
             for k in Dic.keys():
                 if exact:
                     if Str==k:
-                     L.append(D[k])
+                     L.append(Dic[k])
                 else:
                     if Str in k: 
-                     L.append(D[k])
+                     L.append(Dic[k])
         return L
     #---------------------------------------------------------------------------                     
     def SetupDoc(self):

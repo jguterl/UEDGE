@@ -2461,8 +2461,7 @@ c --------------------------------------------------------------------------
       Use(MCN_sources)   # cfneutsor_ei
 
 
-*  -- initialize some arrays to 0 --
-ccdcccac$ompparallel default(firstprivate)
+*  -- initialize some arrays to 0 
       do igsp = 1, ngsp
         do iy = j1, j6
           do ix = i1, i6

@@ -2461,8 +2461,7 @@ c --------------------------------------------------------------------------
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t0,t1,t,a
 
-*  -- initialize some arrays to 0 --
-ccdcccac$ompparallel default(firstprivate)
+*  -- initialize some arrays to 0 
       do igsp = 1, ngsp
         do iy = j1, j6
           do ix = i1, i6
