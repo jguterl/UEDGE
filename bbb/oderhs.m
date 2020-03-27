@@ -1223,14 +1223,14 @@ ccc         call convsr_aux (xc, yc, yl)
 ccc 18   continue
 c...  If this is the last variable before jumping to new cell, reset pandf
          if (mod(iv,numvar).eq.0 .and. isjacreset.ge.1) then
-            call DebugHelper('dump0.txt')
+c            call DebugHelper('dump0.txt')
             call pandf1 (xc, yc, iv, neq, t, yl, wk)
          endif
          do ii=1,neq
          if (yldot_pert(ii).ne.wk(ii)) then
       write(*,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call at ii=',
      . ii,yldot_pert(ii),wk(ii)
-         call DebugHelper('dump1.txt')
+c         call DebugHelper('dump1.txt')
          call xerrab('*** Stop ***')
          if (isnan(yldot_pert(ii))) then
          call xerrab('*** Stop ***')
@@ -1662,7 +1662,7 @@ c      call OmpCopyScalarflx
       tid=-1
        nnzlocal=-10000
       write(*,*) 'nnzmx=',nnzmx
-c$omp parallel do ordered default(shared)
+c$omp parallel do default(shared)
 c$omp& firstprivate(ithcopy,ivmin,ivmax,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)
 c$omp& firstprivate(nnzmx,nthreads)
 c$omp& firstprivate(iJacRowCopy)
@@ -1673,12 +1673,10 @@ c$omp& firstprivate(rJacElemCopy)
         tid=omp_get_thread_num()
         ithcopy=ith
         write(*,*) '#OMP: Thread id:',tid,' <-> ith:',ithcopy
-c$omp ordered
       call LocalJacBuilder(ivmin(ithcopy),ivmax(ithcopy),neq, t, ylcopy,yldot00,
      . ml,mu,wkcopy,iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,
      . nnzmx,nthreads)
       write(*,*) '#,',tid,' nzlocal:',nnzlocal
-c$omp end ordered
 c$omp critical
       iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
       rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
@@ -1923,23 +1921,23 @@ ccc 18   continue
 cJG1 why do we need to reset?????
 c...  If this is the last variable before jumping to new cell, reset pandf
          if (mod(iv,numvar).eq.0 .and. isjacreset.ge.1) then
-         call DebugHelper('dump00.txt')
+c         call DebugHelper('dump00.txt')
            call pandf1 (xc, yc, iv, neq, t, yl, wk)
          endif
-c$omp critical
+ccc$omp critical
          do ii=ii1, ii2
          if (yldot_pert(ii).ne.wk(ii)) then
 
       write(*,'(a,i3,a,i5,e20.12,e20.12)') ' ith:',ith,' *** wk modified on second call at ii=',
      . ii,yldot_pert(ii),wk(ii)
-         call DebugHelper('dump11.txt')
+c         call DebugHelper('dump11.txt')
          write(*,*) 'dumped'
          stop
 
          endif
 
          enddo
-c$omp end critical
+cccc$omp end critical
 cJG      yldot_pert(iv)=gettime(sec4)-time0
       enddo
 c ... End loop over dependent variables and finish Jacobian storage.

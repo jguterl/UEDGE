@@ -3601,7 +3601,7 @@ C
 
       Use(Timespl)
       real(Size4) sec4, gettime, tsint
-      call xerrab('B2Vahl called')
+cJG      call xerrab('B2Vahl called')
 
 C
 C***FIRST EXECUTABLE STATEMENT  B2VAhL
@@ -6068,7 +6068,7 @@ C***END PROLOGUE  BSPLVhN
       real T(*),VNIKX(*),DELTAM(20),DELTAP(20),x,vmprev,vm
       SAVE J, DELTAM, DELTAP
       DATA J/1/,(DELTAM(I),I=1,20),(DELTAP(I),I=1,20)/40*0./
-      call xerrab('save parameters here without threadprivate in comutil#1')
+cJG      call xerrab('save parameters here without threadprivate in comutil#1')
 C***FIRST EXECUTABLE STATEMENT  BSPLVhN
                                        GO TO (10,20),INDEX
    10 J = 1
@@ -6366,7 +6366,7 @@ C     .     hmax,tmp,sm1,tau,r1mach9
       DOUBLE PRECISION SM,DZERO
       SAVE RELEPS
       DATA RELEPS /0.E0/
-            call xerrab('save parameters here without threadprivate in comutil#2')
+cJG            call xerrab('save parameters here without threadprivate in comutil#2')
 C***FIRST EXECUTABLE STATEMENT  HFTIh
 C      IF (RELEPS.EQ.0) RELEPS = EPSILON(4)
       IF (RELEPS.EQ.0) RELEPS = EPSILON(releps)
@@ -6586,7 +6586,7 @@ C
       real             SDOT, SNRM2
       SAVE ZERO, ONE, FAC
       DATA ZERO, ONE /0.E0,1.E0/, FAC /0.1E0/
-            call xerrab('save parameters here without threadprivate in comutil#3')
+cJG            call xerrab('save parameters here without threadprivate in comutil#3')
 C***FIRST EXECUTABLE STATEMENT  LPDPh
       N = N1 + N2
       MODE = 1
@@ -7561,7 +7561,7 @@ C
 C
       SAVE SRELPR, FIRST
       DATA FIRST /.true./
-            call xerrab('save parameters here without threadprivate in comutil#4')
+cJG            call xerrab('save parameters here without threadprivate in comutil#4')
 C
 C***FIRST EXECUTABLE STATEMENT  LSIh
 C
@@ -8230,7 +8230,7 @@ C
 C
       SAVE SRELPR, FIRST
       DATA FIRST /.true./
-            call xerrab('save parameters here without threadprivate in comutil#5')
+cJG            call xerrab('save parameters here without threadprivate in comutil#5')
 C***FIRST EXECUTABLE STATEMENT  WNLShM
 C
 C     Initialize variables.
@@ -9704,7 +9704,7 @@ C***END PROLOGUE  SROThM
      .     w,z
       SAVE ZERO, TWO
       DATA ZERO, TWO /0.0E0, 2.0E0/
-            call xerrab('save parameters here without threadprivate in comutil#5')
+cJG            call xerrab('save parameters here without threadprivate in comutil#5')
 C***FIRST EXECUTABLE STATEMENT  SROThM
       SFLAG=SPARAM(1)
       IF (N.LE.0 .OR. (SFLAG+TWO.EQ.ZERO)) GO TO 140
