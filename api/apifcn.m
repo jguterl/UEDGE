@@ -252,7 +252,7 @@ c     blanks). Basis function basfilex expands $,~.
       open (impunit, file=apidirx(1:stringlen) // '/' // impfname,
      .     form='formatted', iostat=ios, status='old')
       if (ios .ne. 0) then
-         write(*,*) 
+         write(*,*)
      .      '*** Input file ',impfname,' not found'
          call xerrab("")
       else
@@ -376,8 +376,8 @@ c-----------------------------------------------------------------------
       real function lineintegral(arg,rvertex,zvertex)
       implicit none
 Use(Pixels)
-      real arg(nrpix,nzpix)
-      real rvertex(2),zvertex(2)
+      real,intent(in):: arg(nrpix,nzpix)
+      real,intent(in)::rvertex(2),zvertex(2)
       real r1,r2,z1,z2,rp,zp
       integer iv1,iv2,jv1,jv2,k,ii,jj
       integer j,jbeg,jend,jstep
@@ -559,7 +559,7 @@ c to lineintegral:
       lineintegral=0.
       do ii=max(1,min(nrpix,iv1)),max(1,min(nrpix,iv2)),istep
          do jj=max(1,min(nzpix,jv1)),max(1,min(nzpix,jv2)),jstep
-            wt(ii,jj) = sqrt( (rp1(ii,jj)-rp2(ii,jj))**2 + 
+            wt(ii,jj) = sqrt( (rp1(ii,jj)-rp2(ii,jj))**2 +
      .                        (zp1(ii,jj)-zp2(ii,jj))**2 )
             lineintegral=lineintegral+wt(ii,jj)*arg(ii,jj)
          enddo

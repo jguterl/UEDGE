@@ -1,6 +1,6 @@
       subroutine imprates(temp,kk,nzarg,rioniz,rrecomb,rcxrecom)
-      real temp
-      integer kk, nzarg
+      real,intent(in):: temp
+      integer,intent(in):: kk, nzarg
       real rioniz, rrecomb, rcxrecom
 c ... Given temperature "temp" and a charge state "k", which is less
 c     than or equal to the highest state "nzarg", interpolate from
@@ -58,8 +58,8 @@ c-----End of subroutine imprates----------------------------------------
 
       subroutine mcrates(ne,tmpe,tmpi,za,zamax,zn,rion,rrec,rcxr)
       implicit none
-      real ne,tmpe,tmpi
-      integer za,zamax,zn
+      real,intent(in):: ne,tmpe,tmpi
+      integer,intent(in):: za,zamax,zn
       real rion, rrec, rcxr
 c
 c ... Inputs are:
@@ -106,6 +106,7 @@ c
       xte = log(tmpenonz/ev2)
       xti = log(tmpinonz/ev2)
       dlogt = rtlt(1) - rtlt(0)
+      call xerrab('mcrates locked')
 c
 c ... Find index i1 in temperature table such that
 c                 rtlt(i1) .le. xt .lt. rtlt(i1+1)
@@ -200,10 +201,10 @@ c-----End of subroutine mcrates----------------------------------------
 
       real function rcxr_zn6 (tmp, za)
       implicit none
-      real tmp
-      integer za
-Use(Share)               # cutlo
-Use(Physical_constants2) # ev2
+      real,intent(in):: tmp
+      integer,intent(in):: za
+        Use(Share)               # cutlo
+        Use(Physical_constants2) # ev2
 c
 c     Charge exchange rate parameter for carbon on neutral hydrogen.
 c     Input (neutral hydrogen) temperature, tmp, is in [Joules/AMU].
@@ -231,8 +232,8 @@ c-------End of function rcxr_zn6---------------------------------------
 
       real function rcxr_zn6b (tmp, za)
       implicit none
-      real tmp
-      integer za
+      real,intent(in):: tmp
+      integer,intent(in):: za
 Use(Share)               # cutlo
 Use(Physical_constants2) # ev2
 c
@@ -415,8 +416,8 @@ c----------------------------------------------------------------------c
       implicit none
       real radmc
 c ... input args
-      integer zmax, znuc
-      real te, dene, denz(0:zmax)
+      integer,intent(in):: zmax, znuc
+      real,intent(in):: te, dene, denz(0:zmax)
 c ... output args
       real radz(0:zmax)
 c

@@ -74,9 +74,9 @@ c     local variables
       integer i,ifld,lid,ilg,ix,iy,igsp,iv
 
       real(Size4) gettime, sec4
-
+      write(*,*) '*********  uedriv  *********'
 c **- For parallel mpi case, set up preliminary mpi stuff
-      if (ismpion .eq. 1) call uedriv_pll
+c      if (ismpion .eq. 1) call uedriv_pll
 
 c ... Save initial time and set accumulated times to zero.
       tstart = gettime(sec4)
@@ -100,6 +100,7 @@ c...  imeth = inewton(igrid) is set in allocate & selects between
 c...  time-dependent solvers(imeth=0) and Newton solvers(imeth=1)
 
       if (imeth .eq. 0) then
+      write(*,*) '****** imeth=0  *********'
          istep = 0
          tbout = 1.
          if (nsteps .gt. 1) tbout = exp (log(trange)/(nsteps-1))
@@ -282,9 +283,11 @@ c_mpicvode          CALL FCVODE (tout, ts, yl, itask, istate)
        ts = tout
 
       elseif(imeth .eq. 1) then    # Second option for imeth if test
+      write(*,*) '****** imeth=1  *********'
          if (issfon .eq. 1) then
            if (icntnunk .eq. 0 .and. isdtsfscal.eq.0) then
              if (npes <= 1) then
+
                call sfsetnk (neq,yl,suscal,sfscal)
              endif
            endif
@@ -292,6 +295,7 @@ c_mpicvode          CALL FCVODE (tout, ts, yl, itask, istate)
             call sfill (neq, 1., sfscal(1), 1)
          endif
          if((svrpkg .eq. 'nksol') .or.(svrpkg .eq. 'petsc') ) then  #not above issfon because newton poss
+            write(*,*) '****** imeth=1 set_dt  *********'
             call set_dt(neq, yl, yldot)  # sets dtuse for time-step models
             if (isdtsfscal.eq.1) call sfsetnk (neq, yl, suscal, sfscal)
                                          # allow dt in calc of sfscal
@@ -361,7 +365,7 @@ cpetsc      endif
 
 cpetsc      if ((svrpkg.eq.'nksol' .and. npes.eq.1) .or. (snesdebug. eq. 1)) then
 *-------------------------------------------------------------------------
-
+            write(*,*) '****** calling newton  *********'
             call nksol(neq,yl,yldot,rhsnk,jacvnk,suscal,sfscal,ftol,
      .                 stptol,rwork,
      .                 lrw,iwork,liw,iopts,iterm,psetnk,psolnk,mfnksol,
@@ -398,6 +402,7 @@ cpetsc      if (snesdebug. eq. 1) then
 cpetsc      endif
 *-------------------------------------------------------------------------
          else
+            write(*,*) '****** calling netwon  *********'
             call newton (ffun,neq,yl,yldot0,yldot1,npsn(igrid),
      .                   rwork,iwork,jacnw,psolnw)
             njen(igrid) = ijac(igrid)
@@ -583,171 +588,7 @@ c_mpi      endif
       return
       end
 c****** end of subroutine uedriv *********************
-c ------------------------------------------------------------------------
-      subroutine uedriv_pll
 
-c **- Initializes integration/solver routines for mpi parallel version
-
-      implicit none
-
-      Use(Dim)
-      Use(Math_problem_size)
-      Use(Constraints)
-      Use(UEint)
-      Use(UEpar)
-      Use(Lsode)
-      Use(Npes_mpi)
-      Use(Parallv)
-C diagnostic data
-      Use(Indices_domain_dcl)
-c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
-
-
-      integer ifake  #forces Forthon scripts to put implicit none above here
-
-CC c_mpi      include 'mpif.h'
-c_mpi      integer status(MPI_STATUS_SIZE)
-
-c     local variables
-      real tbout, dtreal_sav
-      integer i,ifld,lid,ier,ierr,mu,ml
-      integer ii,typeneq,neqt,ionecall
-      data typeneq/51/,ionecall/0/,ier/0/
-
-c =======================================================================
-c  -- initialize the system --
-      restart = 1
-cpetsc*  Added for fixing parallel implementation (Feb. 18, 2008)
-cpetsc      call set_indirect_address(0)   # sets ixp1 and ixm1 on all PEs
-      call ueinit
-
-      NLOCAL = neq
-
-c ... Check that some indices have been passed properly
-ccc      write(6,*) "[",mype,"] nx+ixmnbcl+ixmxbcl, ny+iymnbcl+iymxbcl, neq:",
-ccc     .              nx+ixmnbcl+ixmxbcl, ny+iymnbcl+iymxbcl, neq,
-ccc     .             ";    nxg+2, nyg+2, neqg:", nxg+2, nyg+2, neqg
-ccc      call flush(6)
-
-      if (svrpkg.eq."cvode") ITASK = 0
-cc   use itask = 1 for the one-step mode
-cxqx      ITASK = 1
-cc   use jpre=0 for no preconditioner, jpre=1 is default
-cxqx      JPRE = 0
-      IGS = 0
-
-cdb_solve      IF (MYPE .EQ. 0) THEN
-cdb_solve        WRITE(6,9) NLOCAL
-cdb_solve 9      FORMAT('Diagonal test problem, size NLOCAL =',I7)
-cdb_solve        WRITE(6,11) NEQg
-cdb_solve  11    FORMAT('Diagonal test problem, size NEQg =',I7)
-cdb_solve        WRITE(6,12)
-cdb_solve  12    FORMAT('  yl(i = 1,...,NEQg)'/)
-cdb_solve        WRITE(6,103) rtol_pv, atol_pv, delt_pv
-cdb_solve  103    FORMAT('rtol_pv, atol_pv, delt_pv =',3E10.1/)
-cdb_solve        WRITE(6,14)
-cdb_solve  14    FORMAT('Method is BDF/NEWTON/SPGMR'/
-cdb_solve     1         'Diagonal preconditioner uses approximate Jacobian'/)
-cdb_solve        WRITE(6,15) NPES
-cdb_solve  15    FORMAT('Number of processors =',I4)
-cdb_solve      ENDIF
-C
-c_mpicvode      if(svrpkg .eq. 'kinsol') then
-c_mpicvode        call fpvecinitmpi(nlocal, neqg, ier)
-c_mpicvode      else if(svrpkg .eq. 'cvode') then
-c_mpicvode        CALL FPVINITMPI (uedgeComm, NLOCAL, NEQg, IER)
-c_mpicvode      endif
-ctaylorkinsol for neq      call fpvecinitmpi(nlocal, neq, ier)
-
-ctaylorkinsol for npes=size      call mpi_comm_size(uedgeComm,size,ier)
-ctaylorkinsol for npes = size
-ctaylorkinsol for mype     call mpi_comm_rank(uedgeComm, rank, ier)
-ctaylorkinsol for mype      mype = rank
-ctaylorkinsol for       baseadd = mype * nlocal
-
-cxqxkinsol      CALL FPVINITMPI (uedgeComm, NLOCAL, NEQg, IER)
-
-C
-      IF (IER .NE. 0) THEN
-        WRITE(6,20) IER
-  20    FORMAT(///' FPVINITMPI returned IER =',I5)
-        STOP
-      ENDIF
-
-      MU = numvar*(nx+4)
-      ML = numvar*(nx+4)
-
-          do i=1,40
-           iopt(i) = 0
-           ropt(i) = 0.0
-          enddo
-
-      if(svrpkg .eq. 'kinsol') then
-         iopt(1) = iprint
-         ropt(3) = rlx
-         ropt(6) = epscon1
-
-         do i = 1, neq
-           constr(i) = float(icnstr(i))
-         enddo
-c_mpicvode         call fpkinmalloc(neqg, ier)
-c_mpicvode         call fkinbbdinit0(maxkd, maxlrst, msbpre, mu, ml, ier)
-
-       elseif(svrpkg .eq. 'cvode') then
-
-cccc_mpi         CALL FPVMALLOC (neqg, ts, yl, METH, ITMETH, IATOL,
-cccc_mpi     .               rtol_pv, atol_pv, INOPT, IOPT, ROPT, IER)
-            IF (IER .NE. 0) THEN
-              WRITE(6,300) IER
-  300         FORMAT(///' FPVMALLOC returned IER =',I5)
-              STOP
-            ENDIF
-C
-c        Use either of these next two lines for kinsol with bbd
-c_mpicxqx         CALL FPVBBDIN (JPRE, IGS, maxkd, 0.0D0, MU, ML, IER)
-cccc_mpi         CALL FPVBBDIN (JPRE, IGS, maxkd, delt_pv, MU, ML, IER)
-           IF (IER .NE. 0) THEN
-             WRITE(6,35) IER
-  35         FORMAT(///' FPVBBDIN returned IER =',I5)
-             STOP
-           ENDIF
-c        FCVSPGMR2 uses our own precond.; thus comment out FPVBBDIN lines
-cccc_mpi         call FCVSPGMR2 (jpre, igs, maxkd, delt_pv)
-      endif
-
-CC
-c xqx start - add timer for parallel
-ctdr      CALL timer_init
-ctdr      CALL mpi_barrier(mpi_comm_world,ier)
-ctdr      call tsecnd(wtimestep_start)
-ctdr      CALL timer(timestep_start)
-c xqx end
-cxqx ------------------end---------------------------------------------
-
-ctdr  mpi stuff and diagnostics
-c ==================================================================
-
-cxqx      CALL jacmap
-
-ctdr      call MPI_BARRIER(uedgeComm, ierr)
-
-      if (ionecall .eq. 1) then
-         call pandf1 (-1, -1, 0, neq, 0., yl, yldot)
-ccc      do iy = 0, ny+1
-ccc      write(*,*) 'uedriv vol(2,iy), iy, id =',vol(2,iy), iy, mype+1
-ccc      enddo
-
-ccc         do 3331 iy = 0, ny+1
-ccc            write(*,*) 'ng(3,iy,1), iy, id', ng(3,iy,1),iy,mype+1
-ccc            write(*,*) 'resng(3,iy,1)/(vol*n0g), vol(3,iy), iy, id',
-ccc     .             resng(3,iy,1)/(vol(3,iy)*n0g(1)),vol(3,iy),iy,mype+1
- 3331    continue
-      return
-      endif
-
-      return
-      end
-c****** End of subroutine uedriv_pll ************************************
 c-----------------------------------------------------------------------
       subroutine newton (f, neq, y, rw1, rw2, npsn, wp, iwp, jacs, jsol)
 
@@ -945,8 +786,8 @@ c-----------------------------------------------------------------------
 c ... Return normalized sum of changes in solver variables yl.
 
 c ... Input arguments:
-      integer neq
-      real yl(neq), ylold(neq)
+      integer,intent(in):: neq
+      real,intent(in):: yl(neq), ylold(neq)
 
       Use(Share)   # cutlo
 

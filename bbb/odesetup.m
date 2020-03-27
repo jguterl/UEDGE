@@ -313,7 +313,7 @@ cmer  The following calculations must be done in a separate subroutine
 cmer  after the UEpar arrays have been allocated.
 c...  Compute which equations are actually evolved from input parameters
 c...  Calculate actual number of equations (some may be turned-off)
-       write(*,*) 'nisp=',nisp,nispmx
+
       call setonxy   #sets neq = acutal number eqns; neqmx adds 2 - usually
 
       if (svrpkg .eq. "cvode" .or. svrpkg .eq. "kinsol") then
@@ -371,6 +371,7 @@ c save preconditioner reordering info for icntnunk=1 case.
       elseif (premeth .eq. 'banded') then
          lwp = lda*neq
          liwp = 3+neq
+         write(*,*) 'Banded storage: lwp,liwp,lda:',lwp,liwp,lda
       elseif (premeth .eq. 'inel') then
          lwp = (neq+1)*ndiagmx
          liwp = 2+ndiagmx
@@ -750,9 +751,11 @@ c-----------------------------------------------------------------------
 *  ---------------------------------------------------------------------
 
 *  -- check nx, ny, nhsp --
+      write(*,*) '*********  ueinit  *********'
       if (nx.lt.1 .or. ny.lt.1 .or. nhsp.lt.1) then
          call xerrab ('ueinit -- faulty argument nx, ny, nhsp')
       end if
+
 
 *  -- Initialize some switches:
 ccc      if (ngsp .eq. 1) then
@@ -1275,7 +1278,7 @@ c...  set volume power sources if the internal Gaussian sources desired
       if (isvolsorext == 0) call volsor
 
 c ... Set impurity sources on inner and outer walls.
-cJG: this routine is called with unassociated pointers(fnzysi,fnzyso) when nzspt=0 because it is a 0-d array!. That's bad...
+cJG: this routine is called with unassociated pointers(fnzysi,fnzyso) when nzspt=0 because it is a 0-d array!. That raises an error when compiling
       if (isimpon .gt. 2 .and. nzspt.gt.0) then
       call imp_sorc_walls (nx, nzspt, xcpf, xcwo, sy(0,0), sy(0,ny),
      .                        ixp1(0,0), ixp1(0,ny), fnzysi, fnzyso)
@@ -1630,7 +1633,7 @@ c...  Construct first intermediate velocity grid (xvnrmox,yvnrmnox)
 
 c...  Construct second intermediate velocity grid (xvnrmnx,yvnrmnx)
       do ir = 1, 3*nxpt
-        call grdintpy(ixsto(ir),ixendo(i),ixst(ir),ixend(ir),
+        call grdintpy(ixsto(ir),ixendo(ir),ixst(ir),ixend(ir),
      .                0,ny+1,0,ny+1,nxold,ny,nx,ny,
      .                xvnrmox,yvnrmox,xvnrm,yvnrm,xvnrmnx,yvnrmnx,
      .                ixv2g,iyv2g)
@@ -1860,7 +1863,15 @@ c ... Enable Jac stencil comp if not parallel
       if (isjacstnlon == 1) then
         call domain_dc   # comp Jacobian stencil ivl2gstnl
       endif
+      write(*,*) '******** Summary **********'
+      write(*,*) 'nisp',nisp
+      write(*,*) 'nhsp',nhsp
+      write(*,*) 'ngsp',ngsp
+      write(*,*) 'nzspt',nzspt
+      write(*,*)  'nusp',nusp
+      write(*,*) 'iigsp',iigsp
 
+      write(*,*) '***************************'
       return
       end
 c***** end of subroutine ueinit ****************************************
@@ -7571,9 +7582,10 @@ c     Assumes that darray is dimensioned (0:nx+1,0:ny+1).
       Use(Npes_mpi)  # mype, ismpion
 c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
 
-      real darray(0:nx+1,0:ny+1)
+      real,intent(in):: darray(0:nx+1,0:ny+1)
       real val
-      integer ix,iy,ixl,iyl,iownit
+      integer,intent(in):: ix,iy
+      integer ixl,iyl,iownit
 c_mpi      integer typeval, ierr, status(MPI_STATUS_SIZE),pedonor
 c_mpi      data typeval/1/
 
@@ -7604,10 +7616,11 @@ c     of index "lindex" that runs around periphery
 
       Use(Dim) # nx, ny
 
-      real darray(0:nx+1,0:ny+1)
+      real,intent(in):: darray(0:nx+1,0:ny+1)
       real getat2dpoint
       character*10 surfacename
-      integer lindex,ix,iy
+      integer,intent(in):: lindex
+      integer ix,iy
       external getat2dpoint
 
       call getixiybdy(lindex,ix,iy,surfacename)
@@ -7628,7 +7641,8 @@ c     of index "lindex" that runs around periphery
       Use(Compla) #mg
       Use(Phyvar) #mp
 
-      integer amumass,charge,znucleus,ij
+      integer,intent(in):: amumass,charge,znucleus
+      integer ij
 
       do ij = 1, nfsp
         if ( amumass == minu(ij) .and. znucleus == znuclin(ij) .and.

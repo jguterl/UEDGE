@@ -163,8 +163,9 @@ c ... The other variables are added in the routine convr_auxo
       implicit none
 
 *  -- input arguments
-      integer ixl, iyl, inc
-      real yl(*)
+      integer,intent(in):: ixl, iyl
+      integer inc
+      real,intent(in):: yl(*)
 
 *  -- local variables
       real ntemp
@@ -364,7 +365,7 @@ c++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 c ***** end of subroutines convsr_vo ********
 c-----------------------------------------------------------------------
-      subroutine convsr_aux (ixl, iyl, yl)
+      subroutine convsr_aux (ixl, iyl)
 
 c...  Calculates various plasmas quantities used repeatedly in pandf
 
@@ -372,7 +373,6 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
 
 *  -- input arguments
       integer ixl, iyl, inc
-      real yl(1)
 *  -- local variables
       real ntemp
       integer is, ie, js, je, k, l
@@ -381,7 +381,8 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
       integer impflag, inegt, inegng
       integer jx,ixlp1,ixlp2,ixrm1
 *  -- external functions
-      real zimp, rnec, zeffc, intpnog
+      real zimp
+      real rnec, zeffc
 
       Use(Dim)                 # nx,ny,nhsp,nzsp,nisp,nusp,ngsp
       Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx1,iysptrx2,ixlb,ixrb

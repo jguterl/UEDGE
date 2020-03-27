@@ -63,8 +63,8 @@ c     local variables --
       do jn=1,nn
          do jr=1,nr
             do jt=1,nt
-               read(nget,9010) tdatm(jt,jr,jn), rdatm(jt,jr,jn), 
-     &                         ndatm(jt,jr,jn), emdatm(jt,jr,jn), 
+               read(nget,9010) tdatm(jt,jr,jn), rdatm(jt,jr,jn),
+     &                         ndatm(jt,jr,jn), emdatm(jt,jr,jn),
      &                         z1datm(jt,jr,jn), z2datm(jt,jr,jn)
             enddo
          enddo
@@ -188,7 +188,7 @@ c-----------------------------------------------------------------------
 
       real function emissbs (vte,vnr,vnt)
       implicit none
-      real vnt,vnr,vte
+      real,intent(in):: vnt,vnr,vte
 Use(Imslwrk)   # nxdata,nydata,nzdata,xdata,ydata,zdata,
                # kxords,kyords,kzords,xknots,yknots,zknots,emcoef
 
@@ -214,7 +214,7 @@ c     		vnt = ne*tau [sec/m**3].
 
       icont = 0
       vlogw=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots, yknots, zknots,
-     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords, 
+     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords,
      &             emcoef, ldf, mdf, icont, iworki, work2, iflagi)
       w=10**vlogw
       emissbs=w
@@ -226,7 +226,7 @@ c----------------------------------------------------------------------c
 
       real function z1avgbs (vte,vnr,vnt)
       implicit none
-      real vnt,vnr,vte
+      real,intent(in):: vnt,vnr,vte
 Use(Imslwrk)   # nxdata,nydata,nzdata,xdata,ydata,zdata,
                # kxords,kyords,kzords,xknots,yknots,zknots,z1coef
 
@@ -252,7 +252,7 @@ c     		vnt = ne*tau [sec/m**3].
 
       icont = 0
       vz1=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots, yknots, zknots,
-     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords, 
+     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords,
      &             z1coef, ldf, mdf, icont, iworki, work2, iflagi)
       z1avgbs=vz1
 
@@ -263,7 +263,7 @@ c-----------------------------------------------------------------------
 
       real function z2avgbs (vte,vnr,vnt)
       implicit none
-      real vnt,vnr,vte
+      real,intent(in):: vnt,vnr,vte
 Use(Imslwrk)   # nxdata,nydata,nzdata,xdata,ydata,zdata,
                # kxords,kyords,kzords,xknots,yknots,zknots,z2coef
 
@@ -289,7 +289,7 @@ c     		vnt = ne*tau [sec/m**3].
 
       icont = 0
       vz2=B3VAL (xuse, yuse, zuse, 0, 0, 0, xknots, yknots, zknots,
-     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords, 
+     &             nxcoef, nycoef, nzcoef, kxords, kyords, kzords,
      &             z2coef, ldf, mdf, icont, iworki, work2, iflagi)
       z2avgbs=vz2
 

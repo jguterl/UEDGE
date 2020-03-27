@@ -1325,6 +1325,7 @@ C
 C
 C***FIRST EXECUTABLE STATEMENT  B3VAL
       B3VAL = 0
+      Call xerrab('b3val called')
 C
 C  ------------------------------
 C  RESET STATE FROM PREVIOUS CALL
@@ -3600,6 +3601,7 @@ C
 
       Use(Timespl)
       real(Size4) sec4, gettime, tsint
+      call xerrab('B2Vahl called')
 
 C
 C***FIRST EXECUTABLE STATEMENT  B2VAhL
@@ -6066,6 +6068,7 @@ C***END PROLOGUE  BSPLVhN
       real T(*),VNIKX(*),DELTAM(20),DELTAP(20),x,vmprev,vm
       SAVE J, DELTAM, DELTAP
       DATA J/1/,(DELTAM(I),I=1,20),(DELTAP(I),I=1,20)/40*0./
+      call xerrab('save parameters here without threadprivate in comutil#1')
 C***FIRST EXECUTABLE STATEMENT  BSPLVhN
                                        GO TO (10,20),INDEX
    10 J = 1
@@ -6363,6 +6366,7 @@ C     .     hmax,tmp,sm1,tau,r1mach9
       DOUBLE PRECISION SM,DZERO
       SAVE RELEPS
       DATA RELEPS /0.E0/
+            call xerrab('save parameters here without threadprivate in comutil#2')
 C***FIRST EXECUTABLE STATEMENT  HFTIh
 C      IF (RELEPS.EQ.0) RELEPS = EPSILON(4)
       IF (RELEPS.EQ.0) RELEPS = EPSILON(releps)
@@ -6582,6 +6586,7 @@ C
       real             SDOT, SNRM2
       SAVE ZERO, ONE, FAC
       DATA ZERO, ONE /0.E0,1.E0/, FAC /0.1E0/
+            call xerrab('save parameters here without threadprivate in comutil#3')
 C***FIRST EXECUTABLE STATEMENT  LPDPh
       N = N1 + N2
       MODE = 1
@@ -7132,6 +7137,7 @@ C
       SAVE FIRST, SRELPR
 C
       DATA FIRST /.true./
+
 C***FIRST EXECUTABLE STATEMENT  LSEIh
 C
 C     Set the nominal tolerance used in the code for the equality
@@ -7555,6 +7561,7 @@ C
 C
       SAVE SRELPR, FIRST
       DATA FIRST /.true./
+            call xerrab('save parameters here without threadprivate in comutil#4')
 C
 C***FIRST EXECUTABLE STATEMENT  LSIh
 C
@@ -8223,6 +8230,7 @@ C
 C
       SAVE SRELPR, FIRST
       DATA FIRST /.true./
+            call xerrab('save parameters here without threadprivate in comutil#5')
 C***FIRST EXECUTABLE STATEMENT  WNLShM
 C
 C     Initialize variables.
@@ -9696,6 +9704,7 @@ C***END PROLOGUE  SROThM
      .     w,z
       SAVE ZERO, TWO
       DATA ZERO, TWO /0.0E0, 2.0E0/
+            call xerrab('save parameters here without threadprivate in comutil#5')
 C***FIRST EXECUTABLE STATEMENT  SROThM
       SFLAG=SPARAM(1)
       IF (N.LE.0 .OR. (SFLAG+TWO.EQ.ZERO)) GO TO 140
@@ -9783,216 +9792,7 @@ C
           RETURN
       END
 c-----------------------------------------------------------------------------
-c-----------------------------------------------------------------------------
-*DECK SROTMhG
-      SUBROUTINE SROTMhG (SD1, SD2, SX1, SY1, SPARAM)
-C***BEGIN PROLOGUE  SROTMhG
-C***PURPOSE  Construct a modified Givens transformation.
-C***LIBRARY   SLATEC (BLAS)
-C***CATEGORY  D1B10
-C***TYPE      SINGLE PRECISION (SROTMhG-S, DROTMG-D)
-C***KEYWORDS  BLAS, LINEAR ALGEBRA, MODIFIED GIVENS ROTATION, VECTOR
-C***AUTHOR  Lawson, C. L., (JPL)
-C           Hanson, R. J., (SNLA)
-C           Kincaid, D. R., (U. of Texas)
-C           Krogh, F. T., (JPL)
-C***DESCRIPTION
-C
-C                B L A S  Subprogram
-C    Description of Parameters
-C
-C     --Input--
-C      SD1  single precision scalar
-C      SD2  single precision scalar
-C      SX1  single precision scalar
-C      SY2  single precision scalar
-C   SPARAM  S.P. 5-vector. SPARAM(1)=SFLAG defined below.
-C           Locations 2-5 contain the rotation matrix.
-C
-C     --Output--
-C      SD1  changed to represent the effect of the transformation
-C      SD2  changed to represent the effect of the transformation
-C      SX1  changed to represent the effect of the transformation
-C      SY2  unchanged
-C
-C     Construct the modified Givens transformation matrix H which zeros
-C     the second component of the 2-vector  (SQRT(SD1)*SX1,SQRT(SD2)*
-C     SY2)**T.
-C     With SPARAM(1)=SFLAG, H has one of the following forms:
-C
-C     SFLAG=-1.E0     SFLAG=0.E0        SFLAG=1.E0     SFLAG=-2.E0
-C
-C       (SH11  SH12)    (1.E0  SH12)    (SH11  1.E0)    (1.E0  0.E0)
-C     H=(          )    (          )    (          )    (          )
-C       (SH21  SH22),   (SH21  1.E0),   (-1.E0 SH22),   (0.E0  1.E0).
-C
-C     Locations 2-5 of SPARAM contain SH11, SH21, SH12, and SH22,
-C     respectively.  (Values of 1.E0, -1.E0, or 0.E0 implied by the
-C     value of SPARAM(1) are not stored in SPARAM.)
-C
-C***REFERENCES  C. L. Lawson, R. J. Hanson, D. R. Kincaid and F. T.
-C                 Krogh, Basic linear algebra subprograms for Fortran
-C                 usage, Algorithm No. 539, Transactions on Mathematical
-C                 Software 5, 3 (September 1979), pp. 308-323.
-C***ROUTINES CALLED  (NONE)
-C***REVISION HISTORY  (YYMMDD)
-C   780301  DATE WRITTEN
-C   861211  REVISION DATE from Version 3.2
-C   891214  Prologue converted to Version 4.0 format.  (BAB)
-C   920316  Prologue corrected.  (WRB)
-C   920501  Reformatted the REFERENCES section.  (WRB)
-c   960207  Changed name to SROTMhG with REAL -> real, etc for mppl (TDR)
-C***END PROLOGUE  SROTMhG
-      implicit none
-      integer igo
-      real SPARAM(5),sd1,sd2,sx1,sy1,zero,one,two,gam,gamsq,rgamsq,sq1,
-     .     sq2,sp1,sp2,sflag,stemp,sh11,sh21,sh12,sh22,su
-      SAVE ZERO, ONE, TWO, GAM, GAMSQ, RGAMSQ
-      DATA ZERO, ONE, TWO /0.0E0, 1.0E0, 2.0E0/
-      DATA GAM, GAMSQ, RGAMSQ /4096.0E0, 1.67772E7, 5.96046E-8/
-C***FIRST EXECUTABLE STATEMENT  SROTMhG
-      IF (.NOT. SD1 .LT. ZERO) GO TO 10
-C       GO ZERO-H-D-AND-SX1..
-          GO TO 60
-   10 CONTINUE
-C     CASE-SD1-NONNEGATIVE
-      SP2=SD2*SY1
-      IF (.NOT. SP2 .EQ. ZERO) GO TO 20
-          SFLAG=-TWO
-          GO TO 260
-C     REGULAR-CASE..
-   20 CONTINUE
-      SP1=SD1*SX1
-      SQ2=SP2*SY1
-      SQ1=SP1*SX1
-C
-      IF (.NOT. ABS(SQ1) .GT. ABS(SQ2)) GO TO 40
-          SH21=-SY1/SX1
-          SH12=SP2/SP1
-C
-          SU=ONE-SH12*SH21
-C
-          IF (.NOT. SU .LE. ZERO) GO TO 30
-C         GO ZERO-H-D-AND-SX1..
-               GO TO 60
-   30     CONTINUE
-               SFLAG=ZERO
-               SD1=SD1/SU
-               SD2=SD2/SU
-               SX1=SX1*SU
-C         GO SCALE-CHECK..
-               GO TO 100
-   40 CONTINUE
-          IF (.NOT. SQ2 .LT. ZERO) GO TO 50
-C         GO ZERO-H-D-AND-SX1..
-               GO TO 60
-   50     CONTINUE
-               SFLAG=ONE
-               SH11=SP1/SP2
-               SH22=SX1/SY1
-               SU=ONE+SH11*SH22
-               STEMP=SD2/SU
-               SD2=SD1/SU
-               SD1=STEMP
-               SX1=SY1*SU
-C         GO SCALE-CHECK
-               GO TO 100
-C     PROCEDURE..ZERO-H-D-AND-SX1..
-   60 CONTINUE
-          SFLAG=-ONE
-          SH11=ZERO
-          SH12=ZERO
-          SH21=ZERO
-          SH22=ZERO
-C
-          SD1=ZERO
-          SD2=ZERO
-          SX1=ZERO
-C         RETURN..
-          GO TO 220
-C     PROCEDURE..FIX-H..
-   70 CONTINUE
-      IF (.NOT. SFLAG .GE. ZERO) GO TO 90
-C
-          IF (.NOT. SFLAG .EQ. ZERO) GO TO 80
-          SH11=ONE
-          SH22=ONE
-          SFLAG=-ONE
-          GO TO 90
-   80     CONTINUE
-          SH21=-ONE
-          SH12=ONE
-          SFLAG=-ONE
-   90 CONTINUE
-      GO TO IGO,(120,150,180,210)
-C     PROCEDURE..SCALE-CHECK
-  100 CONTINUE
-  110     CONTINUE
-          IF (.NOT. SD1 .LE. RGAMSQ) GO TO 130
-               IF (SD1 .EQ. ZERO) GO TO 160
-               ASSIGN 120 TO IGO
-C              FIX-H..
-               GO TO 70
-  120          CONTINUE
-               SD1=SD1*GAM**2
-               SX1=SX1/GAM
-               SH11=SH11/GAM
-               SH12=SH12/GAM
-          GO TO 110
-  130 CONTINUE
-  140     CONTINUE
-          IF (.NOT. SD1 .GE. GAMSQ) GO TO 160
-               ASSIGN 150 TO IGO
-C              FIX-H..
-               GO TO 70
-  150          CONTINUE
-               SD1=SD1/GAM**2
-               SX1=SX1*GAM
-               SH11=SH11*GAM
-               SH12=SH12*GAM
-          GO TO 140
-  160 CONTINUE
-  170     CONTINUE
-          IF (.NOT. ABS(SD2) .LE. RGAMSQ) GO TO 190
-               IF (SD2 .EQ. ZERO) GO TO 220
-               ASSIGN 180 TO IGO
-C              FIX-H..
-               GO TO 70
-  180          CONTINUE
-               SD2=SD2*GAM**2
-               SH21=SH21/GAM
-               SH22=SH22/GAM
-          GO TO 170
-  190 CONTINUE
-  200     CONTINUE
-          IF (.NOT. ABS(SD2) .GE. GAMSQ) GO TO 220
-               ASSIGN 210 TO IGO
-C              FIX-H..
-               GO TO 70
-  210          CONTINUE
-               SD2=SD2/GAM**2
-               SH21=SH21*GAM
-               SH22=SH22*GAM
-          GO TO 200
-  220 CONTINUE
-          IF (SFLAG) 250,230,240
-  230     CONTINUE
-               SPARAM(3)=SH21
-               SPARAM(4)=SH12
-               GO TO 260
-  240     CONTINUE
-               SPARAM(2)=SH11
-               SPARAM(5)=SH22
-               GO TO 260
-  250     CONTINUE
-               SPARAM(2)=SH11
-               SPARAM(3)=SH21
-               SPARAM(4)=SH12
-               SPARAM(5)=SH22
-  260 CONTINUE
-          SPARAM(1)=SFLAG
-          RETURN
-      END
+
 
 c*************************************************************************
 c  Subroutine tanh_multi is from Osborne/Groebner for fitting DIII-D data
@@ -10063,12 +9863,12 @@ c  Subroutine to read ne_tanh data and evaluate for input locations
 c******************************************************************************
 
       subroutine readne_dat(fname)
-       
+
       implicit none
       character*(*) fname
       Use(Dim)
       Use(Fitdata)
-     
+
 c     local variables --
       integer ios, n, nget, ii
       character*30 str1, str2, ptnam, fit_nam, dumm
@@ -10137,7 +9937,7 @@ c  Subroutine to read te_tanh data and evaluate for input locations
 c******************************************************************************
 
       subroutine readte_dat(fname)
-       
+
       implicit none
       character*(*) fname
       Use(Dim)
@@ -10212,7 +10012,7 @@ c  Subroutine to read ti_spline data and evaluate for input locations
 c******************************************************************************
 
       subroutine readti_dat(fname)
-       
+
       implicit none
       character*(*) fname
       Use(Dim)
@@ -10260,7 +10060,7 @@ ccc      call freeus(nget)
         read(nget,*) fcoef_bs(ii)
       enddo
       read(nget,*) str1, str2, numk_bs
- 
+
       close (nget)
 
       return
@@ -10272,7 +10072,7 @@ c Subroutine to call tanh fit for ne,te & spline for ti
 c*********************************************************
 
       subroutine fit_neteti
-       
+
       implicit none
       Use(Dim)              # ny
       Use(Xpoint_indices)   # iysptrx
@@ -10298,7 +10098,7 @@ c...  Shift psi used by psishift to allow control of separatrix
 
 c...  Use tanh function to evaluate ne and Te
       call tanh_multi(ncoefne_tanh, fcoefne_tanh, ny+2, psi_u,
-     &                fit_paramne_tanh, dumfit) 
+     &                fit_paramne_tanh, dumfit)
 c...  Copy & scale nefit by 1e20 to get correct units (1/m**3)
       do ir = 0, ny+1
         nefit(ir,ifitset) = 1e20*dumfit(ir)
@@ -10313,10 +10113,10 @@ c...  Use B_spline to evaluate Ti
       do ir = 0, iysptrx
          tifit(ir,ifitset) = B1VAhL(psi_u(ir),0,fit_t_bs,numc_bs,
      &                       numk_bs+1,fcoef_bs,inbv,wrk1,iflag1)
-      enddo 
+      enddo
 
       return
-      end   
+      end
 c ***  End of subroutine fit_neteti ------------------------------c
 c-----------------------------------------------------------------------c
 
@@ -10325,12 +10125,12 @@ c  Subroutine to read ne, te, ti data and evaluate for input locations
 c******************************************************************************
 
       subroutine read_exp_fit(fname)
-       
+
       implicit none
       character*(*) fname
       Use(Dim)
       Use(Fitdata)     #epsi_fit,eprofile_fit,isprofvspsi,yyc_fit
-     
+
 c     local variables --
       integer ios, n, nget, ii
       character*30 prof_name
@@ -10359,7 +10159,7 @@ c----------------------------------------------------------------------c
           read(nget,*) yyc_fit(ii), eprofile_fit(ii)
         endif
       enddo
-     
+
       close (nget)
 
       return

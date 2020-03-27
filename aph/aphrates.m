@@ -1,7 +1,7 @@
 c-----------------------------------------------------------------------
       real function erl1 (te, ne, tau)
       implicit none
-      real te, ne, tau
+      real,intent(in):: te, ne, tau
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev
@@ -23,7 +23,7 @@ c     "ionization" processes - D. Stotler's "coupling to the ground state"
 c     te [J]          = electron temperature
 c     ne [/m**3]      = electron density
 c     erl1 [J/sec]    = radiation rate
-
+c      if (istabon.ne.10) call xerrab('istabon ne 10')
 c----------------------------------------------------------------------c
       if (istabon .le. 7) then   # various older models
 
@@ -147,7 +147,7 @@ c----------------------------------------------------------------------c
 c-----------------------------------------------------------------------
       real function erl2 (te, ne, tau)
       implicit none
-      real te, ne, tau
+      real,intent(in):: te, ne, tau
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev
@@ -169,7 +169,7 @@ c     "recombination" processes - D. Stotler's "coupling to the continuum"
 c     te [J]          = electron temperature
 c     ne [/m**3]      = electron density
 c     erl2 [J/sec]    = radiation rate
-
+c      if (istabon.ne.10) call xerrab('istabon ne 10')
 c----------------------------------------------------------------------c
       if (istabon .le. 7) then   # various older models
 
@@ -293,8 +293,8 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       real function rcx (t0, n0, k)
       implicit none
-      integer k
-      real t0, n0
+      integer,intent(in):: k
+      real,intent(in):: t0, n0
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev,m_prot
@@ -307,7 +307,7 @@ c     local variables --
       integer ini,iti
       real rlni,rlti,fxni,fxti,a0,a1
       integer je,j0
-      real zloge,rle,fje,rcx1,rcx2
+      real zloge,rle,fje,rcx1,rcx2,rcxcopy
       real kdum
       integer zn,za,zamax
       external mcrates
@@ -385,14 +385,14 @@ c----------------------------------------------------------------------c
          zn=1     # nuclear charge for hydrogenic species
          zamax=1  # maximum atomic charge for hydrogenic species
          za=1     # compute c-x rate for this charge state
-         call mcrates(n0,t0,t0,za,zamax,zn,kdum,kdum,rcx)
-
+         call mcrates(n0,t0,t0,za,zamax,zn,kdum,kdum,rcxcopy)
+         rcx=rcxcopy
 c----------------------------------------------------------------------c
       else     #     use analytic model (hydrogen) for all other istabon
 
          a = 3*t0 / (10*ev)
          rcx = 1.7e-14 * a**0.333
-         if (issgvcxc.eq.1) rcx = sgvcxc # use fixed sig-v 
+         if (issgvcxc.eq.1) rcx = sgvcxc # use fixed sig-v
          if (issgvcxc.eq.2) rcx = sgvcxc*sqrt(t0/m_prot) # fixed sig
 
 c----------------------------------------------------------------------c
@@ -403,8 +403,8 @@ c----------------------------------------------------------------------c
 c-----------------------------------------------------------------------
       real function rqa (te, ne, k)
       implicit none
-      integer k
-      real te, ne
+      integer,intent(in):: k
+      real,intent(in):: te, ne
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev
@@ -428,7 +428,7 @@ c     local variables --
       real zloge,zlogd,rle,rld,fje,fjd,w11,w12,w21,w22,w1,w2,w,vlogw
       integer nxcoef,nycoef
       real xuse,yuse
-
+c             call xerrab('rqa called')
 c     Compute electron energy loss rate parameter for processes
 c     starting from charge state k --
 c     k                = initial charge state
@@ -601,7 +601,7 @@ c     has already added it in
          rqa = svradp(te/ev,ne)
 
 c----------------------------------------------------------------------c
-      elseif (istabon .gt. 7) then	# write error message 
+      elseif (istabon .gt. 7) then	# write error message
          call xerrab('**** function rqa is not defined for istabon > 7')
 
 c----------------------------------------------------------------------c
@@ -612,8 +612,8 @@ c----------------------------------------------------------------------c
 c-----------------------------------------------------------------------
       real function rra (te, ne, tau, k)
       implicit none
-      integer k
-      real te, ne, tau
+      integer,intent(in):: k
+      real,intent(in):: te, ne, tau
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev
@@ -633,7 +633,7 @@ c     local variables --
       real rlne,rlte,fxne,fxte,t0,t1
       integer je,jd,jr
       real zloge,zlogd,zlogr,rle,rld,fje,fjd,fjr,
-     .     rra11,rra12,rra21,rra22,rra1,rra2
+     .     rra11,rra12,rra21,rra22,rra1,rra2,rracopy
       integer nxcoef,nycoef
       real xuse,yuse,vlog10rra
       real kdum
@@ -854,7 +854,8 @@ c----------------------------------------------------------------------c
             zn=1     # nuclear charge for hydrogenic species
             zamax=1  # maximum atomic charge for hydrogenic species
             za=1     # compute recombination rate for this charge state
-            call mcrates(ne,te,te,za,zamax,zn,kdum,rra,kdum)
+            call mcrates(ne,te,te,za,zamax,zn,kdum,rracopy,kdum)
+            rra=rracopy
 
 c----------------------------------------------------------------------c
       endif
@@ -864,8 +865,8 @@ c----------------------------------------------------------------------c
 c-----------------------------------------------------------------------
       real function rsa (te, ne, tau, k)
       implicit none
-      integer k
-      real te, ne, tau
+      integer,intent(in):: k
+      real,intent(in):: te, ne, tau
 Use(Dim)
 Use(Share)                # istabon
 Use(Physical_constants)   # ev
@@ -886,7 +887,7 @@ c     local variables --
       real rlne,rlte,fxne,fxte,t0,t1
       integer je,jd,jr
       real zloge,zlogd,zlogr,rle,rld,fje,fjd,fjr,
-     .     rsa11,rsa12,rsa21,rsa22,rsa1,rsa2
+     .     rsa11,rsa12,rsa21,rsa22,rsa1,rsa2,rsacopy
       integer nxcoef,nycoef
       real xuse,yuse,vlog10rsa
       real kdum
@@ -1001,6 +1002,7 @@ c     compute abscissae --
 
 c----------------------------------------------------------------------c
       elseif (istabon .eq. 6) then
+cJG could be simplified...
 c			use spline fit to POST93 table data
 c      xuse=min(max(xdata(1),log(te/ev)),xdata(nxdata))
 c      yuse=min(max(ydata(1),log10(ne)),ydata(nydata))
@@ -1020,7 +1022,7 @@ c     compute abscissae --
       tsval = gettime(sec4)
       rsa = B2VAhL(xuse, yuse, 0, 0, xknots, yknots, nxcoef, nycoef,
      .          kxords, kyords, rsacoef, ldf, workh, iflag)
-      totb2val = totb2val + gettime(sec4) - tsval      
+      totb2val = totb2val + gettime(sec4) - tsval
 c----------------------------------------------------------------------c
       elseif (istabon .eq. 7) then
 c                       use polynomial fit from Bob Campbell -  8/93
@@ -1049,8 +1051,8 @@ c     ionization rate parameter -- now logarithm of rates
          rsa12=log( wsveh(je,jd+1,jr) )
          rsa21=log( wsveh(je+1,jd,jr) )
          rsa22=log( wsveh(je+1,jd+1,jr) )
-         rsa1=rsa11 + fjd*(rsa12-rsa11) 
-         rsa2=rsa21 + fjd*(rsa22-rsa21) 
+         rsa1=rsa11 + fjd*(rsa12-rsa11)
+         rsa2=rsa21 + fjd*(rsa22-rsa21)
          rsa = exp( rsa1 + fje*(rsa2-rsa1) )
 
 c----------------------------------------------------------------------c
@@ -1111,8 +1113,8 @@ c----------------------------------------------------------------------c
             zn=1     # nuclear charge for hydrogenic species
             zamax=1  # maximum atomic charge for hydrogenic species
             za=0     # compute ionization rate for this charge state
-            call mcrates(ne,te,te,za,zamax,zn,rsa,kdum,kdum)
-
+            call mcrates(ne,te,te,za,zamax,zn,rsacopy,kdum,kdum)
+            rsa=rsacopy
 c----------------------------------------------------------------------c
       endif
 
@@ -1132,13 +1134,14 @@ c
 c    y = log10(te(eV))
 c    x = log10(ne(1/m3))
 c caution: other version may reverse x,y and then correct later
-c 
+c
 c Both ionization and recombination rates are in m3/sec.
 c Etai is in eV.
 c
       implicit none
 
-      real temp,den,x,y,ain,bin,cin,din,ein,gin,hin,riin
+      real,intent(in):: temp,den
+      real x,y,ain,bin,cin,din,ein,gin,hin,riin
 
 c Fit for Ionization Rate
 
@@ -1179,14 +1182,15 @@ c
 c    y = log10(te(eV))
 c    x = log10(ne(1/m3))
 c caution: other version may reverse x,y and then correct later
-c 
+c
 c Both ionization and recombination rates are in m3/sec.
 c Etai is in eV.
 c
 c
       implicit none
 
-      real temp,den,x,y,ar,br,cr,dr,er,gr
+      real ,intent(in)::temp,den
+      real x,y,ar,br,cr,dr,er,gr
 c
 c Fit for Recombination Rate
 c
@@ -1229,14 +1233,15 @@ c
 c    y = log10(te(eV))
 c    x = log10(ne(1/m3))
 c caution: other version may reverse x,y and then correct later
-c 
+c
 c Both ionization and recombination rates are in m3/sec.
 c Etai is in eV.
 c
 
       implicit none
 
-      real temp,den,x,y,ai,bi,ci,di,ei,gi,ae,be,ce,de,ee,ge,sionfl,etai
+      real ,intent(in)::temp,den
+      real x,y,ai,bi,ci,di,ei,gi,ae,be,ce,de,ee,ge,sionfl,etai
 
 c Fit for Ionization Rate
 
@@ -1283,7 +1288,7 @@ c
 c
 c Above 100eV, etai is constant at the 100eV value
 c
-      svradp = max( 0.e0,(13.6e0+etai(x,min(2.e0,y))) ) * 
+      svradp = max( 0.e0,(13.6e0+etai(x,min(2.e0,y))) ) *
      .         1.602e-19 * sionfl(x,y)
 c
       return
@@ -1293,7 +1298,7 @@ c----------------------------------------------------------------------c
 
       real function svdiss (te)
       implicit none
-      real te
+      real,intent(in):: te
 
 Use(Physical_constants)   # ev
 
@@ -1310,13 +1315,13 @@ c     local variables --
 
       b0 = -2.787217511174e+01
       b1 =  1.052252660075e+01
-      b2 = -4.973212347860e+00   
+      b2 = -4.973212347860e+00
       b3 =  1.451198183114e+00
       b4 = -3.062790554644e-01
-      b5 =  4.433379509258e-02   
+      b5 =  4.433379509258e-02
       b6 = -4.096344172875e-03
       b7 =  2.159670289222e-04
-      b8 = -4.928545325189e-06   
+      b8 = -4.928545325189e-06
 
       logt = log (te/ev)
       logsv = b0+logt*(b1+logt*(b2+logt*(b3+logt*(b4

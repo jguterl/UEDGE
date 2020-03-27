@@ -53,10 +53,10 @@ c-----------------------------------------------------------------------
       implicit none #33
 
 *  -- input arguments --
-      integer nx, ny, pos, meth
-      real flox(0:nx+1,0:ny+1), floy(0:nx+1,0:ny+1)
-      real difx(0:nx+1,0:ny+1), dify(0:nx+1,0:ny+1)
-      real phi(0:nx+1,0:ny+1)
+      integer,intent(in):: nx, ny, pos, meth
+      real,intent(in):: flox(0:nx+1,0:ny+1), floy(0:nx+1,0:ny+1)
+      real,intent(in):: difx(0:nx+1,0:ny+1), dify(0:nx+1,0:ny+1)
+      real,intent(in):: phi(0:nx+1,0:ny+1)
 
 *  -- common blocks --
       Use(Selec)   # i1,i4,i5,i8,j1,j4,j5,j8,ixp1
@@ -580,8 +580,9 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       implicit none
 
 *  -- input arguments
-      integer xc, yc, neq
-      real time, yl(neqmx),yldot(neqmx)
+      integer,intent(in):: xc, yc, neq
+      real,intent(in):: time, yl(*)
+      real yldot(*)
 
 *  -- set local array dimension
       integer nigmx
@@ -703,8 +704,9 @@ cnxg      data igs/1/
       integer zmax,znuc
       real dene,denz(0:1),radz(0:1)
       real rsa, rra, rqa, rcx, emissbs, erl1, erl2, radneq, radimpmc
-      real radmc, svdiss, vyiy0, vyiym1, v2ix0, v2ixm1
       external rsa, rra, rqa, rcx, emissbs, erl1, erl2, radneq, radimpmc
+      real radmc, svdiss
+      real vyiy0, vyiym1, v2ix0, v2ixm1
       external radmc, svdiss
       INTEGER :: NTHREADS, TID, OMP_GET_NUM_THREADS
 ccc      save
@@ -757,6 +759,7 @@ c     (IJ  2015/04/06) add ismcnon>=3 for external call to run_neutrals
          endif
          cmneut=1.
       else if (ismcnon .eq. 2) then    # switch between two models:
+      call xerrab('***JG:not test for this version')
          if (yl(neq+1) .gt. 0) then   # use fluid model for Jacobian
             cfneut=1.
             if (isupgon(1) .eq. 1) then
@@ -844,6 +847,7 @@ c     (IJ  2015/04/06) add ismcnon>=3 for external call to run_neutrals
             endif
         endif
       else if (ismcnon .eq. 4) then # test a different fluid model in the preconditioner
+      call xerrab('***JG:not test for this version')
          if (yl(neq+1) .gt. 0) then   # Precon eval
             parvis=parvis*pnc_cfparvis
             travis=travis*pnc_cftravis
@@ -1025,7 +1029,7 @@ c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
 
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
-         call convsr_aux (xc, yc, yl)
+         call convsr_aux (xc, yc)
 
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
@@ -1607,7 +1611,8 @@ c     saved here so they can be restored below.
             ix1 = ixm1(ix,iy)
             if (isimpon .eq. 5) then   # Hirshmans reduced-ion approx.
                if (istimingon .eq. 1) tsimp = gettime(sec4)
-               call mombal (ix1,ix,iy)
+                              call xerrab('isimpon 5 deactivated for omp')
+c                              call mombal (ix1,ix,iy)
                if (istimingon .eq. 1) call timimpfj (tsimp, xc)
             elseif(isimpon .eq. 6 .or. isimpon .eq. 7) then # Force balance without inertia
                if (istimingon .eq. 1) tsimp = gettime(sec4)
@@ -1641,7 +1646,8 @@ ccc     .                               upi(ix1,iy,ifld) = up(ix1,iy,ifld)
             ix2 = ixp1(ix,iy)
             if (isimpon .eq. 5) then
                if (istimingon .eq. 1) tsimp = gettime(sec4)
-               call mombal (ix,ix2,iy)
+               call xerrab('isimpon deactivated for omp')
+c               call mombal (ix,ix2,iy)
                if (istimingon .eq. 1) call timimpfj (tsimp, xc)
             elseif(isimpon .eq. 6 .or. isimpon .eq. 7) then # Force balance without inertia
                if (istimingon .eq. 1) tsimp = gettime(sec4)
@@ -1758,8 +1764,10 @@ c ..       switch to right plate(s)
    24    continue
    25 continue
 
-      if (isimpon.eq.5) goto 29    # have upe from mombal
-
+      if (isimpon.eq.5) then
+                     call xerrab('isimpon 5 deactivated for omp')
+c      goto 29    # have upe from mombal
+      endif
       do iy = j1, j6    #iys1, iyf6
          do ix = i1, i6
             upe(ix,iy) = 0.
@@ -1940,6 +1948,7 @@ c            write(*,*) 'Just after psordisold; xc,yc=',xc,yc
 c              write(*,*) 'Begin psorold loop;ifld,nfsp,psorc=',ifld,nfsp
                psorold(ifld) = psorc(xc,yc,ifld)
                psorxrold(ifld) = psorxr(xc,yc,ifld)
+c              if (xc==1 .and. yc==1) write(*,*) 'psorxr #00',psorxr(xc,yc,ifld)
                msorold(ifld) = msor(xc,yc,ifld)
                msorxrold(ifld) = msorxr(xc,yc,ifld)
                nucxiold(ifld) = nucxi(xc,yc,ifld)
@@ -1966,6 +1975,8 @@ c...  The particle source can be frozen if ifixpsor.ne.0
         do ifld = 1, nhsp  # Hydrogen-only loop
          if (zi(ifld) > 0.) then  #calc only for hydrogen ions
           igsp = igsp + 1
+      if (igsp.gt.ngsp) call xerrab('igsp larger than igsp in pandf. Check setttings
+     . (ziin must be set to zero for neutral species)')
           do iy = iys1, iyf6
             do ix = ixs1, ixf6
 
@@ -1998,14 +2009,15 @@ c               write(*,*) 'tid,ng',tid,ng(ix,iy,igsp),ix,iy,igsp
                psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
      .                            (ngbackg(igsp)/ng(ix,iy,igsp))**ingb) ) *
      .                             nuiz(ix,iy,igsp) * vol(ix,iy)
-*               psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
-*     .                            (ngbackg(igsp)/1e20)**ingb) ) *vol(ix,iy)
-c               psorbgg(ix,iy,igsp) =1e20
+*JGtest               psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
+*JGtest     .                            (ngbackg(igsp)/1e20)**ingb) ) *vol(ix,iy)
+*JG            psorbgg(ix,iy,igsp) =1e20
                psorgc(ix,iy,igsp) = -ng(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy)
      .                              +psorbgg(ix,iy,igsp)
                psorc(ix,iy,ifld) = - psorgc(ix,iy,igsp)
                psordis(ix,iy) = psorc(ix,iy,1)  # changed below if ishymol=1
                psorxrc(ix,iy,ifld) = -ni(ix,iy,ifld)*nurc(ix,iy,igsp)*vol(ix,iy)
+c               if (ix==1 .and. iy==1) write(*,*) 'psorxrc(ix,iy,ifld)=', ni(ix,iy,ifld),nurc(ix,iy,igsp),vol(ix,iy)
                psorrgc(ix,iy,igsp) = -psorxrc(ix,iy,ifld)
                msor(ix,iy,ifld) = 0.
                msorxr(ix,iy,ifld) = 0.
@@ -2033,7 +2045,10 @@ c   neutral particle source/sink for isupgon=1 (reset below if multispecies
 c   models are on [isimpon = 5 or 6 or 7])
               if(isupgon(igsp) .eq. 1)then # inertia gas species is ifld+1
                  psorc(ix,iy,ifld+1)= -psorc(ix,iy,ifld)
+
                  psorxrc(ix,iy,ifld+1)= -psorxrc(ix,iy,ifld)
+cJG
+        if (ix==1 .and. iy==1) write(*,*) 'psorxrc(ix,iy,ifld)=', psorxrc(ix,iy,ifld+1),psorxrc(ix,iy,ifld)
                  msor(ix,iy,ifld+1)= 0.
                  msorxr(ix,iy,ifld+1)= 0.
               endif
@@ -2056,6 +2071,7 @@ c*****************************************************************
                  psorg(ix,iy,igsp) = psorgc(ix,iy,igsp)
                  psor(ix,iy,ifld) =  psorc(ix,iy,ifld)
                  psorxr(ix,iy,ifld) = psorxrc(ix,iy,ifld)
+c                 if (ix==1.and.iy==1) write(*,*) 'psorxrc#0',psorxrc(ix,iy,ifld)
                  psorrg(ix,iy,igsp) = psorrgc(ix,iy,igsp)
                  if(isupgon(igsp) .eq. 1) then # inertia gas is ifld+1
                    psor(ix,iy,ifld+1)= -psor(ix,iy,ifld)
@@ -2333,6 +2349,7 @@ c   contributions just calculated for multispecies
               if (isupgon(1) .eq. 1) then #should be generalized to D & T
                  psor(ix,iy,iigsp)= -psor(ix,iy,1)
                  psorxr(ix,iy,iigsp)= -psorxr(ix,iy,1)
+c                 if (ix==1 .and. iy==1 ) write(*,*) 'psorxr #2',psorxr(ix,iy,iigsp),psorxr(ix,iy,1)
               endif
 c
   603        continue
@@ -2403,6 +2420,7 @@ c  *** a Jacobian calculation
 c ...    integ. sources over cells (but not for Jac) for higher-order accuracy
 
              do ifld = 1, nfsp  # loop over ions
+
                 call volave(nx, ny, j2, j5, i2, i5, ixp1(0,0), ixm1(0,0),
      .                 fsprd, vol(0,0), psor_tmpov(0,0), psor(0,0,ifld))
                 call volave(nx, ny, j2, j5, i2, i5, ixp1(0,0), ixm1(0,0),
@@ -2991,6 +3009,8 @@ c ----- The inertial neutrals coeff. are flux-limited and add to total here
             iy1 = min(iy,ny)   #dont use j5 because hcx also in loop (not imp.)
             do 63 ix = i1, i6
                ix1 = ixp1(ix,iy)
+cJG warning
+cJG               ix1=ix
                tgavex = max(0.5*(tg(ix,iy,1) + tg(ix1,iy,1)), temin*ev)
                tgavey= max(0.5*(tgy0(ix,iy,1)+tgy1(ix,iy,1)), temin*ev)
                niavex = 0.5*(ni(ix,iy,1) + ni(ix1,iy,1)) #only for coll. term
@@ -3073,6 +3093,8 @@ c ... Gas thermal conductivity coeffs - from self-collisions
         do iy = j1, j6
         iy1 = min(iy,ny)
           do ix = i1, i6
+cJG WARNING
+cJG         ix1=ix
             ix1 = ixp1(ix,iy)
             tgavex = max( (tg(ix,iy,igsp)*gx(ix,iy) +
      .                              tg(ix1,iy,igsp)*gx(ix1,iy)) /
@@ -3350,14 +3372,21 @@ c----------------------------------------------------------------------c
        do 86 iy = j2, j5
          do 85 ix = i2, i5
 	   if(isnionxy(ix,iy,ifld) == 1) then
+c	   if (ix==1 .and. iy==1) write(*,*) 'resco #1',resco(ix,iy,ifld)
               resco(ix,iy,ifld) =1+snic(ix,iy,ifld)
      .           +sniv(ix,iy,ifld)*ni(ix,iy,ifld) +
-     .           volpsor(ix,iy,ifld) +
-     .           cfneut * cfneutsor_ni * cnsor * psor(ix,iy,ifld)
+     .           volpsor(ix,iy,ifld)
+c               if (ix==1 .and. iy==1) write(*,*) 'resco #1b',resco(ix,iy,ifld)
+                resco(ix,iy,ifld)=resco(ix,iy,ifld)+cfneut * cfneutsor_ni * cnsor * psor(ix,iy,ifld)
      .          + cfneut * cfneutsor_ni * cnsor * psorxr(ix,iy,ifld) +
-     .           cfneut * cfneutsor_ni * cnsor * psori(ix,iy,ifld) -
-     .           nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
+     .           cfneut * cfneutsor_ni * cnsor * psori(ix,iy,ifld)
+c        if (ix==1 .and. iy==1) write(*,*) 'psource #1c',psorxr(ix,iy,ifld) ,psori(ix,iy,ifld),psor(ix,iy,ifld)
+c        if (ix==1 .and. iy==1) write(*,*) 'resco #1c',resco(ix,iy,ifld)
+             resco(ix,iy,ifld)=resco(ix,iy,ifld) - nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
      .           voljcsor(ix,iy)/qe
+c           if (ix==1 .and. iy==1) write(*,*) 'resco #2',resco(ix,iy,ifld)
+
+
            endif
 c           if (ifld .ne. iigsp) then
 	       if(zi(ifld) .ne. 0) then # IJ 2016 skip if neutral zi(ifld)=0
@@ -3365,6 +3394,7 @@ c           if (ifld .ne. iigsp) then
            else # IJ 2016 zi==0, assume neutral->ifld and ion->ifld-1
               resco(ix,iy,ifld) = resco(ix,iy,ifld) - cmneut * uesor_ni(ix,iy,ifld-1)
            endif
+c           if (ix==1 .and. iy==1) write(*,*) 'resco #3',resco(ix,iy,ifld)
    85    continue
    86  continue
 
@@ -3746,7 +3776,11 @@ c  Add drag with cold, stationary impurity neutrals
      .                       nueli(ix,iy,ifld)+nueli(ix2,iy,ifld) )*
      .                       up(ix,iy,ifld)*volv(ix,iy)
                   endif
+cJG
+               else
+                  resmo(ix,iy,ifld) = 0.
                endif
+
 
                if (isupgon(1) .eq. 1) then
 
@@ -4002,7 +4036,9 @@ c.... Now do the ions (hcxi is flux-limited previously when it is built)
 
       do 126 iy = j4, j8
          do 125 ix = i1, i5
-            ix1 = ixp1(ix,iy)
+         ix1 = ixp1(ix,iy)
+cJG WARNING
+cJG            ix1=ix
             ltmax = min( abs(te(ix,iy)/(rrv(ix,iy)*gtex(ix,iy) + cutlo)),
      .                   lcone(ix,iy) )
             lmfpe = 2e16*(te(ix,iy)/ev)**2/ne(ix,iy)
@@ -4823,9 +4859,14 @@ c ... Define a background elec energy source to prevent very low Te
 c******************************************************************
       do iy = iys, iyf  #j2, j5
         do ix = ixs, ixf  #i2, i5
-          pwrebkgold = pwrebkg(ix,iy)
+cJG          pwrebkgold = pwrebkg(ix,iy)
+cJG warning
+
+             pwrebkgold =pwrbkg_c
           if (isimpon == 0) then
-            pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+cJG            pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+cJG
+                     pwrebkg(ix,iy) =pwrbkg_c
 ccc            pwrebkg(ix,iy) = ( tebg*ev/te(ix,iy))*(0.9+
 ccc     .                        (0.1*tebg*ev/te(ix,iy))**iteb ) *
 ccc     .                                                  pwrbkg_c
@@ -5048,6 +5089,7 @@ c******************************************************************
                   iv = idxn(ix,iy,ifld)
                   yldot(iv) = (1-iseqalg(iv)) *
      .                        resco(ix,iy,ifld)/(vol(ix,iy)*n0(ifld))
+c       if (iv==265) write(*,*) yldot(iv),resco(ix,iy,ifld),vol(ix,iy),n0(ifld)
                endif
  254        continue
             do 255 ifld = 1, nusp
@@ -5099,7 +5141,8 @@ c...  Finally, reset some source terms if this is a Jacobian evaluation
          if (xc .ge. 0 .and. yc .ge. 0) then
             ix1 = ixm1(xc,yc)
             if(isimpon.gt.0) pwrzec(xc,yc) = pradold
-            pwrebkg(xc,yc) = pwrebkgold
+cJG            pwrebkg(xc,yc) = pwrebkgold
+            pwrebkg(xc,yc)=pwrbkg_c
             pwribkg(xc,yc) = pwribkgold
             erliz(xc,yc) = erlizold
             erlrc(xc,yc) = erlrcold
@@ -5114,6 +5157,7 @@ c...  Finally, reset some source terms if this is a Jacobian evaluation
             do ifld = 1, nfsp
                psorc(xc,yc,ifld) = psorold(ifld)
                psorxr(xc,yc,ifld) = psorxrold(ifld)
+c               if (xc==1 .and. yc==1 ) write(*,*) 'psorxr #0',psorxr(xc,yc,ifld),psorxrold(ifld)
                frici(ix1,yc,ifld) = friciom(ifld)
                frici(xc,yc,ifld) = fricio(ifld)
                upi(ix1,yc,ifld) = upiom(ifld)
@@ -5157,3 +5201,181 @@ c ... Accumulate cpu time spent here.
       end
 
 c****** end of subroutine pandf ************
+
+c-----------------------------------------------------------------------
+      subroutine pandf1(xc, yc, ieq, neq, time, yl, yldot)
+
+c ... Calculates matrix A and the right-hand side depending on the
+c     values of xc, yc.
+c  Definitions for argument list
+c
+c  Input variables:
+c    xc is poloidal index of perturbed variablefor Jacobian calc,
+c       or =-1 for full RHS evaluation
+c    yc is radial index for perturbed variable for Jacobian calc,
+c       or =-1 for full RHS evaluation
+c    ieq is the eqn number for Jacobian eval; not presently used
+c    neq is the total number of variables
+c    time is the present physical time; useable by VODPK but not NKSOL
+c    yl is the vector of unknowns
+c  Output variables:
+c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
+
+      implicit none
+      Use(Dim)     # nusp,nisp,ngsp
+      Use(Math_problem_size)   # neqmx(for arrays not used here)
+      Use(UEpar)   # svrpkg,isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,
+                   # isngonxy,isphionxy
+cc      Use(Selec)   # i2,i5,j2,j5
+      Use(Time_dep_nwt)   # nufak,dtreal,ylodt,dtuse
+      Use(Indexes) # idxn,idxg,idxu,dxti,idxte,idxphi
+      Use(Ynorm)   # isflxvar,isrscalf
+      Use(Share)    # geometry,nxc,isnonog,cutlo
+      Use(Indices_domain_dcl) # ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
+      Use(Compla)  # zi
+      Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx
+
+*  -- arguments
+      integer,intent(in):: xc, yc, ieq, neq     # ieq is the equation index for Jac. calc
+      real,intent(in):: time, yl(*)
+      real yldot(*)
+
+*  -- local variables
+      integer ix,iy,igsp,iv,iv1,ifld,j2l,j5l,i2l,i5l
+      character*80 msgjm
+      integer nrcv, ierrjm, ijmgetmr
+
+ccc      save
+
+c
+c     Check if "k" or "kaboom" has been typed to jump back to the parser
+c
+      if (((svrpkg.eq.'nksol') .or. (svrpkg.eq.'petsc')) .and. iskaboom.eq.1) then
+                              #can only call once - preserves 's' in vodpk
+        ierrjm = ijmgetmr(msgjm,80,1,nrcv)
+        if (ierrjm .eq. 0) then
+          if (msgjm(1:nrcv).eq.'kaboom' .or. msgjm(1:nrcv).eq.'k')then
+            call xerrab("")
+          endif
+        endif
+      endif
+
+c     check if a "ctrl-c" has been type to interrupt - from basis
+      call ruthere
+
+c
+c  PANDF calculates the equations in the interior of the grid, plus calls
+c  bouncon for B.C. and poten for potential
+c
+      call pandf (xc, yc, neq, time, yl, yldot)
+c
+c...  If isflxvar=0, we use ni,v,Te,Ti,ng as variables, and the ODEs need
+c...  to be modified as original equations are for d(nv)/dt, etc
+c...  If isflxvar=2, variables are ni,v,nTe,nTi,ng. Boundary equations and
+c...  potential equations are not reordered.
+
+      if(isflxvar.ne.1 .and. isrscalf.eq.1) call rscalf(yl,yldot)
+c
+c ... Now add psuedo or real timestep for nksol method, but not both
+      if (nufak.gt.1.e5 .and. dtreal.lt.1.e-5) then
+         call xerrab('***Both 1/nufak and dtreal < 1.e5 - illegal***')
+      endif
+
+c...  Add a real timestep, dtreal, to the nksol equations
+c...  NOTE!! condition yl(neq+1).lt.0 means a call from nksol, not jac_calc
+
+      if(dtreal < 1.e15) then
+       if((svrpkg=='nksol' .and. yl(neq+1)<0) .or. svrpkg == 'petsc') then
+         if (isbcwdt .eq. 0) then  # omit b.c. eqns
+cccMER   NOTE: what about internal guard cells (for dnbot,dnull,limiter) ???
+            j2l = 1
+            j5l = ny
+            i2l = 1
+            i5l = nx
+         else                      # include b.c. eqns
+            j2l = (1-iymnbcl)
+            j5l = ny+1-(1-iymxbcl)
+            i2l = (1-ixmnbcl)
+            i5l = nx+1-(1-ixmxbcl)
+         endif
+         do iy = j2l, j5l    # if j2l=j2, etc., omit the boundary equations
+            do ix = i2l, i5l
+              do ifld = 1, nisp
+                if(isnionxy(ix,iy,ifld) .eq. 1) then
+                  iv = idxn(ix,iy,ifld)
+                  yldot(iv) = (1.-fdtnixy(ix,iy,ifld))*yldot(iv)
+                  if(zi(ifld).eq.0. .and. ineudif.eq.3) then
+                    yldot(iv) = yldot(iv) - (1/n0(ifld))*
+     .                          (exp(yl(iv))-exp(ylodt(iv)))/dtuse(iv)
+                  else
+                    yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                  endif
+                endif
+              enddo
+               if(ix.ne.nx+2*isbcwdt) then
+                              # nx test - for algebr. eq. unless isbcwdt=1
+                  do ifld = 1, nusp
+                    if(isuponxy(ix,iy,ifld).eq.1) then
+                      iv = idxu(ix,iy,ifld)
+                      yldot(iv) = (1.-fdtupxy(ix,iy,ifld))*yldot(iv)
+                      yldot(iv) = yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                    endif
+                  enddo
+               endif
+               if (isteonxy(ix,iy) == 1) then
+                 iv =  idxte(ix,iy)
+                 yldot(iv) = (1.-fdttexy(ix,iy))*yldot(iv)
+                 yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtuse(iv)
+               endif
+               if (istionxy(ix,iy) == 1) then
+                 iv1 = idxti(ix,iy)
+                 yldot(iv1) = (1.-fdttixy(ix,iy))*yldot(iv1)
+                 yldot(iv1)=yldot(iv1) - (yl(iv1)-ylodt(iv1))/dtuse(iv1)
+               endif
+               do igsp = 1, ngsp
+                  if(isngonxy(ix,iy,igsp).eq.1) then
+                     iv = idxg(ix,iy,igsp)
+                     yldot(iv) = (1.-fdtngxy(ix,iy,igsp))*yldot(iv)
+                     if(ineudif.eq.3) then
+                       yldot(iv) = yldot(iv) - (1/n0g(igsp))*
+     .                            (exp(yl(iv))-exp(ylodt(iv)))/dtuse(iv)
+                     else
+                       yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                     endif
+                  endif
+               enddo
+               do igsp = 1, ngsp
+                  if(istgonxy(ix,iy,igsp).eq.1) then
+                     iv = idxtg(ix,iy,igsp)
+                     yldot(iv) = (1.-fdttgxy(ix,iy,igsp))*yldot(iv)
+                     yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                  endif
+               enddo
+               if (isphionxy(ix,iy).eq.1 .and. isbcwdt.eq.1) then
+                  iv = idxphi(ix,iy)
+                  yldot(iv) = (1.-fdtphixy(ix,iy))*yldot(iv)
+                  yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtuse(iv)
+               endif
+
+            enddo
+         enddo
+
+C...  Now do an additional relaxation of the potential equations with
+c...  timestep dtphi
+        if (dtphi < 1e10) then
+          do iy = 0, ny+1
+            do ix = 0, nx+1
+              if (isphionxy(ix,iy) == 1) then
+                iv = idxphi(ix,iy)
+                yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtphi
+              endif
+            enddo
+          enddo
+        endif
+
+       endif   #if-test on svrpkg and yl(neq+1)
+      endif    #if-test on dtreal
+
+      return
+      end
+c****** end of subroutine pandf1 ************

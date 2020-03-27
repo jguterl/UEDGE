@@ -5,12 +5,12 @@
 
 c############################################################################
 c ** - modifications by TDR 2/20/98
-c 
+c
 c ** - Coding received from David Elder, Feb. 6, 1998; reduced argument
-c ** - list for subroutine (deleted cneutd,cbombf,cbombz,cebd); deleted 
+c ** - list for subroutine (deleted cneutd,cbombf,cbombz,cebd); deleted
 c ** - params, Use statement for cyield instead of include statement
 c ** - REAL -> real for mppl; ALOG10 -> log10
-c 
+c
 c ** -Input variables:
 c     cion  # integer atomic number of impurity, e.g., for carbon, cion=6
 c     cizb  # integer max charge state of plasma ions; hydrogen cizb=1
@@ -20,7 +20,7 @@ c ** -Output variables:
 c     matt  # integer flag giving target material
 c     matp  # integer flag giving plasma material
 c
-c###########################################################################   
+c###########################################################################
 C
 C  *********************************************************************
 C  *                                                                   *
@@ -72,7 +72,7 @@ C     ONLY FOR H, D, AND HE ON BE.  THIS RESULTS IN HIGHER YIELDS
 C     (APPROX 2X).
 C                       LORNE HORTON MAY 93
 C
- 
+
       DATA TARMAT/
      &  ' ALUMINIUM       ',' BERYLLIUM       ',' COPPER          ',
      &  ' GRAPHITE        ',' TITANIUM        ',' IRON            ',
@@ -81,10 +81,10 @@ C
      &  ' "DEUTERIUM"     ',' "HELIUM"        ',' "NEON"          ',
      &  ' "ARGON"         ',' "OXYGEN"        ',' "CHLORINE"      ',
      &  ' "NITROGEN"      ' /
- 
+
       DATA PLAMAT/
      &  ' H    ',' D    ',' T    ',' HE4  ',' C    ',' SELF ',' O    '/
- 
+
       DATA  ETH/
      &     23.87, 14.86, 12.91, 12.51, 16.32, 24.02, 18.55,
      &     12.2 , 10.0 , 14.69, 13.9 , 28.08, 24.17, 32.71,
@@ -210,8 +210,9 @@ C
 c ------------------------------------------------------------------------c
        real FUNCTION YLD96(MATP,MATT,ENERGY)
        IMPLICIT none
-       real ENERGY,X1,X12,X2
-       INTEGER MATP,MATT
+       real ,intent(in)::ENERGY
+       real X1,X12,X2
+       INTEGER,intent(in):: MATP,MATT
 C
 C  *********************************************************************
 C  *                                                                   *
@@ -258,8 +259,10 @@ c ------------------------------------------------------------------------c
       SUBROUTINE SPUTCHEM(IOPTCHEM,E0,TEMP,FLUX,YCHEM)
 
       IMPLICIT NONE
-      INTEGER  IOPTCHEM
-      real     E0,TEMP,FLUX,YCHEM,YGARCIA,YHAASZ,YROTH96,
+      INTEGER,intent(in)::  IOPTCHEM
+      real::YCHEM
+      real,intent(in)::     E0,TEMP,FLUX
+      real YGARCIA,YHAASZ,YROTH96,
      >         YHAASZ97,YHAASZ97M,FLUX_cgs
       INTRINSIC MAX
       Use(Cyield)     #redf_haas
@@ -267,17 +270,17 @@ c ------------------------------------------------------------------------c
 c#########################################################################
 c
 c ** -Modified 2/20/98 to use flux in MKS [1/m**2 s] rather than previous
-c ** -[1/cm**2 s]; TDR 
-c 
+c ** -[1/cm**2 s]; TDR
+c
 c ** -Code obtained from David Elder, 2/6/98; originally written by
-c ** -Houyang Guo at JET 
+c ** -Houyang Guo at JET
 c
 c#########################################################################
 C
 C  *********************************************************************
 C  *                                                                   *
 C  *  CHEMICAL SPUTTERING FOR D --> C                                  *
-C  *                                                                   *  
+C  *                                                                   *
 C  *  IOPTCHEM       -  Options for chemical sputtering:               *
 C  *         1       -  Garcia-Rosales' formula (EPS94)                *
 C  *         2       -  according to Pospieszczyk (EPS95)              *
@@ -300,7 +303,7 @@ c
 c      Change the flux from MKS to cgs units to use old cgs routines
 c      conversion done on 2/20/98
       FLUX_cgs  = 1e4*FLUX
- 
+
       IF      (IOPTCHEM.EQ.1) THEN
         YCHEM = YGARCIA(E0,TEMP,FLUX_cgs)
       ELSE IF (IOPTCHEM.EQ.2) THEN
@@ -328,13 +331,14 @@ c ------------------------------------------------------------------------c
       real    E0,TEMP,FLUX
       real    ETHC,ETFC,QC,SNC
       real    CSURF,CSP3
-      real    YPHYS,YSURF,YTHERM,YROTH96
+      real    YPHYS,YSURF,YTHERM
+      REAL    YROTH96
       INTRINSIC MIN
 C
 C  *********************************************************************
 C  *                                                                   *
 C  *  CHEMICAL SPUTTERING CALCULATED BY Garcia-Rosales FORMULA        *
-C  *                                                                   *  
+C  *                                                                   *
 C  *  ETHC (eV)  -  Threshold energy for D -> C physical sputtering    *
 C  *  ETFC (eV)  -  Thomas-Fermi energy                                *
 C  *  SNC        -  Stopping power                                     *
@@ -355,14 +359,14 @@ C Total Chemical Sputtering Yield:
 C            Ychem = Ysurf+Ytherm*(1+D*Yphys)
 C ---------------------------------------------------------
 
-C 
+C
 C 1> PHYSICAL SPUTTERING YIELD
 C
       ETHC = 27.0
-      ETFC = 447.0      
+      ETFC = 447.0
       QC   = 0.1
 C
-C  - Stopping Power      
+C  - Stopping Power
 C
       SNC = 0.5*LOG(1.+1.2288*E0/ETFC)/(E0/ETFC
      >    + 0.1728*SQRT(E0/ETFC)
@@ -376,7 +380,7 @@ C
          YPHYS = 0.0
       ENDIF
 C
-C 2> YSURF: Surface Process 
+C 2> YSURF: Surface Process
 C
       CSURF  = 1/(1.+1E13*EXP(-2.45*11604/TEMP))
       CSP3   = CSURF*(2E-32*FLUX+EXP(-1.7*11604/TEMP))
@@ -403,8 +407,8 @@ CW    WRITE(6,*) 'YROTH96 = ',YROTH96
 
       RETURN
       END
-      
-      
+
+
 C -------------
 c ------------------------------------------------------------------------c
       FUNCTION YGARCIA(E0,TEMP,FLUX)
@@ -412,12 +416,13 @@ c ------------------------------------------------------------------------c
       IMPLICIT NONE
       real    E0,TEMP,FLUX
       real    ETHC,ETFC,QC,SNC
-      real    YPHYS,YCHEM_TH,YCHEM_ATH,YGARCIA
+      real    YPHYS,YCHEM_TH,YCHEM_ATH
+      real    YGARCIA
 C
 C  *********************************************************************
 C  *                                                                   *
 C  *  CHEMICAL SPUTTERING CALCULATED BY Garcia-Rosales FORMULA        *
-C  *                                                                   *  
+C  *                                                                   *
 C  *  ETHC (eV)  -  Threshold energy for D -> C physical sputtering    *
 C  *  ETFC (eV)  -  Thomas-Fermi energy                                *
 C  *  SNC        -  Stopping power                                     *
@@ -428,22 +433,22 @@ C  *  YCHEM_TH   -  Thermal activated mechanism                        *
 C  *  YCHEM_ATH  -  Athermal mechanism                                 *
 C  *                                                                   *
 C  *********************************************************************
-C            
+C
 
       ETHC = 27.0
-      ETFC = 447.0      
+      ETFC = 447.0
       QC   = 0.1
 C
 C Check for impact energies below threshold
 C
       IF (E0.GT.ETHC) THEN
 C
-C Stopping Power      
+C Stopping Power
 C
       SNC = 0.5*LOG(1.+1.2288*E0/ETFC)/(E0/ETFC
      >    + 0.1728*SQRT(E0/ETFC)
      >    + 0.008*(E0/ETFC)**0.1504)
-C 
+C
 C Physical Sputtering Yield
 C
          YPHYS = QC*SNC*(1-(ETHC/E0)**(2./3.))*(1-ETHC/E0)**2
@@ -467,8 +472,8 @@ CW    WRITE(6,*) 'YTH = ',YCHEM_TH,'YATH = ',YCHEM_ATH
 
       RETURN
       END
-      
-      
+
+
 C -------------
 c ------------------------------------------------------------------------c
 
@@ -480,7 +485,7 @@ C  *  CHEMICAL SPUTTERING FROM Haasz NEW DATA (Dec. 1995)            *
 C  *  - poly. fit: Y = a0 + a1*log(E) + a2*log(E)^2 + a3*log(E)^3      *
 C  *                                                                   *
 C  *********************************************************************
-C            
+C
       IMPLICIT NONE
 
       real    E0,TEMP
@@ -592,7 +597,7 @@ C
          FITE0 = 200.
       ELSE
          FITE0 = E0
-      ENDIF 
+      ENDIF
 C
       YFIT = 0.0
       DO I = 1,4
@@ -619,7 +624,7 @@ C  *  CHEMICAL SPUTTERING FROM Haasz NEW DATA (February 1997)        *
 C  *  - poly. fit: Y = a0 + a1*log(E) + a2*log(E)^2 + a3*log(E)^3      *
 C  *                                                                   *
 C  *********************************************************************
-C            
+C
       IMPLICIT NONE
 
       real    E0,TEMP
@@ -720,7 +725,7 @@ C
          FITE0 = 200.
       ELSE
          FITE0 = E0
-      ENDIF 
+      ENDIF
 C
       YFIT = 0.0
       DO I = 1,4
@@ -751,11 +756,12 @@ C  *  5 and 10 eV to lower value (YDAVIS98), and is fixed below 5 eV.  *
 C  *  Default value for reducf=0.2; change redf_haas                   *
 C  *                                                                   *
 C  *********************************************************************
-C            
+C
       IMPLICIT NONE
 
       real E0, TEMP, reducf
-      real YHAASZ97M, YDAVIS98, YHAASZ97
+      real YHAASZ97M
+      real YDAVIS98, YHAASZ97
       real m1,m2,m3,FRAC
 
       DATA m1/602.39/, m2/202.24/, m3/43.561/
@@ -768,7 +774,7 @@ C
          YHAASZ97M = FRAC*YHAASZ97(E0,TEMP)+ (1.-FRAC)*YDAVIS98
       ELSEIF (E0 .LT. 5.) THEN
          YDAVIS98 = reducf/(m2*((TEMP/m1)**2 - 1)**2 + m3)
-         YHAASZ97M = YDAVIS98   
+         YHAASZ97M = YDAVIS98
       ENDIF
 
       RETURN

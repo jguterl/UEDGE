@@ -26,7 +26,7 @@ except:
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
 machine = sys.platform
-debug = 0
+debug = 1
 fcomp = None
 parallel = 0
 petsc = 0
@@ -200,9 +200,9 @@ setup(name="uedge",
                              libraries=libraries,
                              define_macros=define_macros,
                              extra_objects=uedgeobjects,
-                             extra_link_args=['-fopenmp','-foffload=-lm','-DFORTHON'] +
+                             extra_link_args=['-fopenmp','-g','-O3','-DFORTHON'] +
                              fcompiler.extra_link_args,
-                             extra_compile_args=fcompiler.extra_compile_args
+                             extra_compile_args=fcompiler.extra_compile_args+['-g']
                              )],
 
       cmdclass={'build': uedgeBuild, 'clean': uedgeClean},

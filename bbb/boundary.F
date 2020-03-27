@@ -61,8 +61,9 @@ c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 c...  local scalars
       implicit none
 
-      integer neq
-      real yl(neq), yldot(neq)
+      integer,intent(in):: neq
+      real,intent(in):: yl(neq)
+      real  yldot(neq)
 
       real totfeix, totfeex, kfeix, vyn, cosphi,
      .     ueb, nbound, tbound, vxn, ut0, sumb, feeytotc, feiytotc,
@@ -81,8 +82,10 @@ c...  local scalars
       real t0,t1
 
 *  -- external procedures --
-      real sdot, yld96, kappa
-      external sdot
+      real yld96
+      real kappa
+cJG   sdot
+cJG     external sdot
 
 *  -- procedures --ix=
       real ave
@@ -92,7 +95,6 @@ c...  local scalars
 *  --  Here we write the equations for the boundaries.
 *****************************************************************
 c...  now we reset the boundary conditions around the edge
-ccc$omp parallel default(firstprivate)
 c...  Initialization for constant
       expkmx = exp(-kappamx)
 
@@ -3635,10 +3637,10 @@ c     Calculate distances along left and right boundaries --
          enddo
       enddo
 
-ccccc$omp end parallel
+
 c ... Return if this is a parallel local domain; arrays filled from mype=0
       if (ndomain > 1 .and. nxg .ne. nx) return !JG: do not put return in middle of a routine! OMP does not like it...
-ccccc$omp parallel default(firstprivate)
+
 c...  calculate profiles for fixed left-hand boundary conditions
       do 27 iy = iysptrx1(1)+1, ny+1
          nibprof(iy) = exp( -((yylb(iy,1)-yylb0)/ywnio)**2 )
@@ -3803,7 +3805,7 @@ c-----------------------------------------------------------------------
 
       implicit none
 
-      integer ig
+      integer,intent(in):: ig
 
 *  -- local scalars --
       integer isor, jsor, ixt
@@ -3876,7 +3878,7 @@ c-----------------------------------------------------------------------
 
       implicit none
 
-      integer ig
+      integer,intent(in):: ig
 
 *  -- local scalars --
       integer isor, jsor, ixt
@@ -4195,7 +4197,7 @@ c     Sign convention is current  > 0 for flow from the plasma into the plate.
 c     local variables
       implicit none
 c     input arguments
-      real jsati, jsate, j
+      real,intent(in):: jsati, jsate, j
 c     common blocks
       real d, d0, fac, facmin
 
@@ -4239,7 +4241,7 @@ CC c_mpi      include 'mpif.h'
 c_mpi      integer typeind, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typeind/1/
 c    Assuming nx, ny are resized to be the same as nx_loc,ny_loc, per TDR.
-      real inarray(0:nx,0:ny)
+      real,intent(in):: inarray(0:nx,0:ny)
       real sumarr(2),gsumarr(2)
       integer ibeg,iend,i
 c    sumarr(1) will be numerator, sumarr(2) will be denominator
@@ -4298,7 +4300,7 @@ c_mpi      integer typeind, ierr, status(MPI_STATUS_SIZE)
 c_mpi      data typeind/1/
 c    Assuming nx, ny are resized to be the same as nx_loc,ny_loc, per TDR
 cc      real inarray(ixpt1(1)+1:ixpt2(1))
-      real inarray(*)
+      real,intent(in):: inarray(*)
       real sumarr(2),gsumarr(2)
       integer ibeg,iend,i
 c    sumarr(1) will be numerator, sumarr(2) will be denominator

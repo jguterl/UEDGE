@@ -493,12 +493,13 @@ c...  of the calculation in the grid.
       implicit none
 
 *  -- input arguments
-      integer neq
-      real yl(neq),yldot(neq)
+      integer,intent(in):: neq
+      real,intent(in):: yl(neq)
+      real yldot(neq)
 
 *  -- local variables
       integer jx,ix,iy,iv3,ix1,ix2
-      real dtuse
+c      real dtuse
       logical isgc,isgc1
 
       Use(Dim)      # nx,ny,[nhsp,nisp,ngsp(for arrays in Rhsides not used)]
@@ -584,7 +585,7 @@ c-----------------------------------------------------------------------
       implicit none
 
 *  -- input arguments
-      integer iy
+      integer,intent(in):: iy
 
       Use(Dim)      # nx
       Use(Phyvar)   # qe

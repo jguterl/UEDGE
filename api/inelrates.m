@@ -162,7 +162,9 @@ c     radiation rate.
 c
       implicit none
 c
-      real radneq, temp, rnone, radup, raddwn 
+      real radneq
+      real,intent(in):: temp, rnone
+      real radup, raddwn
 c
       integer itloc, jdloc, kloc, itbnd, jdbnd, i, j
 c
@@ -201,7 +203,7 @@ c
       jdbnd = 0
 c
       if ( itloc .eq. 1 .or. itloc .eq. ncaset ) itbnd = 1
-      if ( jdloc .eq. 1 .or. jdloc .eq. ncaseno )jdbnd = 1 
+      if ( jdloc .eq. 1 .or. jdloc .eq. ncaseno )jdbnd = 1
 c
       if ( itbnd .ne. 1 .and. jdbnd .ne. 1 ) then
 c
@@ -248,12 +250,14 @@ c-----End of function radneq-----
 
       function zimp(temp)
 c
-c   this function computes imp. avgz 
+c   this function computes imp. avgz
 c   [note that dependence on rnone (=(neutral density)/(electron density))
 c   is ignored (rnone=0), as is dependence on confinement time (kloc=1)]
       implicit none
 c
-      real zimp, temp, rnone, zimpup, zimpdwn 
+      real zimp
+      real,intent(in):: temp
+      real rnone, zimpup, zimpdwn
 c
       integer itloc, jdloc, kloc, itbnd, jdbnd, i, j
 c
@@ -293,7 +297,7 @@ c
       jdbnd = 0
 c
       if ( itloc .eq. 1 .or. itloc .eq. ncaset ) itbnd = 1
-      if ( jdloc .eq. 1 .or. jdloc .eq. ncaseno )jdbnd = 1 
+      if ( jdloc .eq. 1 .or. jdloc .eq. ncaseno )jdbnd = 1
 c
       if ( itbnd .ne. 1 .and. jdbnd .ne. 1 ) then
 c
@@ -349,9 +353,9 @@ c
 c
 c     input variables
 c
-      integer nzarg
-      real tep, rnep
-      real rimpp(0:nzarg)
+      integer,intent(in):: nzarg
+      real,intent(in):: tep, rnep
+      real,intent(in):: rimpp(0:nzarg)
 c
 c     output variable
 c
@@ -362,7 +366,7 @@ c   common blocks
 c
 c   local variables
 c
-      integer itemp, kk 
+      integer itemp, kk
       real xltemn, dlogte, temp
 c
 c ************************************************************

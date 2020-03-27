@@ -1171,6 +1171,7 @@ c-----------------------------------------------------------------------
       integer n, job, nabd, lowd, ml, mu, ierr, m, i, ii, j, mdiag, k
       real a(*),abd(nabd,n)
       integer ia(n+1),ja(*)
+      integer,dimension(2):: dimabd
 c-----------------------------------------------------------------------
 c   Compressed Sparse Row  to  Banded (Linpack ) format.
 c-----------------------------------------------------------------------
@@ -1281,6 +1282,8 @@ c----------------------------------------------------------------------*
 c first determine ml and mu.
 c-----------------------------------------------------------------------
       ierr = 0
+      Dimabd(1:2)=SHAPE(abd)
+
 c-----------
       if (job .eq. 1) call getbwd(n,a,ja,ia,ml,mu)
       m = ml+mu+1
@@ -1292,6 +1295,8 @@ c------------
       do 15  i=1,m
          ii = lowd -i+1
          do 10 j=1,n
+         if (ii.gt.dimabd(1)) call xerrab('Abd array too small. Increase numvarbwpad')
+         if (j.gt.dimabd(2)) call xerrab('Abd array too small. Increase numvarbwpad')
 	    abd(ii,j) = 0.0d0
  10      continue
  15   continue
@@ -1300,7 +1305,10 @@ c---------------------------------------------------------------------
       do 30 i=1,n
          do 20 k=ia(i),ia(i+1)-1
             j = ja(k)
+                        if (i-j+mdiag.gt.dimabd(1)) call xerrab('Abd array too small. Increase numvarbwpad')
+         if (j.gt.dimabd(2)) call xerrab('Abd array too small. Increase numvarbwpad')
             abd(i-j+mdiag,j) = a(k)
+
  20      continue
  30   continue
       return
@@ -2680,7 +2688,7 @@ c-----------------------------------------------------------------------
 c-----------------------------------------------------------------------
       integer function maskdeg  (ja,ia,nod,mask,maskval)
       implicit none
-      integer ja(*),ia(*),nod,mask(*),maskval
+      integer,intent(in):: ja(*),ia(*),nod,mask(*),maskval
 c-----------------------------------------------------------------------
       integer deg, k
       deg = 0

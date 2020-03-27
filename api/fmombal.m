@@ -41,7 +41,7 @@ c*****	Thermal velocity-m/s (TEMP in Joules)
      >	     /(promas*amu(misa)*vtherm**3))
 	  do 90 misb=1,miso
 	    mntau(misa,misb) = dza * (denz2(misb)*coulom)
-   90   continue	
+   90   continue
   100 continue
 c*****	Calculate la(=ela) and lab (=elab)
 	call neolab(mntau,capm,capn,ela,elab)
@@ -67,6 +67,7 @@ c-----------------------------------------------------------------------
 	integer natomic(misotope)
         integer ndima
 	save uresp, usave, caplams
+c$omp threadprivate(uresp, usave, caplams)
 !
 !	****	DESCRIPTION OF INPUT VARIABLES	****
 !
@@ -128,7 +129,7 @@ c-----------------------------------------------------------------------
 !		FOR ISOTOPE ISO, CHARGE STATE NZ (NOT INCLUDING NEUTRALS)
 !
 !         FRICC(1:MISOPTE,1:NCHSTATE,1:4)                [JOULES/METER**4]
-!               COMPONENTS OF FRICTION WITH 
+!               COMPONENTS OF FRICTION WITH
 !               FRICC(,,1) = ela(1,)*usol(1,,) for velocity
 !               FRICC(,,2) = ela(2,)*usol(2,,) for qcond
 !               FRICC(,,3) = ela(3,)*usol(3,,) for h
@@ -229,7 +230,7 @@ c*****	Solve average-ion equations in mass-isotope space
 c*****	Compute individual ion flows (for all charge states)
 c
 c	NOTE: USOL(m=1,Z,mass) = PARTICLE FLOW RELATIVE TO UMASS
-c	
+c
 c	      USOL(m=2,Z,mass) = -(2/5)*CONDUCTIVE HEAT FLUX / PRESSURE
 c
 c	      USOL(m=3,Z,mass) = HIGHER-ORDER FLOW (H)
@@ -238,7 +239,7 @@ c
      >	usave,den,denz,parcurrent,qcond,ucond,tempa,umass,ldir)
 c
 c	COMPUTE FRICTION FORCES
-c	
+c
 	call getfrict(friction,fricc,caplam,denmass,ela,nuion,
      .  nurec,usol,zi)
 
@@ -254,7 +255,7 @@ c-----------------------------------------------------------------------
      >	nuion,nurec,usol,zi)
   	implicit real (a-h,o-z), integer (i-n)
 	Use(Reduced_ion_constants)
-	real friction(miso,nzch), usol(KXA,nzch,miso), 
+	real friction(miso,nzch), usol(KXA,nzch,miso),
      .       fricc(miso,nzch,5)
 	real nuion(miso,0:nzch), nurec(miso,nzch)
 	real denmass(miso,0:nzch), caplam(KXA,miso),
@@ -322,7 +323,7 @@ c*****	Integer constants
 	ilam3 = 3
 	iacci = 4
 	iforc = 5
-	
+
 	al32(1) = 1.
 	al32(2) = 5./2.
 	al32(3) = 35./8.
@@ -361,8 +362,9 @@ c-----------------------------------------------------------------------
 	real den(miso,0:nzch), nurec(miso,nzch)
 	real usum(MXNZCH), bmat(KXA*(MXMISO1)*KXA*(MXMISO1))
 	integer nrow(KXA*(MXMISO1)), z1
-        integer i, j
+	integer i, j
 	save nrow, bmat, sbar0, ubar0
+c$OMP threadprivate(bmat,sbar0,ubar0,nrow)
 	macc = miso+1	!Space for acci = acceleration force
 	mflow = 1	!Flow
 	z1 = 1
@@ -462,8 +464,10 @@ c
 	if( ldir.gt.1 )then
 	  call sgefa(amat,nmat,nmat,nrow,info)
 	  nmat2 = nmat*nmat
+cJG	  bmat(1:nmat2)=amat(1:nmat2)
 	  call scopy(nmat2,amat,1,bmat,1)
-	  call scopy(nmat,sbar,1,sbar0,1)
+cJG	  sbar0(1:nmat)=sbar(1:nmat)
+      call scopy(nmat,sbar,1,sbar0,1)
 	  if( info.ne.0 )then
 	    call xerrab('mrespond:  Condition No. = 0 in Solver')
 	  endif
@@ -474,7 +478,10 @@ c
 	  enddo
 	endif
         call sgesl(bmat,nmat,nmat,nrow,sbar,0)
-	if( ldir.gt.1 )call scopy(nmat,sbar,1,ubar0,1)
+	if( ldir.gt.1 ) then
+cJG	ubar0(1:nmat)=sbar(1:nmat)
+	call scopy(nmat,sbar,1,ubar0,1)
+	endif
 	return
 	end
 c---- End of subroutine mrespond ---------------------------------------
@@ -499,7 +506,7 @@ c-----------------------------------------------------------------------
 	  caplam(m,misa) =
      >	  sdot(mtotal,ubar,1,elab(mmisa,1),mtotal)
 	enddo
-	
+
 	do misa = 1,miso
 	  do knz = 1,KXA*natom(misa)
 	    usol(knz,misa) = uresp(knz,misa,iforc)
@@ -528,7 +535,9 @@ c	STORE SOLUTION FOR INCREMENTAL MODE
 c
 	if( ldir.gt.1 )then
 	mtot2 = mtotal*nzch
+cJG	 usave(1:mtot2)=usol(1:mtot2)
 	call scopy(mtot2,usol,1,usave,1)
+cJG  caplams(1:mtotal)=caplam(1:mtotal)
 	call scopy(mtotal,caplam,1,caplams,1)
 	acci0 = acci1
 	endif
@@ -683,7 +692,7 @@ c-----------------------------------------------------------------------
      >	gradp(miso,*), gradt(miso,*), ela(3,3,miso),
      >	       zi(miso,nzch), fmom(KXA,nzch,miso), amu(miso),
      >	       tempa(miso), uneut(miso)
-	
+
 c*****	Print out average-ion quantities
 	write(*,490)xirl,umass
  490	format(' XI(IGRID) = ',1pe10.3,' UMASS = ',1pe10.3,/,
@@ -750,7 +759,7 @@ c*****	Print out average-ion quantities
      >	/' J||(calc) = ',1pe11.3,/,
      >	' MEAN INERTIAL TERM RHO*AI   = ',1pe11.3,/,
      >	' E||     = ',1pe11.3/)
-	return	
+	return
 	end
 c---- End of subroutine printit ----------------------------------------
 c-----------------------------------------------------------------------
@@ -910,6 +919,7 @@ c*****	Shift first row blocks 1 block to left (on input, 1st block = 0)
 	na=0
 	do 30 j=1,k
 	  napk=na+k
+cJG   a(na+1:na+1+k2-1)=a(napk+1:napk+1+k2-1)
 	  call scopy(k2,a(napk+1),1,a(na+1),1)
 	  napk2=na+k2
 	  do i=1,k
@@ -995,6 +1005,7 @@ c*****	Move block 2 to 1, block 3 to 2, 0 out block 3 of rows used in
 c*****	this stage that will also be used in next.
 	  if( iblock.ne.n .and. iflag.eq.0 )then
 	    do l=nl,nh
+cJG	    a(nrow(l)+1:nrow(l)+1+k2-1)=a(nrow(l)+k+1:nrow(l)+k+1+k2-1)
 	      call scopy(k2,a(nrow(l)+k+1),1,a(nrow(l)+1),1)
 	      do j=1,k
 	        a(nrow(l)+j+k2)=0.0
@@ -1059,6 +1070,7 @@ c-----------------------------------------------------------------------
 	integer nrowz(KXA*MXNZCH,MXMISO), lsz(NSIZE,MXMISO),
      >	msz(NSIZE,MXMISO)
 	save zmat, source, scaz, lsz, msz, nrowz
+c$omp threadprivate(zmat, source, scaz, lsz, msz, nrowz)
 c
 c	FOR LDIR > 1, DO COMPLETE NEW MATRIX INVERSION
 c	FOR LDIR <=1, DO INCREMENTAL MATRIX INVERSION, USING
@@ -1193,6 +1205,7 @@ c
 	noff = 1 + nforc
 	istore = 1
 	if( ldir.gt.1 )then
+cJG	source(1:nkz,misa)=asource(noff:noff+nkz-1)
 	  call scopy(nkz,asource(noff),1,source(1,misa),1)
 	  lflag = 1
 	  noff = 1
@@ -1202,12 +1215,17 @@ c
 	  lflag = iforc
 	  nr = 1
 	  iflag = 1
+
+cJG	  amat(1:nknz)=zmat(1:nknz,misa)
 	  call scopy(nknz,zmat(1,misa),1,amat,1)
 	endif
 	call uinvm2(KXA,nz,amat,asource(noff),xsol(noff),
      >	nrowz(1,misa),scaz(1,misa),lsz(1,misa),msz(1,misa),
      >	nr,istore,iflag)
-	if( ldir.gt.1 )call scopy(nknz,amat,1,zmat(1,misa),1)
+	if( ldir.gt.1 ) then
+cJG	zmat(1:nknz,misa)=amat(1:nknz)
+	call scopy(nknz,amat,1,zmat(1,misa),1)
+	endif
 	if( iflag.ne.0 )then
 	call xerrab(" CALL TO UINVM2 FAILED! ")
 	endif
@@ -1218,6 +1236,7 @@ c	Note response arrays are arranged consecutively
 c
 	do ntype = lflag,NBA
 	noff = 1 + nkz*(ntype-1)
+cJG	uresp(1:nkz,1,misa,ntype)=xsol(noff:noff+nkz-1)
 	call scopy(nkz,xsol(noff),1,uresp(1,1,misa,ntype),1)
 	enddo
  100	continue
