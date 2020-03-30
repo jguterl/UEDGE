@@ -1,7 +1,7 @@
 c!include "bbb.h"
 c!include "../com/com.h"
 c!include "../mppl.h"
-c!include "../sptodp.h"
+ccccc!include "../sptodp.h"
 c-----------------------------------------------------------------------
       subroutine fd2tra (nx, ny, flox, floy, difx, dify, phi,
      .                   trax, tray, pos, meth)
@@ -81,8 +81,6 @@ c..   note: dim(a,b) = max((a-b),0)
 *  ---------------------------------------------------------------------
 *  -- auxiliaries --
 *  ---------------------------------------------------------------------
-cccac$omp
-
       posx   = mod (pos, 10)
       posy   = pos / 10
       methx  = mod (meth, 10)
@@ -220,7 +218,6 @@ cccac$omp
 
 *=======================================================================
   100 continue
-
       if (isnonog .eq. 1) goto 200
 *=======================================================================
 
@@ -241,10 +238,8 @@ cccac$omp
          do 102 ix = i4, i8
             tray(ix,iy+posy) = -dify(ix,iy+posy)*
      .                          (phi(ix,iy+1)-phi(ix,iy))
-
   102    continue
   103 continue
-
       return
 
 *  ---------------------------------------------------------------------
@@ -255,10 +250,8 @@ cccac$omp
          do 112 ix = i4, i8
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
      .                                phi(ix,iy),phi(ix,iy+1))
-
   112    continue
   114 continue
-
       return
 
 *  ---------------------------------------------------------------------
@@ -270,10 +263,8 @@ cccac$omp
             tray(ix,iy+posy) = floy(ix,iy+posy) *
      .                        (phi(ix,iy+1)+phi(ix,iy))/2. -
      .                       dify(ix,iy+posy)*(phi(ix,iy+1)-phi(ix,iy))
-
   122    continue
   123 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -285,10 +276,8 @@ cccac$omp
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
      .                                phi(ix,iy), phi(ix,iy+1)) -
      .                       dify(ix,iy+posy)*(phi(ix,iy+1)-phi(ix,iy))
-
   132    continue
   133 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -301,10 +290,8 @@ cccac$omp
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
      .                                phi(ix,iy), phi(ix,iy+1)) -
      .                         tpv * (phi(ix,iy+1)-phi(ix,iy))
-
   142    continue
   143 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -318,10 +305,8 @@ cccac$omp
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
      .                                phi(ix,iy), phi(ix,iy+1)) -
      .                         tpv * (phi(ix,iy+1)-phi(ix,iy))
-
   152    continue
   153 continue
-
       return
 
 *====================================================================
@@ -353,10 +338,8 @@ cccac$omp
      .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
      .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
             tray(ix,iy+posy) = -dify(ix,iy+posy) * (py1-py0)
-
   202    continue
   203 continue
-
       return
 
 *  ---------------------------------------------------------------------
@@ -376,10 +359,8 @@ cccac$omp
      .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
      .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1)
-
   212    continue
   214 continue
-
       return
 
 *  ---------------------------------------------------------------------
@@ -400,10 +381,8 @@ cccac$omp
      .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
             tray(ix,iy+posy) = floy(ix,iy+posy) * (py1+py0)/2. -
      .                              dify(ix,iy+posy)*(py1-py0)
-
   222    continue
   223 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -424,10 +403,8 @@ cccac$omp
      .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                 dify(ix,iy+posy)*(py1-py0)
-
   232    continue
   233 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -449,10 +426,8 @@ cccac$omp
             tpv = dim(dify(ix,iy+posy), abs(floy(ix,iy+posy))/2.)
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                              tpv * (py1-py0)
-
   242    continue
   243 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -475,10 +450,8 @@ cccac$omp
      .        max(10.*dify(ix,iy+posy),abs(floy(ix,iy+posy)),cutlo))**5
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                              tpv * (py1-py0)
-
   252    continue
   253 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -500,10 +473,8 @@ cccac$omp
      .                 fxpy(ix,iy,1)*log(phi(ixp1(ix,iy)  ,iy  )) )
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                 dify(ix,iy+posy)*(py1-py0)
-
   262    continue
   263 continue
-
       return
 
 *  ------------------------------------------------------------------
@@ -524,7 +495,6 @@ cccac$omp
      .                fxpy(ix,iy,1)/phi(ixp1(ix,iy)  ,iy  ) )
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                 dify(ix,iy+posy)*(py1-py0)
-
   272    continue
   273 continue
 
@@ -550,11 +520,8 @@ cccac$omp
      .            fxpyv(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  ) )
             tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
      .                                 dify(ix,iy+posy)*(py1-py0)
-
-
   282    continue
   283 continue
-
 
       return
       end
@@ -1036,7 +1003,7 @@ c     involve ion-density sources, fluxes, and/or velocities.
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
-c--------------------------------------------------------------------------------------
+c-----------------------------------------------------------------------------------
 c ... Calculate the Bohm diffusion rates (units are m**2/s)
       do ifld = 1, nisp
        if (facbni+facbup+facbee+facbei>0 .and. isbohmcalc>0) then
@@ -1752,7 +1719,7 @@ c ..       switch to right plate(s)
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
 *     or if isphiofft = 1.
 ***********************************************************************
-      if(isphion+isphiofft .eq. 1)  call calc_currents
+ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
@@ -1943,18 +1910,13 @@ c ... get optical-depth to outer (iy=ny+1) bdry; selection of min rtau
 c...  Initialize save-variables if this is a Jacobian (xc,yc > -1)
          if (xc .ge. 0 .and. yc .ge. 0) then
             psordisold = psordis(xc,yc)
-c            write(*,*) 'Just after psordisold; xc,yc=',xc,yc
             do ifld = 1, nfsp
-c              write(*,*) 'Begin psorold loop;ifld,nfsp,psorc=',ifld,nfsp
                psorold(ifld) = psorc(xc,yc,ifld)
                psorxrold(ifld) = psorxr(xc,yc,ifld)
-c              if (xc==1 .and. yc==1) write(*,*) 'psorxr #00',psorxr(xc,yc,ifld)
                msorold(ifld) = msor(xc,yc,ifld)
                msorxrold(ifld) = msorxr(xc,yc,ifld)
                nucxiold(ifld) = nucxi(xc,yc,ifld)
                nueliold(ifld) = nueli(xc,yc,ifld)
-c               write(*,*) 'End psorold loop;ifld,nfsp,psorc=',ifld,nfsp,
-c     .                     psorc(xc,yc,ifld)
             enddo
             do igsp = 1, ngsp
                nucxold(igsp) = nucx(xc,yc,igsp)
@@ -2004,20 +1966,14 @@ c     Ionization of neutral hydrogen by electrons and recombination--
                else
                    nurc(ix,iy,igsp) = 0.
                endif
-c               write(*,*) 'tid,ng',tid,ng(ix,iy,igsp),ix,iy,igsp
-               !ng(ix,iy,igsp)=100*ngbackg(igsp)
                psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
      .                            (ngbackg(igsp)/ng(ix,iy,igsp))**ingb) ) *
      .                             nuiz(ix,iy,igsp) * vol(ix,iy)
-*JGtest               psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
-*JGtest     .                            (ngbackg(igsp)/1e20)**ingb) ) *vol(ix,iy)
-*JG            psorbgg(ix,iy,igsp) =1e20
                psorgc(ix,iy,igsp) = -ng(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy)
      .                              +psorbgg(ix,iy,igsp)
                psorc(ix,iy,ifld) = - psorgc(ix,iy,igsp)
                psordis(ix,iy) = psorc(ix,iy,1)  # changed below if ishymol=1
                psorxrc(ix,iy,ifld) = -ni(ix,iy,ifld)*nurc(ix,iy,igsp)*vol(ix,iy)
-c               if (ix==1 .and. iy==1) write(*,*) 'psorxrc(ix,iy,ifld)=', ni(ix,iy,ifld),nurc(ix,iy,igsp),vol(ix,iy)
                psorrgc(ix,iy,igsp) = -psorxrc(ix,iy,ifld)
                msor(ix,iy,ifld) = 0.
                msorxr(ix,iy,ifld) = 0.
@@ -2047,8 +2003,6 @@ c   models are on [isimpon = 5 or 6 or 7])
                  psorc(ix,iy,ifld+1)= -psorc(ix,iy,ifld)
 
                  psorxrc(ix,iy,ifld+1)= -psorxrc(ix,iy,ifld)
-cJG
-        if (ix==1 .and. iy==1) write(*,*) 'psorxrc(ix,iy,ifld)=', psorxrc(ix,iy,ifld+1),psorxrc(ix,iy,ifld)
                  msor(ix,iy,ifld+1)= 0.
                  msorxr(ix,iy,ifld+1)= 0.
               endif
@@ -2071,7 +2025,6 @@ c*****************************************************************
                  psorg(ix,iy,igsp) = psorgc(ix,iy,igsp)
                  psor(ix,iy,ifld) =  psorc(ix,iy,ifld)
                  psorxr(ix,iy,ifld) = psorxrc(ix,iy,ifld)
-c                 if (ix==1.and.iy==1) write(*,*) 'psorxrc#0',psorxrc(ix,iy,ifld)
                  psorrg(ix,iy,igsp) = psorrgc(ix,iy,igsp)
                  if(isupgon(igsp) .eq. 1) then # inertia gas is ifld+1
                    psor(ix,iy,ifld+1)= -psor(ix,iy,ifld)
@@ -2160,7 +2113,6 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
                             call imprates(te(ix,iy), 0, nzsp(jz), kionz0,
      .                                    krecz, kcxrz)
                          elseif (ismctab .eq. 2) then
-c                         write(*,*) 'mcrates 1:',nzsp(jz), znucl(ifld_fcs),ifld_fcs
                             call mcrates(ne(ix,iy),te(ix,iy),
      .                                   ti(ix,iy)*mp/mi(1),
      .                                   0, nzsp(jz), znucl(ifld_fcs),
@@ -2178,7 +2130,6 @@ c                         write(*,*) 'mcrates 1:',nzsp(jz), znucl(ifld_fcs),ifld
                             call imprates(te(ix,iy), 1, nzsp(jz), kionz,
      .                                    krecz, kcxrz)
                          elseif (ismctab .eq. 2) then
-c                         write(*,*) 'mcrates 2:',nzsp(jz), znucl(ifld_fcs)
                             call mcrates(ne(ix,iy), te(ix,iy),
      .                                   ti(ix,iy)*mp/mi(1),
      .                                   1, nzsp(jz), znucl(ifld_fcs),
@@ -2253,7 +2204,6 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
                            call imprates(te(ix,iy), izch, nzsp(jz),
      .                                  kionz, krecz, kcxrz)
                         elseif (ismctab .eq. 2) then
-c                        write(*,*) 'mcrates 3:',nzsp(jz), znucl(ifld_fcs)
                            call mcrates(ne(ix,iy), te(ix,iy),
      .                                  ti(ix,iy)*mp/mi(1),
      .                                  izch, nzsp(jz), znucl(ifld),
@@ -3009,8 +2959,6 @@ c ----- The inertial neutrals coeff. are flux-limited and add to total here
             iy1 = min(iy,ny)   #dont use j5 because hcx also in loop (not imp.)
             do 63 ix = i1, i6
                ix1 = ixp1(ix,iy)
-cJG warning
-cJG               ix1=ix
                tgavex = max(0.5*(tg(ix,iy,1) + tg(ix1,iy,1)), temin*ev)
                tgavey= max(0.5*(tgy0(ix,iy,1)+tgy1(ix,iy,1)), temin*ev)
                niavex = 0.5*(ni(ix,iy,1) + ni(ix1,iy,1)) #only for coll. term
@@ -3093,8 +3041,6 @@ c ... Gas thermal conductivity coeffs - from self-collisions
         do iy = j1, j6
         iy1 = min(iy,ny)
           do ix = i1, i6
-cJG WARNING
-cJG         ix1=ix
             ix1 = ixp1(ix,iy)
             tgavex = max( (tg(ix,iy,igsp)*gx(ix,iy) +
      .                              tg(ix1,iy,igsp)*gx(ix1,iy)) /
@@ -3114,6 +3060,7 @@ c JG: out of bound value
             else
             naavex=0.0
             endif
+
             noavey = 0.5*(ngy0(ix,iy1,igsp) + ngy1(ix,iy1,igsp))
             niavey = 0.5*(niy0(ix,iy1,1) + niy1(ix,iy1,1))
             if (nisp.gt.1) then
@@ -3149,13 +3096,14 @@ c ... Gas molecule thermal equipartition with hydrogen ions and atoms
       do igsp = 1, ngsp
         do iy = j1, j6
           do ix = i1, i6
+          # Just check that we are not out of bound (that should not happen)
           if (nisp.gt.1) then
 	    nhi_nha = ni(ix,iy,1)+ni(ix,iy,2)
-            eqpg(ix,iy,igsp) = cftgeqp*ng(ix,iy,igsp)*nhi_nha*
-     .                                            keligig(igsp)
           else
           nhi_nha=0.0
           endif
+          eqpg(ix,iy,igsp) = cftgeqp*ng(ix,iy,igsp)*nhi_nha*
+     .                                            keligig(igsp)
           enddo
         enddo
       enddo
@@ -3372,19 +3320,13 @@ c----------------------------------------------------------------------c
        do 86 iy = j2, j5
          do 85 ix = i2, i5
 	   if(isnionxy(ix,iy,ifld) == 1) then
-c	   if (ix==1 .and. iy==1) write(*,*) 'resco #1',resco(ix,iy,ifld)
               resco(ix,iy,ifld) =1+snic(ix,iy,ifld)
      .           +sniv(ix,iy,ifld)*ni(ix,iy,ifld) +
-     .           volpsor(ix,iy,ifld)
-c               if (ix==1 .and. iy==1) write(*,*) 'resco #1b',resco(ix,iy,ifld)
-                resco(ix,iy,ifld)=resco(ix,iy,ifld)+cfneut * cfneutsor_ni * cnsor * psor(ix,iy,ifld)
+     .           volpsor(ix,iy,ifld)+cfneut * cfneutsor_ni * cnsor * psor(ix,iy,ifld)
      .          + cfneut * cfneutsor_ni * cnsor * psorxr(ix,iy,ifld) +
-     .           cfneut * cfneutsor_ni * cnsor * psori(ix,iy,ifld)
-c        if (ix==1 .and. iy==1) write(*,*) 'psource #1c',psorxr(ix,iy,ifld) ,psori(ix,iy,ifld),psor(ix,iy,ifld)
-c        if (ix==1 .and. iy==1) write(*,*) 'resco #1c',resco(ix,iy,ifld)
-             resco(ix,iy,ifld)=resco(ix,iy,ifld) - nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
+     .           cfneut * cfneutsor_ni * cnsor * psori(ix,iy,ifld)-
+     .           nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
      .           voljcsor(ix,iy)/qe
-c           if (ix==1 .and. iy==1) write(*,*) 'resco #2',resco(ix,iy,ifld)
 
 
            endif
@@ -3394,7 +3336,6 @@ c           if (ifld .ne. iigsp) then
            else # IJ 2016 zi==0, assume neutral->ifld and ion->ifld-1
               resco(ix,iy,ifld) = resco(ix,iy,ifld) - cmneut * uesor_ni(ix,iy,ifld-1)
            endif
-c           if (ix==1 .and. iy==1) write(*,*) 'resco #3',resco(ix,iy,ifld)
    85    continue
    86  continue
 
@@ -3776,11 +3717,11 @@ c  Add drag with cold, stationary impurity neutrals
      .                       nueli(ix,iy,ifld)+nueli(ix2,iy,ifld) )*
      .                       up(ix,iy,ifld)*volv(ix,iy)
                   endif
-cJG
+cJG: init resmo to 0
                else
                   resmo(ix,iy,ifld) = 0.
                endif
-
+cJG
 
                if (isupgon(1) .eq. 1) then
 
@@ -4037,8 +3978,6 @@ c.... Now do the ions (hcxi is flux-limited previously when it is built)
       do 126 iy = j4, j8
          do 125 ix = i1, i5
          ix1 = ixp1(ix,iy)
-cJG WARNING
-cJG            ix1=ix
             ltmax = min( abs(te(ix,iy)/(rrv(ix,iy)*gtex(ix,iy) + cutlo)),
      .                   lcone(ix,iy) )
             lmfpe = 2e16*(te(ix,iy)/ev)**2/ne(ix,iy)
@@ -4860,8 +4799,7 @@ c******************************************************************
       do iy = iys, iyf  #j2, j5
         do ix = ixs, ixf  #i2, i5
 cJG          pwrebkgold = pwrebkg(ix,iy)
-cJG warning
-
+cJG: pwrebkgold not reset properly
              pwrebkgold =pwrbkg_c
           if (isimpon == 0) then
 cJG            pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
@@ -5089,7 +5027,6 @@ c******************************************************************
                   iv = idxn(ix,iy,ifld)
                   yldot(iv) = (1-iseqalg(iv)) *
      .                        resco(ix,iy,ifld)/(vol(ix,iy)*n0(ifld))
-c       if (iv==265) write(*,*) yldot(iv),resco(ix,iy,ifld),vol(ix,iy),n0(ifld)
                endif
  254        continue
             do 255 ifld = 1, nusp
@@ -5134,8 +5071,7 @@ c  in time (rate equations).  Both bouncon and poten must be called before
 c  the perturbed variables are reset below to get Jacobian correct
 
       if (isphion.eq.1) call poteneq (neq, yl, yldot)
-
-      call bouncon (neq, yl, yldot)
+      if (isbouncon.eq.1) call bouncon (neq, yl, yldot)
 
 c...  Finally, reset some source terms if this is a Jacobian evaluation
          if (xc .ge. 0 .and. yc .ge. 0) then
@@ -5157,7 +5093,6 @@ cJG            pwrebkg(xc,yc) = pwrebkgold
             do ifld = 1, nfsp
                psorc(xc,yc,ifld) = psorold(ifld)
                psorxr(xc,yc,ifld) = psorxrold(ifld)
-c               if (xc==1 .and. yc==1 ) write(*,*) 'psorxr #0',psorxr(xc,yc,ifld),psorxrold(ifld)
                frici(ix1,yc,ifld) = friciom(ifld)
                frici(xc,yc,ifld) = fricio(ifld)
                upi(ix1,yc,ifld) = upiom(ifld)
@@ -5237,8 +5172,8 @@ cc      Use(Selec)   # i2,i5,j2,j5
 
 *  -- arguments
       integer,intent(in):: xc, yc, ieq, neq     # ieq is the equation index for Jac. calc
-      real,intent(in):: time, yl(*)
-      real yldot(*)
+      real,intent(in):: time, yl(neqmx)
+      real yldot(neq)
 
 *  -- local variables
       integer ix,iy,igsp,iv,iv1,ifld,j2l,j5l,i2l,i5l

@@ -240,7 +240,7 @@ isnupdot1sd               integer /0/  #=0, use 2-pt ndot for (n*up)_dot;
 isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
 is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
 z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
-
+isbouncon                  integer /1/ #=0/1 turn off/on call to bouncon
 ***** Model_choice restart:
 #Flags for choosing one or another calculation of a part of the model
 iondenseqn	character*8	/"llnl"/	# ion continuity equation
@@ -3042,7 +3042,7 @@ jscalcol          integer /0/  #=1 causes column scaling for daspk
 
 ***** Variable_perturbation restart:
 delperturb             real	/1.e-8/		# fractional change for finite diffs
-#delpy           real	/-1.e-8/	# Forthon del; used to set del if > 0. JG: removed it because "del" is confusing anyway when parsing package attribute
+###delpy           real	/-1.e-8/	# Forthon del; used to set del if > 0. JG: removed it because "del" is confusing anyway when parsing package attribute
 dylconst        real    /1./            # factor in floor term in dyl
 isjacreset      integer  /1/            # if=1, pandf1 reset for last variable
 
@@ -3660,8 +3660,8 @@ tau2(0:nx+1,0:ny+1)	_real	# time to escape to outboard divertor plate
 
 ***** Impurity_source_flux:
 # Arrays for impurity-source fluxes calculated from api variables
-fnzysi(0:nx+1,nzspt)	_real	# profiles along inner wall
-fnzyso(0:nx+1,nzspt)	_real	# profiles along outer wall
+fnzysi(0:nx+1,nzspt+1)	_real	# profiles along inner wall
+fnzyso(0:nx+1,nzspt+1)	_real	# profiles along outer wall
 
 ***** Reduced_ion_interface:
 # Arrays for info transfer between subroutines mombal and fmombal

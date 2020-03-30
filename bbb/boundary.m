@@ -90,18 +90,15 @@ cJG     external sdot
 *  -- procedures --ix=
       real ave
       ave(t0,t1) = 2*t0*t1 / (cutlo+t0+t1)
-
 *****************************************************************
 *  --  Here we write the equations for the boundaries.
 *****************************************************************
 c...  now we reset the boundary conditions around the edge
 c...  Initialization for constant
       expkmx = exp(-kappamx)
-
 c ====================================================================
 c ======================== The iy=0 boundary =========================
 c ====================================================================
-
 c...  do the iy = 0 boundary
 c...  if extrapolation b.c. on p.f. region, isextrpf=1, otherwise isextrpf=0
       if (iymnbcl .eq. 0) goto 1100   # interior domain boundary; no bdry eqn
@@ -3279,7 +3276,6 @@ c ... Set the corner gas density cells at iy=ny+1 to avoid probs
   714      continue
   715    continue
       endif
-ccc$omp end parallel
       return
       end
 c***** end of subroutine bouncon *****
@@ -3608,7 +3604,6 @@ c-----------------------------------------------------------------------
       real argi, argo, xnoti, xnoto
 *  -- local arrays --
       real sycosi(10), sycoso(10)
-ccccc$omp parallel default(firstprivate)
 c     Calculate distances along left and right boundaries --
       do jx = 1, nxpt
          yylb(iysptrx1(jx),jx) = - 0.5/
@@ -3779,7 +3774,6 @@ c...  The gas is injected via fluxes fngyso,i
             ix=ixp1(ix,0)
          enddo
  33   continue
-ccccc$omp end parallel
       return
       end
 c ***** End of subroutine walsor ******

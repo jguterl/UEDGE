@@ -486,17 +486,13 @@ cc      call gallot("Rccoef",0)
       call gallot("Newtaux",0)
       call gallot("Wkspace",0)
       call gallot("Postproc",0)
-*       call gchange("Imprad",0)
-*        call gchange("Impurity_source_flux",0)
-**         call gchange("Impurity_source_flux",0)
-*         call gchange("Impurity_source",0)
-*         call gchange("Sources_at_walls",0)
-*JG: need to allocate everything to copy in threads
-*Could do copy routine per grousp. That could make sense...
-      call gchange("Imprad",0)
-         call gchange("Impurity_source_flux",0)
+
+       if (isimpon .gt. 0) call gchange("Imprad",0)
+      if (isimpon .gt. 2) then
+         call gallot("Impurity_source_flux",0)
          call gchange("Impurity_source",0)
          call gchange("Sources_at_walls",0)
+      endif
 
       call gchange("Volsrc",0)
 c preserves preconditioner data for icntnunk=1
@@ -867,6 +863,7 @@ cJG: add a condition to avoid the memory leak
             enddo
          else
          write(*,*) 'no allocation of mi,zi,znucl:ifld>nisp, ifld_lcs:',ifld_lcs,nispmx
+         call xerrab('no allocation of mi,zi,znucl:ifld>nisp')
          endif
 
          if (ngsp .gt. nhgsp) then  ! impurity gas is present
@@ -1279,10 +1276,10 @@ c...  set volume power sources if the internal Gaussian sources desired
 
 c ... Set impurity sources on inner and outer walls.
 cJG: this routine is called with unassociated pointers(fnzysi,fnzyso) when nzspt=0 because it is a 0-d array!. That raises an error when compiling
-      if (isimpon .gt. 2 .and. nzspt.gt.0) then
+cJG      if (isimpon .gt. 2 .and. nzspt.gt.0) then !replaced by extending dimension of fnzysi to nzpst+1
       call imp_sorc_walls (nx, nzspt, xcpf, xcwo, sy(0,0), sy(0,ny),
      .                        ixp1(0,0), ixp1(0,ny), fnzysi, fnzyso)
-      endif
+cJG      endif
 c ... Initialize molecular thermal equilibration array in case not computed
       do igsp = 1,ngsp
         call s2fill (nx+2, ny+2, 0.0e0, eqpg(0,0,igsp), 1, nx+2)
@@ -1685,7 +1682,7 @@ c...  Reset gas density to minimum if too small or negative
              do ix = 0, nx+1
                if(isngonxy(ix,iy,igsp)==1) then
                   ng(ix,iy,igsp) = max(ng(ix,iy,igsp),
-     .                                 1.0e-01*ngbackg(igsp))
+     .                          1.0e-01*ngbackg(igsp))
                   if (ineudif .eq. 2) then
                     lng(ix,iy,igsp) = log(ng(ix,iy,igsp))
                   endif

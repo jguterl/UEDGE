@@ -931,7 +931,6 @@ c first check for illegal values.
         if (iwork(7) .gt. 0) iermsg = iwork(7)
         if (iwork(8) .gt. 0) itermx = iwork(8)
         if (iwork(9) .gt. 0) incpset = iwork(9)
-        if (iwork(10) .gt. 0) DebugTime = iwork(10)
         if (rwork(1) .gt. zero) stepmx = rwork(1)
         if (rwork(2) .gt. zero) sqteta = sqrt(rwork(2))
         if (rwork(3) .gt. zero) tau = rwork(3)

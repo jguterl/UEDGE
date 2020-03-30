@@ -103,7 +103,7 @@ c...  Omit constraint check on x-boundaries for Ti - ckinfl problem
 	  if(isngonxy(ix,iy,igsp) .eq. 1) then
             iv = iv + 1
             if(ineudif .ne. 3) then
-              yl(iv) = ng(ix,iy,igsp)/n0g(igsp)
+             yl(iv) = ng(ix,iy,igsp)/n0g(igsp)
             elseif(ineudif .eq. 3) then
               yl(iv) = lng(ix,iy,igsp)
             endif
