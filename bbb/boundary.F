@@ -5,6 +5,7 @@ c-----------------------------------------------------------------------
 
 *   BOUNCON provides the evaluation of the equations for the boundaries.
 
+            use Output 
             use Dim       ! nx,ny,nhsp,nzspt,nzsp,nisp,ngsp,nusp,nxpt
             use Share     ! nxpt,nxc,geometry,cutlo,islimon,ix_lim,iy_lims
 		    ! isudsym
@@ -64,7 +65,6 @@ c...  local scalars
       integer,intent(in):: neq
       real,intent(in):: yl(neq)
       real  yldot(neq)
-
       real totfeix, totfeex, kfeix, vyn, cosphi,
      .     ueb, nbound, tbound, vxn, ut0, sumb, feeytotc, feiytotc,
      .     r_major, fniytotc, fng_chem, vbound, eng_sput, flx_incid,
@@ -91,7 +91,7 @@ cJG     external sdot
       real ave
       ave(t0,t1) = 2*t0*t1 / (cutlo+t0+t1)
 *****************************************************************
-*  --  Here we write the equations for the boundaries.
+*  --  Here we write(iout the equations for the boundaries.
 *****************************************************************
 c...  now we reset the boundary conditions around the edge
 c...  Initialization for constant
@@ -199,7 +199,7 @@ c...   Caution: the wall source models assume gas species 1 only is inertial
      .                            fngyi_use(ix,1) ) / (vyn*sy(ix,0)* n0(ifld))
                endif   ! end if-test for core and p.f. boundaries
              else  ! ifld is NOT inertial neutrals but still hydrogen ion
-c
+
                if (isixcore(ix)==1) then   ! ix is part of the core boundary:
                   if (isnicore(ifld) .eq. 1) then ! set uniform, fixed density
                      yldot(iv1) = nurlxn*(ncore(ifld)-ni(ix,0,ifld))/
@@ -360,8 +360,10 @@ c...  Now do the parallel velocity BC at iy = 0
                   endif
 
                elseif (isupwi(ifld)==1) then   ! isixcore if-test; PF bdry
+
                   yldot(iv2) = -nurlxu * fmiy(ix,0,ifld) /
      .                                    (vpnorm*sy(ix,0)*fnorm(ifld))
+
                elseif (isupwi(ifld)==2) then   ! PF bdry
                   yldot(iv2) = nurlxu * nm(ix,0,ifld) / fnorm(ifld) *
      .                               (up(ix,1,ifld) - up(ix,0,ifld))
@@ -429,6 +431,7 @@ c     the adjacent cells.
                   endif
                else   ! ix is not part of the core boundary:
                   if (isnwconi(iimp) .eq. 0) then
+c                  if (iv==14) write(iout,*) 'iv=14:ifld', iimp,fniy(ix,0,iimp),fnzysi(ix,ifld),vpnorm,sy(ix,0),nurlxn
                      yldot(iv) = -nurlxn *
      .                           (fniy(ix,0,iimp) - fnzysi(ix,ifld)) /
      .                           (sy(ix,0) * n0(iimp) * vpnorm)
@@ -1659,7 +1662,7 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
       endif         ! end of ix = 0, isfixlb.ne.0 boundary conditions
 
 c...  If isfixlb=2, check if i2,i5 range for yldot loop in pandf includes ixpt2(1)
-c...  Then overwrite pandf value is up(ixpt2(1)) --> 0 eqn.
+c...  Then overwrite(iout pandf value is up(ixpt2(1)) --> 0 eqn.
       if (isfixlb(1) .eq. 2) then
          if (i2.le.ixpt2(1) .and. i5.ge.ixpt2(1) .and. j2.le.iysptrx2(1)) then
             do 179 ifld = 1, nusp
@@ -2264,7 +2267,7 @@ c ... Neutral temperature - test if tg eqn is on, then set BC
       endif         ! end of ix = nx+1, isfixrb.ne.0 boundary conditions
 
 c...  If isfixrb=2, check if i2,i5 range for yldot in pandf includes ixpt1(1);
-c...  the overwrite ix=ixpt1(1) up eqn with up(ixpt1(1)) --> 0 eqn.
+c...  the overwrite(iout ix=ixpt1(1) up eqn with up(ixpt1(1)) --> 0 eqn.
       if (isfixrb(1) .eq. 2) then
          if (i2.le.ixpt1(1) .and. i5.ge.ixpt1(1) .and. j2.le.iysptrx1(1)) then
            do ifld = 1, nusp
@@ -2789,7 +2792,7 @@ c...  First do the ion density
                do 192 ifld = 1, nisp
                  if(isnionxy(nxc,iy,ifld)*isnionxy(nxc+1,iy,ifld)==1) then
                    if (.not. ((isnicore(ifld)==3).and.(iy==0))) then
-                     ! do not over-write corner cell b.c. from iy=0
+                     ! do not over-write(iout corner cell b.c. from iy=0
                      ! because it connects inboard and outboard core te
                      iv = idxn(nxc,iy,ifld)
                      iv2 = idxn(nxc+1,iy,ifld)
@@ -2815,7 +2818,7 @@ c...  Now do the parallel velocity
 
                if(isteonxy(nxc,iy)*isteonxy(nxc+1,iy) .eq. 1) then
                   if ( .not. ((iflcore==1).and.(iy==0)) ) then
-                     ! do not over-write corner cell b.c. from iy=0
+                     ! do not over-write(iout corner cell b.c. from iy=0
                      ! because it connects inboard and outboard core te
                      iv = idxte(nxc,iy)
                      iv2 = idxte(nxc+1,iy)
@@ -2827,7 +2830,7 @@ c...  Now do the parallel velocity
                endif
                if(istionxy(nxc,iy)*istionxy(nxc+1,iy) .eq. 1) then
                   if ( .not. ((iflcore==1).and.(iy==0)) ) then
-                     ! do not over-write corner cell b.c. from iy=0
+                     ! do not over-write(iout corner cell b.c. from iy=0
                      ! because it connects inboard and outboard core ti
                      iv = idxti(nxc,iy)
                      iv2 = idxti(nxc+1,iy)
@@ -2852,7 +2855,7 @@ c...  Now do the parallel velocity
 c...  Do boundary condition for potential along ix=nxc and ix=nxc+1
                if (isphionxy(nxc,iy)*isphionxy(nxc+1,iy)==1) then
                   if ( .not. (isnewpot==1 .and. (iy==0 .or. iy==1)) ) then
-                     ! do not over-write BC from iy=0 & iy=1 because
+                     ! do not over-write(iout BC from iy=0 & iy=1 because
                      ! these connect inboard and outboard phi values
                      iv = idxphi(nxc,iy)
                      iv2 = idxphi(nxc+1,iy)
@@ -4127,7 +4130,7 @@ c...  Instead use data arrays on inner plt recycling coeff., albedo if ndatlb>0
                   endif
                 endif
               endif
-c_Pigarov            if (iy = 2) write(*,*) "recompute recylb", recylb(2,1,1)
+c_Pigarov            if (iy = 2) write(iout,*) "recompute recylb", recylb(2,1,1)
             enddo
           enddo
         enddo
@@ -4154,7 +4157,7 @@ c...  Instead use data arrays on outer plt recycling coeff., albedo if ndatrb>0
                   endif
                 endif
               endif
-c_Pigarov            if (iy = 2) write(*,*) "recompute recyrb", recyrb(2,1,1)
+c_Pigarov            if (iy = 2) write(iout,*) "recompute recyrb", recyrb(2,1,1)
             enddo
           enddo
         enddo

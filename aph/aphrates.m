@@ -23,7 +23,6 @@ c     "ionization" processes - D. Stotler's "coupling to the ground state"
 c     te [J]          = electron temperature
 c     ne [/m**3]      = electron density
 c     erl1 [J/sec]    = radiation rate
-c      if (istabon.ne.10) call xerrab('istabon ne 10')
 c----------------------------------------------------------------------c
       if (istabon .le. 7) then   # various older models
 
@@ -169,7 +168,6 @@ c     "recombination" processes - D. Stotler's "coupling to the continuum"
 c     te [J]          = electron temperature
 c     ne [/m**3]      = electron density
 c     erl2 [J/sec]    = radiation rate
-c      if (istabon.ne.10) call xerrab('istabon ne 10')
 c----------------------------------------------------------------------c
       if (istabon .le. 7) then   # various older models
 

@@ -13,7 +13,7 @@ import getopt
 version='7.0.8.4.15rc1'
 
 try:
-    os.environ['PATH'] += os.pathsep + site.USER_BASE + '/bin'
+    os.environ['PATH']+= os.pathsep + site.USER_BASE + '/bin'
     import distutils
     from distutils.core import setup
     from distutils.core import Extension
@@ -27,8 +27,8 @@ except:
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
 machine = sys.platform
 debug = 1
-fcomp = None
-parallel = 0
+fcomp = 'mpif90'
+parallel = 1
 petsc = 0
 
 for o in optlist:
@@ -55,8 +55,8 @@ if petsc == 1 and os.getenv('PETSC_ARCH') == None:
 sys.argv = ['setup2.py']+args
 fcompiler = FCompiler(machine=machine,
                       debug=debug,
-                      fcompname=fcomp)
-
+                      fcompname='mpif90',fcompexec='mpif90')
+print('Compiler:',fcompiler.fcompname)
 
 class uedgeBuild(build):
     def run(self):
@@ -158,8 +158,8 @@ if petsc:
     libraries = ['petsc'] + fcompiler.libs
 
 if parallel:
-    library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
-    libraries = fcompiler.libs + ['mpi']
+    #library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
+    libraries = fcompiler.libs + ['mpich','mpichfort']
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:

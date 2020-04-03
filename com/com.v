@@ -3,14 +3,65 @@ com   # Data and routines used in multiple packages
 MXMISO=16        # maximum number of charged isotopes; also must set in api.v
 ngspmx = 4	# maximum number of gas species; also must set in bbb.v
 }
+***** Output:
+iout  integer /6/     # switch used by OMFIT
 
 ***** OMFIT:
 iomfit  integer /1/     # switch used by OMFIT
 
+***** Verbose:
+VerboseCall        integer /0/     # Print name of subroutine when this one is called. Can be used to explore call trees
+VerboseJac         integer /1/
+
+***** ParallelOptions:
+OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+OMPMPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+
+***** MpiOptions:
+Rank integer /0/ # Rank of the processor
+ComSize integer /1/ # Size of the common world
+MPIDebug integer /0/ #Print debug info for omp constructs
+MPIVerbose integer /1/ #Print info for omp jacobian calculation
+MPIWriteJacobian     integer /0/ # Write jacobian in an ascii text file
+MPIlenpfac       integer /1/ # Factor to increase nnzmxperthread
+nnzmxperproc   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
+MPIneq  integer # number of equation (=neq)
+Nprocs          integer /64/ # Number of threads to be used to calculate the Jacobian
+MPICheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
+ioutmpi           integer /6/ # Unit for stdout for common mpi write statements
+
+***** MpiJacobian:
+MPIivmin(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+MPIivmax(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+MPIiJacRow(MPIneq) _integer #
+MPIiJacCol(nnzmxperproc) _integer #
+MPIrJacElem(nnzmxperproc) _real #
+
 ***** OmpOptions:
 OMPAllocDebug integer /0/ #Print info on allocation and association of variables
-OMPDebug integer /1/ #Print debug info for omp constructs
+OMPDebug integer /0/ #Print debug info for omp constructs
+OMPVerbose integer /1/ #Print info for omp jacobian calculation
 OMPCopyDebug integer /0/ #Print debug info for omp constructs
+iidebugprint      integer /-1/ # index ii of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. iv is determined by ivdebugprint
+ivdebugprint      integer /-1/ # index iv of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. ii is determined by iidebugprint
+WriteJacobian     integer /0/ # Write jacobian in an ascii text file
+omplenpfac       integer /1/ # Factor to increase nnzmxperthread
+nnzmxperthread   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
+ompneq  integer # number of equation (=neq)
+OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation
+OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation
+Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
+OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
+
+***** OmpJacobian:
+ivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+ivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+iJacRow(ompneq,Nthreads) _integer #
+iJacCol(nnzmxperthread,Nthreads) _integer #
+rJacElem(nnzmxperthread,Nthreads) _real #
+nnz(Nthreads) _integer
+nnzcum(Nthreads) _integer
 
 ***** COMroutines:
 glbwrlog(ioun)          function
@@ -504,6 +555,7 @@ ttngylog   real            /0./   # time spent for fngy in neudifpg
 ttngfd2    real            /0./   # time spent in fd2tra for neudifpg
 ttngfxy    real            /0./   # time spent for fngxy in neudifpg
 DebugTime  integer         /0/    # Display execution times of various subroutines
+ShowTime       integer /1/     # Show execution time of routines
 ***** Linkbbb:
 # information shared by bbb and wdf packages
 nxbbb	integer

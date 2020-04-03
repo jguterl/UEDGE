@@ -197,7 +197,7 @@ c$omp threadprivate(uresp, usave, caplams)
 !		COUPLING (DUE TO ATOMIC PHYSICS) TO THE NEUTRALS
 !		POPULATION (THROUGH UNEUT,QNEUT).
 !
-
+      write(*,*) 'fmombal'
 c ... Start timing impurity calculations.
       if (istimingon .eq. 1 .and. misotope .gt. 1) tsval = gettime(sec4)
 
@@ -464,9 +464,7 @@ c
 	if( ldir.gt.1 )then
 	  call sgefa(amat,nmat,nmat,nrow,info)
 	  nmat2 = nmat*nmat
-cJG	  bmat(1:nmat2)=amat(1:nmat2)
 	  call scopy(nmat2,amat,1,bmat,1)
-cJG	  sbar0(1:nmat)=sbar(1:nmat)
       call scopy(nmat,sbar,1,sbar0,1)
 	  if( info.ne.0 )then
 	    call xerrab('mrespond:  Condition No. = 0 in Solver')
@@ -479,7 +477,6 @@ cJG	  sbar0(1:nmat)=sbar(1:nmat)
 	endif
         call sgesl(bmat,nmat,nmat,nrow,sbar,0)
 	if( ldir.gt.1 ) then
-cJG	ubar0(1:nmat)=sbar(1:nmat)
 	call scopy(nmat,sbar,1,ubar0,1)
 	endif
 	return
@@ -535,9 +532,7 @@ c	STORE SOLUTION FOR INCREMENTAL MODE
 c
 	if( ldir.gt.1 )then
 	mtot2 = mtotal*nzch
-cJG	 usave(1:mtot2)=usol(1:mtot2)
 	call scopy(mtot2,usol,1,usave,1)
-cJG  caplams(1:mtotal)=caplam(1:mtotal)
 	call scopy(mtotal,caplam,1,caplams,1)
 	acci0 = acci1
 	endif
@@ -919,7 +914,6 @@ c*****	Shift first row blocks 1 block to left (on input, 1st block = 0)
 	na=0
 	do 30 j=1,k
 	  napk=na+k
-cJG   a(na+1:na+1+k2-1)=a(napk+1:napk+1+k2-1)
 	  call scopy(k2,a(napk+1),1,a(na+1),1)
 	  napk2=na+k2
 	  do i=1,k
@@ -1005,7 +999,6 @@ c*****	Move block 2 to 1, block 3 to 2, 0 out block 3 of rows used in
 c*****	this stage that will also be used in next.
 	  if( iblock.ne.n .and. iflag.eq.0 )then
 	    do l=nl,nh
-cJG	    a(nrow(l)+1:nrow(l)+1+k2-1)=a(nrow(l)+k+1:nrow(l)+k+1+k2-1)
 	      call scopy(k2,a(nrow(l)+k+1),1,a(nrow(l)+1),1)
 	      do j=1,k
 	        a(nrow(l)+j+k2)=0.0
@@ -1205,7 +1198,6 @@ c
 	noff = 1 + nforc
 	istore = 1
 	if( ldir.gt.1 )then
-cJG	source(1:nkz,misa)=asource(noff:noff+nkz-1)
 	  call scopy(nkz,asource(noff),1,source(1,misa),1)
 	  lflag = 1
 	  noff = 1
@@ -1216,14 +1208,12 @@ cJG	source(1:nkz,misa)=asource(noff:noff+nkz-1)
 	  nr = 1
 	  iflag = 1
 
-cJG	  amat(1:nknz)=zmat(1:nknz,misa)
 	  call scopy(nknz,zmat(1,misa),1,amat,1)
 	endif
 	call uinvm2(KXA,nz,amat,asource(noff),xsol(noff),
      >	nrowz(1,misa),scaz(1,misa),lsz(1,misa),msz(1,misa),
      >	nr,istore,iflag)
 	if( ldir.gt.1 ) then
-cJG	zmat(1:nknz,misa)=amat(1:nknz)
 	call scopy(nknz,amat,1,zmat(1,misa),1)
 	endif
 	if( iflag.ne.0 )then
@@ -1236,7 +1226,6 @@ c	Note response arrays are arranged consecutively
 c
 	do ntype = lflag,NBA
 	noff = 1 + nkz*(ntype-1)
-cJG	uresp(1:nkz,1,misa,ntype)=xsol(noff:noff+nkz-1)
 	call scopy(nkz,xsol(noff),1,uresp(1,1,misa,ntype),1)
 	enddo
  100	continue

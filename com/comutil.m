@@ -3601,7 +3601,7 @@ C
 
       Use(Timespl)
       real(Size4) sec4, gettime, tsint
-cJG      call xerrab('B2Vahl called')
+      write(*,*) 'B2Vahl called'
 
 C
 C***FIRST EXECUTABLE STATEMENT  B2VAhL

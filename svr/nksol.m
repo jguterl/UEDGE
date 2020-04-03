@@ -744,6 +744,7 @@ c
       logical mxtkn
       integer DebugTime
       real(kind=4):: sec4, gettime,time0
+      Use(Verbose)
 cpetsc      external gettime
 cpetsc      real gettime,sec4
 c+pnb
@@ -791,7 +792,7 @@ c-----------------------------------------------------------------------
       iprint = 0
       iunit = 6
       iermsg = 0
-      write(*,*) '********* nksol ***********'
+      if (VerboseCall.gt.0) write(*,*) '**************** calling nksol ********************'
 c+ icntnu change
 c-----------------------------------------------------------------------
 c load pthrsh value in nks003 common block if this is not a continuation

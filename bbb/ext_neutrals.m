@@ -126,10 +126,10 @@ c ... Save current state
       s=uedge_save_pdb(trim(uedgesave))
 
 c ... Execute uedgecmd, read uedgescript, and exit
-c      write(*,*) '*************************************'
-      write(*,*) "------------------------------------------------"
-      write(*,*) "Running a new UEDGE session"
-      
+c      write(iout,*) '*************************************'
+      write(iout,*) "------------------------------------------------"
+      write(iout,*) "Running a new UEDGE session"
+
 c ... Run a new UEDGE session
  	  cmd = trim(uedgecmd//" ""read "//uedgescript//";quit""")
       if (istimecmdon) cmd="time "//trim(cmd)
@@ -162,10 +162,10 @@ c ... Local variables:
       logical :: isechocmdon =.false.  #uses "echo cmd" for debugging purposes
 
       if(ext_verbose) then
-c       write(*,*) '*************************************'
-        write(*,*) "------------------------------------------------"
-        write(*,*) "Running DEGAS2 Monte Carlo neutrals"
-        write(*,*) "... until steady state"	
+c       write(iout,*) '*************************************'
+        write(iout,*) "------------------------------------------------"
+        write(iout,*) "Running DEGAS2 Monte Carlo neutrals"
+        write(iout,*) "... until steady state"
       endif
 
 c ... Allocate MNC data storage ???
@@ -176,10 +176,10 @@ c ... Write uedge plasma data
         cmd="call writemcnfile("""//trim(bkufile)//""","""//trim(runid)//""")"
         print *,trim(cmd)
       else
-	    call writemcnfile(bkufile,runid)	  	  	 
+	    call writemcnfile(bkufile,runid)
       end if
 
-c ... Process plasma data into degas2 background file format 
+c ... Process plasma data into degas2 background file format
 	  cmd = trim(bkcmd)//" "//trim(bkufile)
 c      if (istimecmdon) cmd="time "//trim(cmd)
       if (isechocmdon) cmd="echo "//trim(cmd)
@@ -188,7 +188,7 @@ c      if (istimecmdon) cmd="time "//trim(cmd)
 
 c ... Set parameters in degas2 background file
       do istra=1,nstra
-	    write(nflightstr(istra),'(i0)') mcnflights(istra)
+	     write(nflightstr(istra),'(i0)') mcnflights(istra)
       enddo
 	  cmd = trim(ncsetcmd)//" "//trim(bkdfile)//" "//trim(ncsetvar)
 	  if (isechocmdon) then
@@ -209,7 +209,7 @@ c      if (istimecmdon) cmd="time "//trim(cmd)
 
 c ... Run degas2 MC neutrals code
 	  if(ismpicmdon) then
-	    write(npextstr,'(i0)') npext 
+	     write(npextstr,'(i0)') npext
  	    cmd = trim(degas2mpi)
 		cmd=trim(mpicmd)//" "//trim(npopt)//" "//trim(npextstr)//" "//trim(cmd)
       else
@@ -221,7 +221,7 @@ c ... Run degas2 MC neutrals code
 	  call system(trim(cmd))
 
 c ... Read data and convert
-      if(get_neutral_sources) then 
+      if(get_neutral_sources) then
 c ... Read source data
         if(isechocmdon) then
           cmd="call readmcnsor("""//trim(degas2file)//""")"
@@ -236,11 +236,11 @@ c ...  Convert source data
         else
           call convertmcnsor
         end if
-      end if 
+      end if
 
       if(get_neutral_moments) then
 c ... Generate moment data using outputbrowser
-        cmd = trim(degas2outcmd) //" "//trim(degas2outscript)        
+        cmd = trim(degas2outcmd) //" "//trim(degas2outscript)
 c        if (istimecmdon) cmd="time "//trim(cmd)
         if (isechocmdon) cmd="echo "//trim(cmd)
         if (ext_verbose) print *,trim(cmd)
@@ -265,7 +265,7 @@ c ... Convert moment data
         else
           call convertmcnmoments
         end if
-      end if 
+      end if
 
       end
 c-----------------------------------------------------------------------
@@ -293,7 +293,7 @@ c***************************************************
 
 c ... Common blocks:
       Use(Dim)      	#nisp, ngsp, nhsp ...
-      Use(UEpar)    	#isnion, isupon, ... 
+      Use(UEpar)    	#isnion, isupon, ...
 	  Use(Math_problem_size) #neqmx
       Use(Time_dep_nwt) #dtreal
 	  Use(PNC_params) 	#dtplasma
@@ -301,13 +301,13 @@ c ... Common blocks:
 c ... Local variables:
       integer isnionold(nispmx),isuponold(nispmx),istionold,isteonold,isphionold
       integer isngonold(ngspmx), isupgonold(ngspmx), nhspold, ngspold
-      real dtrealold 
+      real dtrealold
 
       if(pnc_verbose) then
-c        write(*,*) "************************************************"
-        write(*,*) "------------------------------------------------"
-        write(*,*) "Solving UEDGE plasma model without neutral gas"
-        write(*,*) "dtplasma=",dtplasma
+c        write(iout,*) "************************************************"
+        write(iout,*) "------------------------------------------------"
+        write(iout,*) "Solving UEDGE plasma model without neutral gas"
+        write(iout,*) "dtplasma=",dtplasma
       endif
 
 c ... Save original settings
@@ -325,22 +325,22 @@ c ... Save original settings
 c ... Turn on fluid plasma model & turn off neutrals model
 c ... The settings below correspond to the original model
 c ... Now, assume the desired settings are specified by the user
-c     isnion=1			 
-c      isupon=1			 
-c      istion=1		 
-c      isteon=1			 
-c      isphion=1	 
-c      if (nhsp .gt. 1) then 
+c     isnion=1
+c      isupon=1
+c      istion=1
+c      isteon=1
+c      isphion=1
+c      if (nhsp .gt. 1) then
 c        isnion(iigsp)=0
 c        isupon(iigsp)=0
 c      endif
 
-c ... Solve fluid plasma model 
+c ... Solve fluid plasma model
       dtreal=dtplasma
       call exmain
 
-c ... Restore original settings  
-      dtreal=dtrealold    
+c ... Restore original settings
+      dtreal=dtrealold
       isnion=isnionold
       isupon=isuponold
       istion=istionold
@@ -365,7 +365,7 @@ c ... This subroutine can be used with explicit PNC, but not with implicit JFNK
 c ... Common blocks:
       Use(Dim)      	#nisp, ngsp, ...
       Use(UEint)        #ziin
-      Use(UEpar)    	#isnion, isupon, iigsp, ... 
+      Use(UEpar)    	#isnion, isupon, iigsp, ...
 	  Use(Math_problem_size) #neqmx
       Use(Time_dep_nwt)  #dtreal
       Use(MCN_dim)
@@ -377,13 +377,13 @@ c ... Local variables:
       integer isnionold(nispmx),isuponold(nispmx),istionold,isteonold,isphionold
       integer ismcnonold, nhspold, ngspold, ziinold(nispmx)
       integer isngonold(ngspmx), isupgonold(ngspmx)
-      real dtrealold 
+      real dtrealold
 
       if(pnc_verbose) then
-c        write(*,*) "************************************************"
-        write(*,*) "------------------------------------------------"
-        write(*,*) "Solving UEDGE neutral gas model for ng, upg"
-        write(*,*) "dtneut=", dtneut
+c        write(iout,*) "************************************************"
+        write(iout,*) "------------------------------------------------"
+        write(iout,*) "Solving UEDGE neutral gas model for ng, upg"
+        write(iout,*) "dtneut=", dtneut
       endif
 
 c ... Save original settings
@@ -418,11 +418,11 @@ c ... Turn on fluid neutrals model & turn off fluid plasma model
       isupgon(1)=1	#neutrals model with parallel flow
       isngon=0
 
-c ... Solve fluid neutrals model 
+c ... Solve fluid neutrals model
       call exmain
 
-c ... Restore original settings  
-      dtreal=dtrealold    
+c ... Restore original settings
+      dtreal=dtrealold
       isnion=isnionold
       isupon=isuponold
       istion=istionold
@@ -466,10 +466,10 @@ c ... Local Variables:
       real smov(0:nx+1,0:ny+1,1:nfl,1:nstra)
       real seit(0:nx+1,0:ny+1,1:nstra)
       real sinb1, cosb1
-c     real sinbp(0:nx+1,0:ny+1),cosbp(0:nx+1,0:ny+1) 
+c     real sinbp(0:nx+1,0:ny+1),cosbp(0:nx+1,0:ny+1)
 
 c ... Allocate MCN_bkgd group
-      call gchange("MCN_bkgd",0) 
+      call gchange("MCN_bkgd",0)
 
 c      cosb1=br(:,:,0)/bpol(:,:,0)
 c      sinb1=bz(:,:,0)/bpol(:,:,0)
@@ -512,7 +512,7 @@ c      upc=(upi)/2.
               smop(ix,iy,ifld,istra) = smox(ix,iy,ifld,istra) * rr(ix,iy)
      .                                + smophi(ix,iy,ifld,istra) * rbfbt(ix,iy)
               # interpolate parallel component (on UEDGE velocity mesh) is:
-              smov(ix,iy,ifld,istra) = 
+              smov(ix,iy,ifld,istra) =
      .                      0.5*(smop(ix,iy,ifld,istra)+smop(ix2,iy,ifld,istra))
               # contribution to ion thermal energy
               seit(ix,iy,istra) = seit(ix,iy,istra)
@@ -530,7 +530,7 @@ c      upc=(upi)/2.
 
 # Put data in generic source arrays
       mcnsor_ni=sni
-      mcnsor_up=smov 
+      mcnsor_up=smov
       mcnsor_te=see
       mcnsor_ti=seit
 
@@ -558,12 +558,12 @@ c----------------------------------------------------------------------c
 c******************************************************
 c Subroutine to convert components of DEGAS2 vector to UEDGE vector
 c******************************************************
-c     [Vx]            [   c  0   s   ] [Vr] 
-c     [Vy] = R.V    = [  -s  0   s   ] [Vt] 
+c     [Vx]            [   c  0   s   ] [Vr]
+c     [Vy] = R.V    = [  -s  0   s   ] [Vt]
 c     [Vp]            [bp*c  bt  s*bp] [Vz]
 c
-c     [Vr]            [  c    -s    0   ] [Vr] 
-c     [Vt] = R^-1.V = [-bp/bt  0   1/bt ] [Vt] 
+c     [Vr]            [  c    -s    0   ] [Vr]
+c     [Vt] = R^-1.V = [-bp/bt  0   1/bt ] [Vt]
 c     [Vz]            [  s     c    0   ] [Vz]
 
       subroutine convertmcnvec(mcvar,uevar,mcvar_rsd,uevar_rsd,sgn)
@@ -601,9 +601,9 @@ c ... Local Variables:
           uevar(:,:,ifld,2) = - sinb*mcvar(:,:,ifld,1) +  cosb*mcvar(:,:,ifld,3)
           uevar(:,:,ifld,3) =     rr*uevar(:,:,ifld,1) + rbfbt*mcvar(:,:,ifld,2)
 
-          uevar_rsd(:,:,ifld,1) = sqrt((cosb*mcvar_sd(:,:,ifld,1))**2  + (sinb*mcvar_sd(:,:,ifld,3))**2)  
+          uevar_rsd(:,:,ifld,1) = sqrt((cosb*mcvar_sd(:,:,ifld,1))**2  + (sinb*mcvar_sd(:,:,ifld,3))**2)
           uevar_rsd(:,:,ifld,2) = sqrt((sinb*mcvar_sd(:,:,ifld,1))**2  + (cosb*mcvar_sd(:,:,ifld,3))**2)
-          uevar_rsd(:,:,ifld,3) = sqrt( (rr*uevar_rsd(:,:,ifld,1))**2 + (rbfbt*mcvar_sd(:,:,ifld,2))**2 ) 
+          uevar_rsd(:,:,ifld,3) = sqrt( (rr*uevar_rsd(:,:,ifld,1))**2 + (rbfbt*mcvar_sd(:,:,ifld,2))**2 )
         enddo
       else
         do ifld=1,nfl
@@ -611,9 +611,9 @@ c ... Local Variables:
           uevar(:,:,ifld,3) =   sinb*mcvar(:,:,ifld,1) +  cosb*mcvar(:,:,ifld,2)
           uevar(:,:,ifld,2) =  (- rr*uevar(:,:,ifld,1) +       mcvar(:,:,ifld,3))/rbfbt
 
-          uevar_rsd(:,:,ifld,1) = sqrt((cosb*mcvar_sd(:,:,ifld,1))**2  + (sinb*mcvar_sd(:,:,ifld,2))**2)  
+          uevar_rsd(:,:,ifld,1) = sqrt((cosb*mcvar_sd(:,:,ifld,1))**2  + (sinb*mcvar_sd(:,:,ifld,2))**2)
           uevar_rsd(:,:,ifld,3) = sqrt((sinb*mcvar_sd(:,:,ifld,1))**2  + (cosb*mcvar_sd(:,:,ifld,2))**2)
-          uevar_rsd(:,:,ifld,2) = sqrt( (rr*uevar_rsd(:,:,ifld,1))**2 + mcvar_sd(:,:,ifld,3)**2)/abs(rbfbt) 
+          uevar_rsd(:,:,ifld,2) = sqrt( (rr*uevar_rsd(:,:,ifld,1))**2 + mcvar_sd(:,:,ifld,3)**2)/abs(rbfbt)
         enddo
       endif
 
@@ -653,18 +653,18 @@ c ... Local Variables:
       do ifld=1,nfl
         do iy=1,ny
           do ix=1,nx
-            ix2=ixp1(ix,iy) 
+            ix2=ixp1(ix,iy)
             dx2=dx(ix,iy)+dx(ix2,iy)
-            uevar(ix,iy,ifld,1) =     
+            uevar(ix,iy,ifld,1) =
      .        (mcvar(ix,iy,ifld,1)*dx(ix2,iy)+mcvar(ix2,iy,ifld,1)*dx(ix,iy))/dx2
-            uevar_rsd(ix,iy,ifld,1) = 
+            uevar_rsd(ix,iy,ifld,1) =
      .        (mcvar_rsd(ix,iy,ifld,1)*dx(ix2,iy)+mcvar_rsd(ix2,iy,ifld,1)*dx(ix,iy))/dx2
 
             iy2 = iy+1
             dy2 = dy(ix,iy)+dy(ix,iy2)
             uevar(ix,iy,ifld,2) =
      .        (mcvar(ix,iy,ifld,2)*dy(ix,iy2) + mcvar(ix,iy2,ifld,2)*dy(ix,iy))/dy2
-            uevar_rsd(ix,iy,ifld,2) =  
+            uevar_rsd(ix,iy,ifld,2) =
      .        (mcvar_rsd(ix,iy,ifld,2)*dy(ix,iy2) + mcvar_rsd(ix,iy2,ifld,2)*dy(ix,iy))/dy2
           enddo
         enddo
@@ -694,11 +694,11 @@ c ... Output Variables:
 c ... Local Variables:
       real, dimension(0:nx+1,0:ny+1,nfl,3) :: uevec,uevec_rsd
 
-c      write(*,*) "convertmcnvector: vec"
+c      write(iout,*) "convertmcnvector: vec"
       call convertmcnvec(mcvar,uevec,mcvar_rsd,uevec_rsd,1)
-c      write(*,*) "convertmcnvector: interp" 
+c      write(iout,*) "convertmcnvector: interp"
       call  interpmcnvec(uevec,uevar,uevec_rsd,uevar_rsd)
-c     write(*,*) "convertmcnvector: done"
+c     write(iout,*) "convertmcnvector: done"
       end
 
 c----------------------------------------------------------------------c
@@ -724,14 +724,14 @@ c ... Output Variables:
       real, dimension(0:nx+1,0:ny+1,nfl,3,3), intent(out) :: uevar,uevar_rsd
 
 c ... Local Variables:
-      integer :: idim 
+      integer :: idim
       real, dimension(0:nx+1,0:ny+1,nfl,3,3) :: uevec,uevec_rsd
       real, dimension(0:nx+1,0:ny+1,nfl,3) :: vec,vec_rsd,var,var_rsd
 
 c ... Calculate field-aligned UEDGE components:
 c ...     [Vx] = R.v = [ cos, sin] [Vr]
 c ...     [Vy]         [-sin, cos] [Vz]
-c ...     ...   etc. 
+c ...     ...   etc.
 c ...     [P]_xy = R . P_[rz] . R^T
 
 c ... First multiply by R matrix
@@ -751,7 +751,7 @@ c ... Then multiply by Transpose(R) matrix
         uevar(:,:,:,idim,:)=var
         uevar_rsd(:,:,:,idim,:)=var_rsd
       end do
-c      write(*,*) "convertmcntensor: done"
+c      write(iout,*) "convertmcntensor: done"
 
       end
 
@@ -770,9 +770,9 @@ c----------------------------------------------------------------------c
       integer ix,iy,ifld,istra
 
       external remark
-c 	  write(*,*) 'TEST SCALE_MCN START: ismcnvar=',ismcnvar
+c 	  write(iout,*) 'TEST SCALE_MCN START: ismcnvar=',ismcnvar
 
-c     This subroutine scales plasma source terms obtained from the 
+c     This subroutine scales plasma source terms obtained from the
 c     Monte-Carlo-Neutrals code.  These sources are assumed to scale
 c     with the neutral source currents at the divertor plates.
 c     The flag that controls the scaling is ismcnvar :
@@ -784,7 +784,7 @@ c     or volume element where neutral particles originate.  Here
 c     we consider only two possible strata: the inboard and outboard
 c     divertor plates.  We neglect strata associated with gas puffing
 c     or recombination.
-c     
+c
 c     Plasma source terms from EIRENE are :
 c         mcnsor_ni
 c         mcnsor_up
@@ -823,7 +823,7 @@ c     Compute scale factors for each strata :
 
       if (ismcnvar==1) then	# sources scale with current
 c		 call remark("ismcnvar=1")
-c         write(*,*) 'ismcnvar=1' 
+c         write(iout,*) 'ismcnvar=1'
          do istra=1,nstra
             uecurr(istra)=0.
             if (istra==1) then	# for east target plate only
@@ -861,8 +861,8 @@ c       Scale source terms and sum over strata :
         enddo
       else if (ismcnvar==2) then	# sources scale with electron density
 c	     call remark("ismcnvar=2")
-c         write(*,*) 'ismcnvar=2' 
-         # Scale all sources to electron (ion) density 
+c         write(iout,*) 'ismcnvar=2'
+         # Scale all sources to electron (ion) density
          do istra=1,nstra
             do iy=0,ny+1
                do ix=0,nx+1
@@ -883,7 +883,7 @@ c         write(*,*) 'ismcnvar=2'
          enddo
       else if (ismcnvar==3) then	# sources scale with old UEDGE current
 c        call remark("ismcnvar=3")
-c        write(*,*) 'ismcnvar=3' 
+c        write(iout,*) 'ismcnvar=3'
          do istra=1,nstra
             uecurr(istra)=0.
             if (istra==1) then	# for east target plate only
@@ -919,12 +919,12 @@ c       Scale source terms and sum over strata :
               enddo
            enddo
         enddo
-      else if (ismcnvar==4) then	
+      else if (ismcnvar==4) then
          # Sources scale with electron density and target plate current (neutral density)
          # This is a combination of ismcnvar = 2 and 3
 c	     call remark("ismcnvar=4")
-c         write(*,*) 'ismcnvar=4' 
-         # Scale all sources electron (ion) density 
+c         write(iout,*) 'ismcnvar=4'
+         # Scale all sources electron (ion) density
          do iy=0,ny+1
             do ix=0,nx+1
                do ifld=1,nisp
@@ -955,7 +955,7 @@ c         write(*,*) 'ismcnvar=4'
                enddo
             enddo
          enddo
-      # Scale sources linearly with old UEDGE current to target plate 
+      # Scale sources linearly with old UEDGE current to target plate
       # This option corresponds to ismcnvar=3
          do istra=1,nstra
             uecurr(istra)=0.
@@ -1049,17 +1049,17 @@ c ... Local variables:
       character*8 stepstr
       character*256 pnc_save_name
 
-      write(*,*) '*************************************'
-      write(*,*) 'UEDGE plasma + UEDGE neutral coupling'
+      write(iout,*) '*************************************'
+      write(iout,*) 'UEDGE plasma + UEDGE neutral coupling'
 
 c ... Allocate PNC_data group
-      call gchange("PNC_data",0) 
+      call gchange("PNC_data",0)
 
       do pnc_step=pnc_step+1,pnc_maxstep
         pnc_time = pnc_time + dtplasma
-        write(*,*) '*************************************'
-        write(*,*) 'Step: ',pnc_step
-        write(*,*) 'Time: ',pnc_time
+        write(iout,*) '*************************************'
+        write(iout,*) 'Step: ',pnc_step
+        write(iout,*) 'Time: ',pnc_time
 
         #Neutral Step      Use(PNC_params)	#dtneut
 		call store_neutrals
@@ -1073,19 +1073,19 @@ c ... Allocate PNC_data group
 
         #Plasma Step
         dtreal=dtplasma
-        call store_plasma	
-        call uedge_plasma	
+        call store_plasma
+        call uedge_plasma
 c        call exmain  			#should use exmain to be consistent with other pnc routines
         call update_plasma
 
-        call pnc_diagnostics    
+        call pnc_diagnostics
 
         #Save PNC data
         if(mod(pnc_step,pnc_nsave)==0) then
           write(stepstr,'(i0)') pnc_step
           pnc_save_name=trim(pnc_savefile)//trim(stepstr)//'.pdb'
-          if(.not.(pnc_save_pdb(pnc_save_name)==0)) 
-     .      write(*,*) 'uedge_uedge: error writing '//pnc_save_name
+          if(.not.(pnc_save_pdb(pnc_save_name)==0))
+     .      write(iout,*) 'uedge_uedge: error writing '//pnc_save_name
         endif
       enddo
       pnc_step=pnc_step-1  #return value to pnc_maxstep
@@ -1115,22 +1115,22 @@ c ... External functions:
 c ... Local variables:
       character*256 pnc_save_name
       character*8 stepstr
-    
 
-c      write(*,*) '**************************************'
-c        write(*,*) "************************************************"
-      
-      write(*,*) "------------------------------------------------"
-      write(*,*) 'UEDGE plasma + DEGAS2 neutral coupling'
+
+c      write(iout,*) '**************************************'
+c        write(iout,*) "************************************************"
+
+      write(iout,*) "------------------------------------------------"
+      write(iout,*) 'UEDGE plasma + DEGAS2 neutral coupling'
 
 c ... Allocate PNC_data group
-      call gchange("PNC_data",0) 
+      call gchange("PNC_data",0)
 
       do pnc_step=pnc_step+1,pnc_maxstep
         pnc_time = pnc_time + dtplasma
-        write(*,*) '**************************************'
-        write(*,*) 'Step: ',pnc_step
-        write(*,*) 'Time: ',pnc_time
+        write(iout,*) '**************************************'
+        write(iout,*) 'Step: ',pnc_step
+        write(iout,*) 'Time: ',pnc_time
 
         #Neutral step
         dtreal=dtneut
@@ -1141,19 +1141,19 @@ c ... Allocate PNC_data group
         #Plasma step
 		dtreal=dtplasma
         call store_plasma
-c        write(*,*) "Solving UEDGE plasma model without neutral gas"
-c        write(*,*) "dtreal=",dtplasma	
+c        write(iout,*) "Solving UEDGE plasma model without neutral gas"
+c        write(iout,*) "dtreal=",dtplasma
 c        call exmain  			#not uedge_plasma to be consistent with other pnc routines
         call uedge_plasma
         call update_plasma
-        call pnc_diagnostics    
+        call pnc_diagnostics
 
         #Save PNC data
         if(mod(pnc_step,pnc_nsave)==0) then
           write(stepstr,'(i0)') pnc_step
           pnc_save_name=trim(pnc_savefile)//trim(stepstr)//'.pdb'
-          if(.not.(pnc_save_pdb(pnc_save_name)==0)) 
-     .      write(*,*) 'uedge_degas2: error writing '//pnc_save_name
+          if(.not.(pnc_save_pdb(pnc_save_name)==0))
+     .      write(iout,*) 'uedge_degas2: error writing '//pnc_save_name
         endif
 
       enddo
@@ -1171,7 +1171,7 @@ c*******************************************************************
       implicit none
 
 c ... Common blocks:
-      Use(Dim)			  # neq 
+      Use(Dim)			  # neq
       Use(Math_problem_size) # neqmx
       Use(Lsode)    	  # yl, yldot
       Use(Time_dep_nwt)   # dtreal
@@ -1187,7 +1187,7 @@ c      call convert() #convert ni,up, ti... to yl
       call pandf1(-1, -1, 0, neq, 1., yl, yldot)
       get_fnrm=sqrt(sum((yldot(1:neq)*sfscal(1:neq))**2))
       dtreal=dtreal_save
-      
+
       end function get_fnrm
 
 c-----------------------------------------------------------------------
@@ -1201,7 +1201,7 @@ c*******************************************************************
       implicit none
 
 c ... Common blocks:
-      Use(Dim)			  # neq 
+      Use(Dim)			  # neq
       Use(Math_problem_size) # neqmx
       Use(Lsode)    	  # yl, yldot
       Use(Time_dep_nwt)   # dtreal
@@ -1216,7 +1216,7 @@ c      call convert() #convert ni,up, ti... to yl
       call pandf(-1, -1, neq, 1., yl, yldot)
       get_fnrm_pandf=sqrt(sum((yldot(1:neq)*sfscal(1:neq))**2))
       dtreal=dtreal_save
-      
+
       end function get_fnrm_pandf
 
 
@@ -1245,16 +1245,16 @@ c ... Local variables:
       logical :: isechocmdon =.false.  #uses "echo cmd" for debugging purposes
 
 c ... External functions:
-      real get_fnrm,get_fnrm_pandf 
+      real get_fnrm,get_fnrm_pandf
 c     basis subroutine dobalance must be predefined within basis parser
 
       fnrm_new=get_fnrm(1.0d20)
 
       if (pnc_step == 1) then	# Write header information into file
-        open(unit=pnc_fp,file=trim(pnc_histfile),action="write", 
+        open(unit=pnc_fp,file=trim(pnc_histfile),action="write",
      .        status="replace",iostat=ioerr)
-        if(ioerr.ne.0) then 
-          write(*,*) "Trouble opening ",trim(pnc_histfile)," iostat =",ioerr
+        if(ioerr.ne.0) then
+          write(iout,*) "Trouble opening ",trim(pnc_histfile)," iostat =",ioerr
         endif
         write(pnc_fp,*) "***************************************"
         write(pnc_fp,*) "TIME HISTORY OF RESIDUALS AND SUMMARIES"
@@ -1263,10 +1263,10 @@ c     basis subroutine dobalance must be predefined within basis parser
         write(pnc_fp,*) "relax_g  = ", relax_g
       endif
 
-      open(unit=pnc_fp,file=trim(pnc_histfile),action="write",status="old",  
+      open(unit=pnc_fp,file=trim(pnc_histfile),action="write",status="old",
      .      position="append",iostat=ioerr)
-      if(ioerr.ne.0) then 
-        write(*,*) "Trouble writing ",trim(pnc_histfile)," iostat =",ioerr
+      if(ioerr.ne.0) then
+        write(iout,*) "Trouble writing ",trim(pnc_histfile)," iostat =",ioerr
       endif
 
       write(pnc_fp,*) "***************************************"
@@ -1280,7 +1280,7 @@ c     basis subroutine dobalance must be predefined within basis parser
       write(pnc_fp,*) 'res_te    = ', res_te
       write(pnc_fp,*) 'res_phi   = ', res_phi
 
-      if (extneutopt==0) then 
+      if (extneutopt==0) then
         write(pnc_fp,*) 'res_ng    = ', res_ng
         write(pnc_fp,*) 'res_upg   = ', res_upg
       else
@@ -1301,8 +1301,8 @@ c     basis subroutine dobalance must be predefined within basis parser
       endif
 
       close(unit=pnc_fp,iostat=ioerr)
-      if(ioerr.ne.0) then 
-        write(*,*) "Trouble closing ",trim(pnc_histfile)," iostat =",ioerr
+      if(ioerr.ne.0) then
+        write(iout,*) "Trouble closing ",trim(pnc_histfile)," iostat =",ioerr
       endif
 
       if(pnc_dobalance) then
@@ -1310,11 +1310,11 @@ c       call parsestr('rundiagnostics()')
         call parsestr('dobalance(pnc_balancefile)')
 c        call sleep(0.005)  #Need time lag before touching files
 c       cmd="touch "//trim(pnc_histfile)
-c       call system(trim(cmd))        
-        cmd='cat '//trim(pnc_balancefile)//' >> '//trim(pnc_histfile)        
+c       call system(trim(cmd))
+        cmd='cat '//trim(pnc_balancefile)//' >> '//trim(pnc_histfile)
         if (isechocmdon) cmd="echo "//trim(cmd)
         if (ext_verbose) print *,trim(cmd)
-        call system(trim(cmd)) 
+        call system(trim(cmd))
       endif
 
       end
@@ -1337,10 +1337,10 @@ c ... Common blocks:
       Use(PNC_params)	# pnc_step
       Use(PNC_data)		# sni_pnc, ...
 
-      if (extneutopt==0) then 
+      if (extneutopt==0) then
         ni_pnc=nis
         up_pnc=ups
-      else 
+      else
         if (get_neutral_sources) then
           sni_pnc   =sni
           smor_pnc  =smor
@@ -1349,7 +1349,7 @@ c ... Common blocks:
           sei_pnc   =sei
           see_pnc   =see
         endif
-        if (get_neutral_moments) then 
+        if (get_neutral_moments) then
           ng_pnc  = ng_ue
           upg_pnc = upg_ue
           tg_pnc  = tg_ue
@@ -1382,7 +1382,7 @@ c ... Common blocks:
 c ... Local Variables
       integer ifld
 
-      if(extneutopt==0) then 
+      if(extneutopt==0) then
         ni(:,:,iigsp)=relax_p*ni(:,:,iigsp)+(1-relax_p)*ni_pnc(:,:,iigsp)
         up(:,:,iigsp)=relax_p*up(:,:,iigsp)+(1-relax_p)*up_pnc(:,:,iigsp)
 
@@ -1391,7 +1391,7 @@ c ... Local Variables
 
         res_ng    = sqrt(sum((ni(:,:,iigsp)-ni_pnc(:,:,iigsp))**2/real(nx*ny)))
         res_upg   = sqrt(sum((up(:,:,iigsp)-up_pnc(:,:,iigsp))**2/real(nx*ny)))
-        
+
         del_ng    = maxval(abs(ni(:,:,iigsp)-ni_pnc(:,:,iigsp)))
         del_upg   = maxval(abs(up(:,:,iigsp)-up_pnc(:,:,iigsp)))
 
@@ -1409,9 +1409,9 @@ c ... Local Variables
           del_upg     = del_upg/maxval(abs(up_pnc))
         end if
         if(pnc_verbose) then
-          write(*,*) 'Variable           Max Res                        Std Dev Res'
-          write(*,*) 'ng        ', del_ng,  res_ng
-          write(*,*) 'upg       ', del_upg, res_upg
+          write(iout,*) 'Variable           Max Res                        Std Dev Res'
+          write(iout,*) 'ng        ', del_ng,  res_ng
+          write(iout,*) 'upg       ', del_upg, res_upg
         endif
       endif
       if (get_neutral_sources) then
@@ -1467,13 +1467,13 @@ c ... Local Variables
         end if
 
          if (pnc_verbose .and. pnc_step .gt. 1) then
-          write(*,*) 'Variable           Max Res                         Std Dev Res'
-          write(*,*) 'sni     ', del_sni,    res_sni
-          write(*,*) 'smor    ', del_smor,   res_smor
-          write(*,*) 'smophi  ', del_smophi, res_smophi
-          write(*,*) 'smoz    ', del_smoz,   res_smoz
-          write(*,*) 'sei     ', del_sei,    res_sei
-          write(*,*) 'see     ', del_see,    res_see
+          write(iout,*) 'Variable           Max Res                         Std Dev Res'
+          write(iout,*) 'sni     ', del_sni,    res_sni
+          write(iout,*) 'smor    ', del_smor,   res_smor
+          write(iout,*) 'smophi  ', del_smophi, res_smophi
+          write(iout,*) 'smoz    ', del_smoz,   res_smoz
+          write(iout,*) 'sei     ', del_sei,    res_sei
+          write(iout,*) 'see     ', del_see,    res_see
         endif
       endif
       if (get_neutral_moments) then
@@ -1493,7 +1493,7 @@ c         tgs = relax_g*tg_ue(:,:,1) + (1-relax_g)*tg_pnc(:,:,1)
         del_ng = maxval(abs(ng_ue-ng_pnc))
         del_tg = maxval(abs(tg_ue-tg_pnc))
 
-        if (pnc_print_norm==1 .or. (pnc_step<=1 .and. pnc_print_norm==2) ) then       
+        if (pnc_print_norm==1 .or. (pnc_step<=1 .and. pnc_print_norm==2) ) then
           res_ng = res_ng/maxval(abs(ng_ue))
           res_tg = res_tg/maxval(abs(tg_ue))
           del_ng = del_ng/maxval(abs(ng_ue))
@@ -1508,16 +1508,16 @@ c         tgs = relax_g*tg_ue(:,:,1) + (1-relax_g)*tg_pnc(:,:,1)
         endif
 
          if (pnc_verbose .and. pnc_step .gt. 1) then
-          if (.not. get_neutral_sources) then 
-            write(*,*) 'Variable           Max Res                         Std Dev Res'
+          if (.not. get_neutral_sources) then
+            write(iout,*) 'Variable           Max Res                         Std Dev Res'
           endif
-          write(*,*) 'ng     ', del_ng, res_ng
-          write(*,*) 'tg     ', del_tg, res_tg
+          write(iout,*) 'ng     ', del_ng, res_ng
+          write(iout,*) 'tg     ', del_tg, res_tg
         endif
       endif
-      if(pnc_verbose) then 
-c        write(*,*) "************************************************"
-        write(*,*) "------------------------------------------------"
+      if(pnc_verbose) then
+c        write(iout,*) "************************************************"
+        write(iout,*) "------------------------------------------------"
       endif
       end
 
@@ -1546,7 +1546,7 @@ c ... Common blocks:
       phi_pnc=phi
 
 c ... Store neutral sources calculated by pandf
-      if (get_neutral_moments) then 
+      if (get_neutral_moments) then
  	      sng_pnc = sng_ue
 		  seg_pnc = seg_ue
       endif
@@ -1581,7 +1581,7 @@ c ... Common blocks:
       phi=relax_p*phi+(1-relax_p)*phi_pnc
 
       nis  = ni
-      ups  = up 
+      ups  = up
       tis  = ti
       tes  = te
       phis = phi
@@ -1592,7 +1592,7 @@ c ... Common blocks:
       res_ti   = sqrt(sum((ti-ti_pnc)**2)/real(nx*ny))
       res_te   = sqrt(sum((te-te_pnc)**2)/real(nx*ny))
       res_phi  = sqrt(sum((phi-phi_pnc)**2)/real(nx*ny))
-       
+
       del_ni   = maxval(abs(ni-ni_pnc))
       del_up   = maxval(abs(up-up_pnc))
       del_ti   = maxval(abs(ti-ti_pnc))
@@ -1600,7 +1600,7 @@ c ... Common blocks:
       del_phi  = maxval(abs(phi-phi_pnc))
 
 c ... Calculate residuals for neutral sources calculated by pandf
-      if (get_neutral_moments) then 
+      if (get_neutral_moments) then
         res_sng = sqrt(sum((sng_ue-sng_pnc)**2)/real(nx*ny*nfl*nstra))
         res_seg = sqrt(sum((seg_ue-seg_pnc)**2)/real(nx*ny*nfl*nstra))
         del_sng = maxval(abs(sng_ue-sng_pnc))
@@ -1631,7 +1631,7 @@ c	    del_seg = maxval(abs(fegx_ue))
          res_seg = res_seg/maxval(abs(seg_ue))
          del_sng = del_sng/maxval(abs(sng_ue))
          del_seg = del_seg/maxval(abs(seg_ue))
-        endif  
+        endif
       else if (pnc_print_norm==2) then #normalize to previous maximum value
         res_ni     = res_ni/maxval(abs(ni_pnc))
         res_up     = res_up/maxval(abs(up_pnc))
@@ -1650,23 +1650,23 @@ c	    del_seg = maxval(abs(fegx_ue))
           res_seg = res_seg/maxval(abs(seg_pnc))
           del_sng = del_sng/maxval(abs(sng_pnc))
           del_seg = del_seg/maxval(abs(seg_pnc))
-        endif  
+        endif
       end if
       if(pnc_verbose) then
-        write(*,*) 'Variable           Max Res                         Std Dev Res'
+        write(iout,*) 'Variable           Max Res                         Std Dev Res'
           if (get_neutral_moments) then
-            write(*,*) 'sng     ', del_sng, res_sng
-            write(*,*) 'seg     ', del_seg, res_seg
-          endif  
+            write(iout,*) 'sng     ', del_sng, res_sng
+            write(iout,*) 'seg     ', del_seg, res_seg
+          endif
 
-        write(*,*) 'ni      ', del_ni,  res_ni
-        write(*,*) 'up      ', del_up,  res_up
-        write(*,*) 'ti      ', del_ti,  res_ti
-        write(*,*) 'te      ', del_te,  res_te
-        write(*,*) 'phi     ', del_phi, res_phi
+        write(iout,*) 'ni      ', del_ni,  res_ni
+        write(iout,*) 'up      ', del_up,  res_up
+        write(iout,*) 'ti      ', del_ti,  res_ti
+        write(iout,*) 'te      ', del_te,  res_te
+        write(iout,*) 'phi     ', del_phi, res_phi
       endif
-c      write(*,*) '************************************************'
-       write(*,*) '------------------------------------------------'
+c      write(iout,*) '************************************************'
+       write(iout,*) '------------------------------------------------'
       end
 
 c-----------------------------------------------------------------------
@@ -1688,69 +1688,69 @@ c ... Local variables:
       character*8 nxstr,nystr,nispstr,ngspstr
       integer fileid, flen
 
-c ... External functions: 
+c ... External functions:
       integer pfopen, pfwrta, pfclos, pfgerr # PDB API
 
       flen=len(trim(filename))
       fileid = pfopen(flen, trim(filename), 'w')
       if (fileid .eq. 0)
-     .  write(*,*) pfgerr
-cc     .   write(*,*) 'PDB error opening ', filename #call errproc
-c     write(*,*) 'PDB open ',trim(filename)
+     .  write(iout,*) pfgerr
+cc     .   write(iout,*) 'PDB error opening ', filename #call errproc
+c     write(iout,*) 'PDB open ',trim(filename)
 
       write(nxstr,'(i0)') nx+1
       write(nystr,'(i0)') ny+1
       write(nispstr,'(i0)') nisp
       write(ngspstr,'(i0)') ngsp
 
-      varstr='ngs(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='ngs(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(ngspstr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', ngs) == 0)
-     .  write(*,*) 'PDB error writing ngs', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing ngs', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='nis(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='nis(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nispstr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', nis) == 0)
-     .  write(*,*) 'PDB error writing nis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing nis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='ups(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='ups(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nispstr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', ups) == 0)
-     .  write(*,*) 'PDB error writing ups', pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing ups', pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='tis(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', tis) == 0)
-     .  write(*,*) 'PDB error writing tis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing tis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='tes(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', tes) == 0)
-     .  write(*,*) 'PDB error writing tes', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing tes', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='phis(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+c      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', phis) == 0)
-     .  write(*,*) 'PDB error writing phis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error writing phis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      if (pfclos(fileid)==0) write(*,*) 'Error closing file', pfgerr
-c     .   write(*,*) 'PDB error closing ', filename #call errproc
-cc      write(*,*) 'PDB close ',trim(filename)
+      if (pfclos(fileid)==0) write(iout,*) 'Error closing file', pfgerr
+c     .   write(iout,*) 'PDB error closing ', filename #call errproc
+cc      write(iout,*) 'PDB close ',trim(filename)
 
       uedge_save_pdb=fileid
       end function uedge_save_pdb
@@ -1770,7 +1770,7 @@ c ... Common blocks:
 
 c ... External functions:
       integer uedge_save_pdb
-     
+
       uedge_save=uedge_save_pdb(trim(uedge_savefile))
 
       end function uedge_save
@@ -1795,63 +1795,63 @@ c ... Local variables:
       character*8 nxstr,nystr,nispstr,ngspstr
       integer fileid, flen
 
-c ... External functions: 
+c ... External functions:
       integer pfopen, pfread, pfclos, pfgerr # PDB API
 
       flen=len(trim(filename))
       fileid = pfopen(flen, trim(filename), 'r')
       if (fileid .eq. 0)
-     .  write(*,*) 'PDB error opening file', pfgerr
-cc     .   write(*,*) 'PDB error opening ', filename #call errproc
-cc      write(*,*) 'PDB open ',trim(filename)
+     .  write(iout,*) 'PDB error opening file', pfgerr
+cc     .   write(iout,*) 'PDB error opening ', filename #call errproc
+cc      write(iout,*) 'PDB open ',trim(filename)
 
-      varstr='ngs(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='ngs(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(ngspstr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr), ngs)==0)
-     .  write(*,*) 'PDB error reading ngs', pfgerr
-cc     .   write(*,*) 'PDB error reading ', filename #call errproc
+     .  write(iout,*) 'PDB error reading ngs', pfgerr
+cc     .   write(iout,*) 'PDB error reading ', filename #call errproc
 
       write(nxstr,'(i0)') nx+1
       write(nystr,'(i0)') ny+1
       write(nispstr,'(i0)') nisp
       write(ngspstr,'(i0)') ngsp
 
-      varstr='nis(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='nis(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nispstr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr), nis)==0)
-     .  write(*,*) 'PDB error reading nis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error reading nis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='ups(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='ups(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nispstr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr), ups)==0)
-     .  write(*,*) 'PDB error reading ups', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error reading ups', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='tis(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr), tis)==0)
-     .  write(*,*) 'PDB error reading tis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error reading tis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='tes(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr),tes)==0)
-     .  write(*,*) 'PDB error reading tes', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error reading tes', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='phis(0:'//trim(nxstr)//',0:'//trim(nystr)//')'
-c     write(*,*) trim(varstr), len(trim(varstr))
+c     write(iout,*) trim(varstr), len(trim(varstr))
       if (pfread(fileid, len(trim(varstr)), trim(varstr), phis)==0)
-     .  write(*,*) 'PDB error reading phis', pfgerr
-cc     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) 'PDB error reading phis', pfgerr
+cc     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      if (pfclos(fileid)==0) write(*,*) 'Error closing file', pfgerr
-c     .   write(*,*) 'PDB error closing ', filename #call errproc
-c     write(*,*) 'PDB close ',trim(filename)
+      if (pfclos(fileid)==0) write(iout,*) 'Error closing file', pfgerr
+c     .   write(iout,*) 'PDB error closing ', filename #call errproc
+c     write(iout,*) 'PDB close ',trim(filename)
 
       uedge_read_pdb=fileid
       end function uedge_read_pdb
@@ -1872,7 +1872,7 @@ c ... Common blocks:
 
 c ... External functions:
       integer uedge_read_pdb
-     
+
       uedge_read=uedge_read_pdb(trim(uedge_savefile))
 
       end function uedge_read
@@ -1886,7 +1886,7 @@ c******************************************************
 
       implicit none
 
-c ... Common blocks: 
+c ... Common blocks:
       Use(Dim)
       Use(MCN_dim)
       Use(MCN_sources)  #sni
@@ -1896,73 +1896,73 @@ c ... Local variables:
       character*8 nxstr,nystr,nflstr,nstrastr
       integer fileid, flen
 
-c ... External functions: 
+c ... External functions:
       integer pfopen, pfwrta, pfclos, pfgerr # PDB API
 
       flen=len(trim(filename))
 
       fileid = pfopen(flen, trim(filename), 'w')
       if (fileid .eq. 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error opening ', filename #call errproc
-      write(*,*) 'PDB open ',trim(filename)
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error opening ', filename #call errproc
+      write(iout,*) 'PDB open ',trim(filename)
 
       write(nxstr,'(i0)') nx+1
       write(nystr,'(i0)') ny+1
       write(nflstr,'(i0)') nfl
       write(nstrastr,'(i0)') nstra
 
-      varstr='sni(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='sni(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', sni) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='smor(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='smor(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smor) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='smophi(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='smophi(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smophi) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='smoz(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smoz) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='sei(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nstrastr)//')pnc_save_pdb'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', sei) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='see(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', see) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      if (pfclos(fileid)==0) write(*,*) pfgerr
-c     .   write(*,*) 'PDB error closing ', filename #call errproc
-      write(*,*) 'PDB close ',trim(filename)
+      if (pfclos(fileid)==0) write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error closing ', filename #call errproc
+      write(iout,*) 'PDB close ',trim(filename)
 
       mcnsor_save_pdb=fileid
       end function mcnsor_save_pdb
@@ -1976,7 +1976,7 @@ c******************************************************
 
       implicit none
 
-c ... Common blocks: 
+c ... Common blocks:
       Use(Dim)
       Use(MCN_dim)
       Use(MCN_sources)  #sni
@@ -1987,72 +1987,72 @@ c ... Local variables:
       character*8 nxstr,nystr,nflstr,nstrastr
       integer fileid, flen
 
-c ... External functions: 
+c ... External functions:
       integer pfopen, pfwrta, pfclos, pfgerr # PDB API
 
       flen=len(trim(filename))
       fileid = pfopen(flen, trim(filename), 'a')
       if (fileid .eq. 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error opening ', filename #call errproc
-      write(*,*) 'PDB open ',trim(filename)
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error opening ', filename #call errproc
+      write(iout,*) 'PDB open ',trim(filename)
 
       write(nxstr,'(i0)') nx+1
       write(nystr,'(i0)') ny+1
       write(nflstr,'(i0)') nfl
       write(nstrastr,'(i0)') nstra
 
-      varstr='sni(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='sni(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', sni) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='smor(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='smor(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smor) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      varstr='smophi(0:'//trim(nxstr)//',0:'//trim(nystr)// 
+      varstr='smophi(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smophi) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='smoz(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nflstr)//',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', smoz) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='sei(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', sei) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
       varstr='see(0:'//trim(nxstr)//',0:'//trim(nystr)//
      .  ',1:'//trim(nstrastr)//')'
-      write(*,*) trim(varstr), len(trim(varstr))
-      if (pfwrta(fileid, len(trim(varstr)), trim(varstr), 
+      write(iout,*) trim(varstr), len(trim(varstr))
+      if (pfwrta(fileid, len(trim(varstr)), trim(varstr),
      .   len('double'), 'double', see) == 0)
-     .  write(*,*) pfgerr
-c     .   write(*,*) 'PDB error writing ', filename #call errproc
+     .  write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error writing ', filename #call errproc
 
-      if (pfclos(fileid)==0) write(*,*) pfgerr
-c     .   write(*,*) 'PDB error closing ', filename #call errproc
-      write(*,*) 'PDB close ',trim(filename)
+      if (pfclos(fileid)==0) write(iout,*) pfgerr
+c     .   write(iout,*) 'PDB error closing ', filename #call errproc
+      write(iout,*) 'PDB close ',trim(filename)
 
       mcnsor_append_pdb=fileid
       end function mcnsor_append_pdb
@@ -2074,7 +2074,7 @@ c ... External functions:
 
 c ... Local variables:
       character*256 filename
-     
+
       pnc_save_pdb=uedge_save_pdb(filename)
 
       if (extneutopt .gt. 0) then
@@ -2139,7 +2139,7 @@ c ... Output Variables
 
 c ... Local Variables
       integer nunit,ix,iy,ifl,idum,tskip,il
-      real rdum 
+      real rdum
 
 c     Read data from DEGAS2 code outputbrowser data files such as 'neutral_density.dat':
       call freeus (nunit)
@@ -2155,13 +2155,13 @@ c     Skip header
       enddo
 c     Read variable and rel. std. dev.
       do ifl=1,ngsp
-c       write(*,*) "ifl =",ifl
+c       write(iout,*) "ifl =",ifl
         do ix=1,nx
           do iy=1,ny
             read (nunit,*) idum, idum,
      .        var(ix,iy,ifl), rsd(ix,iy,ifl)
 c           if (abs(var(ix,iy,ifl)) .gt. 0)
-c    .        write(*,*) ix, iy, ifl, var(ix,iy,ifl), rsd(ix,iy,ifl)
+c    .        write(iout,*) ix, iy, ifl, var(ix,iy,ifl), rsd(ix,iy,ifl)
            enddo
         enddo
 c       Skip trailing data
@@ -2191,7 +2191,7 @@ c----------------------------------------------------------------------c
 c ... Input Variables
       character*(*) dname
 
-c ... Local Variables      
+c ... Local Variables
       logical verbose
       character*512 fname
       integer sskip, vskip, idim
@@ -2278,7 +2278,7 @@ c     Read data from DEGAS2 code outputbrowser data files such as 'neutral_densi
       ext_verbose=verbose
        if (ext_verbose)
      . call remark(" *** neutral moments read from DEGAS2 directory "
-     .                                                  //dname//" ***")     
+     .                                                  //dname//" ***")
 
       end
 
@@ -2293,7 +2293,7 @@ c----------------------------------------------------------------------c
       Use(Compla)			# ng,tg
       Use(Interp)			# ngs,tis
       Use(MCN_dim)
-      Use(MCN_sources)      # ng_mc,ng_mc_rsd,... 
+      Use(MCN_sources)      # ng_mc,ng_mc_rsd,...
       Use(Ext_neutrals) 	# ext_verbose
       Use(PNC_params)		# pnc moment filenames
 
@@ -2301,7 +2301,7 @@ c ... Local Variables
       integer idim,ifld
 
 c ... Scalars
-c     write(*,*) "convertmcnmoments: scalar"
+c     write(iout,*) "convertmcnmoments: scalar"
       call mcnblend(ng_ue,ngs,ng_mc,ng_ue_rsd,ng_mc_rsd,mcalpha_ng)
       call mcnblend(pg_ue,ngs(:,:,1)*tis,pg_mc,pg_ue_rsd,pg_mc_rsd,mcalpha_pg)
       call mcuedivide(tg_ue,pg_ue,ng_ue,tg_ue_rsd,pg_ue_rsd,ng_ue_rsd)
@@ -2312,10 +2312,10 @@ c ... 2. Multiply current density by area in order to get current
 c ... 3. Blend kinetic fluxes with fluid fluxes
 c ... 4. Calculate velocity
 
-c     write(*,*) "convertmcnmoments: vector"
+c     write(iout,*) "convertmcnmoments: vector"
       call convertmcnvector(jng_mc,jng_ue,jng_mc_rsd,jng_ue_rsd)
       do ifld=1,nfl
-        fngx_mc(:,:,ifld)=sx*jng_ue(:,:,ifld,1) 
+        fngx_mc(:,:,ifld)=sx*jng_ue(:,:,ifld,1)
         fngy_mc(:,:,ifld)=sy*jng_ue(:,:,ifld,2)
       enddo
       fngx_mc_rsd=jng_ue_rsd(:,:,:,1)
@@ -2335,30 +2335,30 @@ c     write(*,*) "convertmcnmoments: vector"
       enddo
       upg_ue = vg_ue(:,:,:,3)
       upg_ue_rsd = vg_ue_rsd(:,:,:,3)
-     
+
       call convertmcnvector(jeg_mc,jeg_ue,jeg_mc_rsd,jeg_ue_rsd)
       do ifld=1,nfl
         fegx(:,:,ifld)=0.0
         fegy(:,:,ifld)=0.0
-        fegx_mc(:,:,ifld)=sx*jeg_ue(:,:,ifld,1) 
+        fegx_mc(:,:,ifld)=sx*jeg_ue(:,:,ifld,1)
         fegy_mc(:,:,ifld)=sy*jeg_ue(:,:,ifld,2)
       enddo
       fegx_mc_rsd=jeg_ue_rsd(:,:,:,1)
       fegy_mc_rsd=jeg_ue_rsd(:,:,:,2)
       call mcnblend(fegx_ue,fegx,fegx_mc,fegx_ue_rsd,fegx_mc_rsd,mcalpha_feg)
       call mcnblend(fegy_ue,fegy,fegy_mc,fegy_ue_rsd,fegy_mc_rsd,mcalpha_feg)
- 
+
 c ... Tensors
 c ... 1. convertmcntensor
 c ... 2. find parallel component, perpendicular curl, etc.
 c ... 3. Blend kinetic and fluid results
 
-c     write(*,*) "convertmcnmoments: tensor"
+c     write(iout,*) "convertmcnmoments: tensor"
       call convertmcntensor(stressg_mc,stressg_ue,stressg_mc_rsd,stressg_ue_rsd)
       do ifld=1,nfl
         fmgx(:,:,ifld)=fmix(:,:,2*ifld)
         fmgy(:,:,ifld)=fmiy(:,:,2*ifld)
-        fmgx_mc(:,:,ifld)=sx*stressg_ue(:,:,ifld,1,3) 
+        fmgx_mc(:,:,ifld)=sx*stressg_ue(:,:,ifld,1,3)
         fmgy_mc(:,:,ifld)=sy*stressg_ue(:,:,ifld,2,3)
       end do
       fmgx_mc_rsd=stressg_ue_rsd(:,:,:,1,3)
@@ -2383,12 +2383,12 @@ c ... Input Variables
       real var_rsd(0:nx+1,0:ny+1,1:ngsp),dens_rsd(0:nx+1,0:ny+1,1:nfl)
 
 c ... Output Variables
-      real out(0:nx+1,0:ny+1,1:nfl),out_rsd(0:nx+1,0:ny+1,1:nfl)     
+      real out(0:nx+1,0:ny+1,1:nfl),out_rsd(0:nx+1,0:ny+1,1:nfl)
 
       out=0.;out_rsd=1.;
       where(dens .gt. 0.0) out=var/dens
-      where(dens .gt. 0.0) out_rsd=sqrt(var_rsd**2+dens_rsd**2) 
-     
+      where(dens .gt. 0.0) out_rsd=sqrt(var_rsd**2+dens_rsd**2)
+
       end
 
 c----------------------------------------------------------------------
@@ -2404,12 +2404,12 @@ c ... Input Variables
       real var_rsd(0:nx+1,0:ny+1,1:nfl),dens_rsd(0:nx+1,0:ny+1,1:nfl)
 
 c ... Output Variables
-      real out(0:nx+1,0:ny+1,1:nfl),out_rsd(0:nx+1,0:ny+1,1:nfl)     
+      real out(0:nx+1,0:ny+1,1:nfl),out_rsd(0:nx+1,0:ny+1,1:nfl)
 
       out=0.;out_rsd=1.;
       where(dens .ne. 0.0) out=var/dens
       where(dens .ne. 0.0) out_rsd=sqrt(var_rsd**2+dens_rsd**2)
-     
+
       end
 
 c----------------------------------------------------------------------
@@ -2436,24 +2436,24 @@ c----------------------------------------------------------------------
       Use(MCN_dim)          # nfl
 
 c ... Input Variables
-      real, intent(in), dimension(0:nx+1,0:ny+1,1:nfl) :: uevar,mcvar,mcrsd 
+      real, intent(in), dimension(0:nx+1,0:ny+1,1:nfl) :: uevar,mcvar,mcrsd
       real, intent(in) :: alpha
 
 c ... Output Variables
-      real, intent(inout), dimension(0:nx+1,0:ny+1,1:nfl) :: outrsd  
-      real, intent(out), dimension(0:nx+1,0:ny+1,1:nfl) :: out   
+      real, intent(inout), dimension(0:nx+1,0:ny+1,1:nfl) :: outrsd
+      real, intent(out), dimension(0:nx+1,0:ny+1,1:nfl) :: out
 
 c ... Local Variables
-      real, dimension(0:nx+1,0:ny+1,1:nfl) :: mcfrac 
+      real, dimension(0:nx+1,0:ny+1,1:nfl) :: mcfrac
 
       call mcnrsdfix(mcrsd)
       mcfrac=(1-mcrsd**2)**alpha
 c      mcfrac=(1-mcrsd**alpha)
-      out = (1-mcfrac)*uevar + mcfrac*mcvar 
+      out = (1-mcfrac)*uevar + mcfrac*mcvar
       where(out .ne. 0) outrsd = mcrsd*mcfrac*mcvar/out
       where(out .eq. 1) outrsd = 1
 
-c      write(*,*) "mcnblend ",out
+c      write(iout,*) "mcnblend ",out
       end
 
 c-----------------------------------------------------------------------
@@ -2470,7 +2470,7 @@ c ... Input Variables
       real var3(0:nx+1,0:ny+1,n3)
 
 c ... Output Variables
-      real mult23(0:nx+1,0:ny+1,n3)    
+      real mult23(0:nx+1,0:ny+1,n3)
 
 c ... Local Variables
       integer i
@@ -2478,7 +2478,7 @@ c ... Local Variables
       do i=1,n3
         mult23(:,:,i)=var3(:,:,i)*var2
       end do
-      
+
       end function mult23
 
 c-----------------------------------------------------------------------
@@ -2494,7 +2494,7 @@ c ... Input Variables
       real var4(0:nx+1,0:ny+1,n3,n4)
 
 c ... Output Variables
-      real mult24(0:nx+1,0:ny+1,n3,n4)   
+      real mult24(0:nx+1,0:ny+1,n3,n4)
 
 c ... Local Variables
       integer i,j
@@ -2520,7 +2520,7 @@ c ... Input Variables
       real var4(0:nx+1,0:ny+1,n3,n4)
 
 c ... Output Variables
-      real mult34(0:nx+1,0:ny+1,n3,n4)    
+      real mult34(0:nx+1,0:ny+1,n3,n4)
 
 c ... Local Variables
       integer i
@@ -2553,13 +2553,14 @@ c******************************************************
 
 c      real function norm(v)
 c      implicit none
-c      real :: v 
+c      real :: v
 c      norm=sum(v**2)
 c      norm=sqrt(norm)
 c      end function norm
-    
+
       subroutine test_opt(optarg)
-c ... This fails when argument not present: parxfcn: incorrect number of argument 
+c ... This fails when argument not present: parxfcn: incorrect number of argument
+      Use(Output)
       implicit none
 
       logical test
@@ -2571,14 +2572,14 @@ c      if(optarg.ne.real(DEFAULT)) opt=optarg
       character*128 opt, optarg
       opt='test_string'
       test=(optarg==' y')
-      write(*,*) "test =", test,", optarg=",optarg,", opt=",opt
+      write(iout,*) "test =", test,", optarg=",optarg,", opt=",opt
       if(.not.(optarg==' y')) opt=trim(optarg)
 
       call remark(trim(opt))
       end
 
       subroutine test_parser(optarg)
-c ... This fails when argument not present: parxfcn: incorrect number of argument 
+c ... This fails when argument not present: parxfcn: incorrect number of argument
       implicit none
 
 c     Use(Dim)
@@ -2590,7 +2591,7 @@ c    opt=trim(optarg)
 c     opt='remark 1'
       opt='dobalance(pnc_balancefile)'
 
-      write(*,*) "opt=",opt
+      write(iout,*) "opt=",opt
       call parsestr(trim(opt))
 
       end

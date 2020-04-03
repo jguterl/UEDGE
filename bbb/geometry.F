@@ -446,6 +446,7 @@ c  ---------------------------------------------------------------------
 *     for the global mesh when domain decomposition is used (similar to first
 *     section of nphygeo)
 
+            use Output 
             use Dim             ! nx,ny
             use Share           ! nxomit,nxc,nxleg,nxcore,geometry,ismpsym
             use Xpoint_indices  ! ixpt1,ixpt2,iysptrx1,iysptrx2,iysptrx
@@ -481,43 +482,43 @@ c ... Generate grid information or read it from file 'gridue'.
            call remark('*** WARNING: ismmon.ne.0 BUT isnonog=0 ****')
         endif
         if(gengrid .eq. 1) then
-c            write(6,*) "Calling flxrun in globalmesh."
+c            write(iout6,*) "Calling flxrun in globalmesh."
             call flxrun
             call grdrun
 	  else
 c JG: Add option to read grid file from file name
-            write(*,*) "Read Grid from:",fname
+            write(iout,*) "Read Grid from:",fname
             fname = GridFileName
             call readgrid(fname, runid)
-            write(*,*) 'Read file "', fname, '" with runid:  ', runid
-            write(*,*)
+            write(iout,*) 'Read file "', fname, '" with runid:  ', runid
+            write(iout,*)
          endif
       elseif (mhdgeo .eq. 2) then
          if (gengrid == 1) then
             call torangrd
-            write(*,*) '**** mhdgeo=2: Circ toroidal annulus generated *****'
+            write(iout,*) '**** mhdgeo=2: Circ toroidal annulus generated *****'
          else
             fname = GridFileName
             call readgrid(fname, runid)
-            write(*,*) 'Read file "', fname, '" with runid:  ', runid
-            write(*,*)
+            write(iout,*) 'Read file "', fname, '" with runid:  ', runid
+            write(iout,*)
          endif
       elseif (mhdgeo .eq. 0) then
          call idealgrd
-         write(*,*) '**** mhdgeo=0: cylindrical grid generated *****'
+         write(iout,*) '**** mhdgeo=0: cylindrical grid generated *****'
       elseif (mhdgeo .eq. -1) then
          call idealgrd
-         write(*,*) '**** mhdgeo=-1: cartesian grid generated *****'
+         write(iout,*) '**** mhdgeo=-1: cartesian grid generated *****'
       elseif (mhdgeo .eq. -2) then
          call mirrorgrd
-         write(*,*) '**** mhdgeo=-2: mag mirror grid generated *****'
+         write(iout,*) '**** mhdgeo=-2: mag mirror grid generated *****'
       else
-         write(*,*) '**** mhdgeo < -1: reading grid from file *****'
+         write(iout,*) '**** mhdgeo < -1: reading grid from file *****'
          fname = GridFileName
-	 write(*,*) "mhdgeo<-1"
+	 write(iout,*) "mhdgeo<-1"
          call readgrid(fname, runid)
-         write(*,*) 'Read file "', fname, '" with runid:  ', runid
-         write(*,*)
+         write(iout,*) 'Read file "', fname, '" with runid:  ', runid
+         write(iout,*)
       endif
 
 c...  Reset separatrix index if nyomitmx > 0
@@ -678,50 +679,50 @@ c ...   Need to fix ixpt2(1) modified by grdrun is geometry=isoleg
               nxpt = nxpt_temp
             endif
          else
-	    write(*,*) '**** mhdgeo=1: read grid from GridFileName *****'
+	    write(iout,*) '**** mhdgeo=1: read grid from GridFileName *****'
 	    fname = GridFileName
             call readgrid(fname, runid)
-            write(*,*) 'Read file "', fname, '" with runid:  ', runid
+            write(iout,*) 'Read file "', fname, '" with runid:  ', runid
 c ...  now that the grid is read in, we can manipulate dnull for nxomit>0
             if (nxpt.gt.1) then
             if (geometry=="dnull" .and. nxomit >= ixlb(2)) then
               call remark("*** nxomit>0: do outer quad as single-null")
                 geometry = "snull"
                 nxpt = 1
-	        write(*,*) "ixpt1, ixpt2 = ", ixpt1, ixpt2
+	        write(iout,*) "ixpt1, ixpt2 = ", ixpt1, ixpt2
                 ixpt1(1) = ixpt1(1)   ! ixpt1,2 are shifted by nxomit later
                 ixpt2(1) = ixpt2(2)
                 ixlb(1) = 0
               endif
               endif
-            write(*,*)
+            write(iout,*)
          endif
 
       elseif (mhdgeo .eq. 2) then
          if (gengrid == 1) then
             call torangrd
-            write(*,*) '*** mhdgeo=2: Circ toroidal annulus ***'
+            write(iout,*) '*** mhdgeo=2: Circ toroidal annulus ***'
          else
             fname = GridFileName
             call readgrid(fname, runid)
-            write(*,*) 'Read file "', fname, '" with runid:  ', runid
-            write(*,*)
+            write(iout,*) 'Read file "', fname, '" with runid:  ', runid
+            write(iout,*)
          endif
       elseif (mhdgeo .eq. 0) then
          call idealgrd
-         write(*,*) '**** mhdgeo=0: cylindrical grid generated *****'
+         write(iout,*) '**** mhdgeo=0: cylindrical grid generated *****'
       elseif (mhdgeo .eq. -1) then
          call idealgrd
-         write(*,*) '**** mhdgeo=-1: cartesian grid generated *****'
+         write(iout,*) '**** mhdgeo=-1: cartesian grid generated *****'
       elseif (mhdgeo .eq. -2) then
          call mirrorgrd
-         write(*,*) '**** mhdgeo=-2: mag mirror grid generated *****'
+         write(iout,*) '**** mhdgeo=-2: mag mirror grid generated *****'
       else
-         write(*,*) '**** mhdgeo < -1: reading grid from file *****'
+         write(iout,*) '**** mhdgeo < -1: reading grid from file *****'
          fname = GridFileName
          call readgrid(fname, runid)
-         write(*,*) 'Read file "', fname, '" with runid:  ', runid
-         write(*,*)
+         write(iout,*) 'Read file "', fname, '" with runid:  ', runid
+         write(iout,*)
       endif
 
 c...  Reset separatrix index if nyomitmx > 0
@@ -2091,13 +2092,13 @@ c ...       Search for intersection btwn (ixu1,iyu1) & (ixu2,iyu2)
                goto 15
             else
                if (iy.ne.0 .and. iy.ne.ny) then
-                  write(*,*) ' fx search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fx search failure at ix,iy = ',ix,iy
                endif
                if (iy.eq.0 .and. ishy.eq.1) then
-                  write(*,*) ' fx search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fx search failure at ix,iy = ',ix,iy
                endif
                if (iy.eq.ny .and. ishy.eq.0) then
-                  write(*,*) ' fx search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fx search failure at ix,iy = ',ix,iy
                endif
             endif
 
@@ -2142,7 +2143,7 @@ c...  Similarly approximate gyf for upper target plate guard cells
       endif
 
       if (ifxfail .gt. 0) then
-         write(*,*) 'Total failures to find fxm,fx0,fxp = ', ifxfail
+         write(iout,*) 'Total failures to find fxm,fx0,fxp = ', ifxfail
       endif
 
 c...  Calculate the fraction-stencil for variables to use at iy-1, iy, iy+1
@@ -2239,13 +2240,13 @@ c ...       Search for intersection btwn (ixu1,iyu1) & (ixu2,iyu2)
             else        ! failed to find proper pt.
               do jx = 1, nxpt
                 if (ix>ixlb(jx) .and. ix<ixrb(jx)) then
-                  write(*,*) ' fy search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
                 if (ix==ixlb(jx) .and. ishx.eq.1) then
-                  write(*,*) ' fy search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
                 if (ix==ixrb(jx) .and. ishx.eq.0) then
-                  write(*,*) ' fy search failure at ix,iy = ',ix,iy
+                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
               enddo
             endif
@@ -2266,7 +2267,7 @@ ccc     .                  / abs( cos(0.5*(angfs1-angfs2)) )
  41   continue
 
       if (ifyfail .gt. 0) then
-         write(*,*) 'Total failures to find fym,fy0,fyp = ', ifyfail
+         write(iout,*) 'Total failures to find fym,fy0,fyp = ', ifyfail
       endif
 
 c...  if isupstreamx=1, cells above x-point should be orthogonal; reset
@@ -2393,7 +2394,7 @@ c ---------------------------------------------------------------------
          rx = r0
          zx = z1 -slp2*(r1-r0)
          if (abs(slp2).gt.1.e9) then
-            write(*,*) '* Warning: slp2*slp1 indeterminante in lindis *'
+            write(iout,*) '* Warning: slp2*slp1 indeterminante in lindis *'
          endif
       endif
       d1 = sqrt((rx-r1)**2 + (zx-z1)**2)

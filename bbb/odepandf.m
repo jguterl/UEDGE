@@ -598,7 +598,7 @@ cgrs  real teyc, glte   # used in commented-out code, and never computed
       real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg
       integer impflag
 cnxg      data igs/1/
-
+      Use(Output)
       Use(Dim)      # nx,ny,nhsp,nusp,nzspt,nzsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
                                # iysptrx
@@ -822,8 +822,8 @@ c     (IJ  2015/04/06) add ismcnon>=3 for external call to run_neutrals
               ni(:,:,ifld)=ni(:,:,ifld)*pnc_cfni(ifld)
               up(:,:,ifld)=up(:,:,ifld)*pnc_cfup(ifld)
             enddo
-c            write(*,*) 'ismcnon=4'
-c            write(*,*) parvis
+c            write(iout,*) 'ismcnon=4'
+c            write(iout,*) parvis
          endif
       end if #ismcnon
 
@@ -1579,7 +1579,7 @@ c     saved here so they can be restored below.
             if (isimpon .eq. 5) then   # Hirshmans reduced-ion approx.
                if (istimingon .eq. 1) tsimp = gettime(sec4)
                               call xerrab('isimpon 5 deactivated for omp')
-c                              call mombal (ix1,ix,iy)
+                              call mombal (ix1,ix,iy)
                if (istimingon .eq. 1) call timimpfj (tsimp, xc)
             elseif(isimpon .eq. 6 .or. isimpon .eq. 7) then # Force balance without inertia
                if (istimingon .eq. 1) tsimp = gettime(sec4)
@@ -1732,8 +1732,8 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
    25 continue
 
       if (isimpon.eq.5) then
-                     call xerrab('isimpon 5 deactivated for omp')
-c      goto 29    # have upe from mombal
+      call xerrab('isimpon 5 deactivated for omp')
+      goto 29    # have upe from mombal
       endif
       do iy = j1, j6    #iys1, iyf6
          do ix = i1, i6
@@ -2299,7 +2299,7 @@ c   contributions just calculated for multispecies
               if (isupgon(1) .eq. 1) then #should be generalized to D & T
                  psor(ix,iy,iigsp)= -psor(ix,iy,1)
                  psorxr(ix,iy,iigsp)= -psorxr(ix,iy,1)
-c                 if (ix==1 .and. iy==1 ) write(*,*) 'psorxr #2',psorxr(ix,iy,iigsp),psorxr(ix,iy,1)
+c                 if (ix==1 .and. iy==1 ) write(iout,*) 'psorxr #2',psorxr(ix,iy,iigsp),psorxr(ix,iy,1)
               endif
 c
   603        continue
@@ -3308,7 +3308,7 @@ c     the call to scale_mcn must occur AFTER fnix has been calculated.
 
 
       if (ismcnon .ne. 0) then
-c 	     write(*,*) 'TEST ISMCNON START: ismcnon=',ismcnon
+c 	     write(iout,*) 'TEST ISMCNON START: ismcnon=',ismcnon
 c         call scale_mcn
          call scale_mcnsor
       endif
@@ -3358,7 +3358,7 @@ c ... IJ 2016/10/19 add MC neutral flux if flags set
                     sng_ue(ix,iy,jfld) = - ( (fngx_ue(ix,iy,jfld) - fngx_ue(ix1,iy, jfld))
      .                        +   fluxfacy*(fngy_ue(ix,iy,jfld) - fngy_ue(ix,iy-1,jfld)) )
      .                        *( (ng(ix,iy,jfld)*ti(ix,iy))/(ng(ix,iy,jfld)*ti(ix,iy)) )
-c                   if (ix .eq. 1 .and. iy .eq. 1) write(*,*) 'sng_ue', ifld, jfld
+c                   if (ix .eq. 1 .and. iy .eq. 1) write(iout,*) 'sng_ue', ifld, jfld
                     resco(ix,iy,ifld) = resco(ix,iy,ifld) +
      .                                  cmneutdiv*cmneutdiv_fng*sng_ue(ix,iy,jfld)
                  endif
@@ -4810,7 +4810,8 @@ ccc     .                        (0.1*tebg*ev/te(ix,iy))**iteb ) *
 ccc     .                                                  pwrbkg_c
 ccc     .                        (-vsoree(ix,iy)+pwrbkg_c)
           else  #add impurity rad loss
-            pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+cJG            pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+            pwrebkg(ix,iy) =pwrbkg_c
 ccc            pwrebkg(ix,iy) = ( tebg*ev/te(ix,iy))*(0.9+
 ccc     .                        (0.1*tebg*ev/te(ix,iy))**iteb ) *
 ccc     .                                                  pwrbkg_c
@@ -5049,6 +5050,7 @@ c******************************************************************
             do 256 igsp = 1, ngsp
 	      if(isngonxy(ix,iy,igsp).eq.1) then
                 iv2 = idxg(ix,iy,igsp)
+cJG                if (ix==1 .and. iy==1) write(iout,*) 'ix=1,iy=1,iv=',iv2,resng(ix,iy,igsp)
                 yldot(iv2) = (1-iseqalg(iv2)) *
      .                      resng(ix,iy,igsp)/(vol(ix,iy)*n0g(igsp))
               endif

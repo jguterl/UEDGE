@@ -106,8 +106,7 @@ c
       xte = log(tmpenonz/ev2)
       xti = log(tmpinonz/ev2)
       dlogt = rtlt(1) - rtlt(0)
-      call xerrab('mcrates locked')
-c
+
 c ... Find index i1 in temperature table such that
 c                 rtlt(i1) .le. xt .lt. rtlt(i1+1)
 c     or, equivalently,
@@ -155,7 +154,6 @@ c ... For given za and zn, find the species index, ii, in the table.
 c
       ii = -1
       do i=0,rtnsd-1
-c        write(*,*) 'rtzn(i),rtza(i)',rtzn(i),rtza(i),zn,za
          if ((zn .eq. nint(rtzn(i))) .and. (za .eq. nint(rtza(i)))) then
             ii = i
             break
@@ -310,11 +308,11 @@ c     read header --
 *     un*formatted read for header data
       read (nget,'(2a8,i12,4x,a32)') idcod, idtyp, n, id1
       if (n .lt. 0 .and. iprt_imp_file == 1) then
-c        write(*,*) '***Impurity file using new 2012 format is ',mcfilename(i)
+        write(*,*) '***Impurity file using new 2012 format is ',mcfilename(i)
         mcfformat(i) = 1
         iprt_imp_file = 0
       elseif (iprt_imp_file == 1) then
-c        write(*,*) '***Impurity file using pre-2012 format is ',mcfilename(i)
+        write(*,*) '***Impurity file using pre-2012 format is ',mcfilename(i)
         mcfformat(i) = 0
         iprt_imp_file = 0
       endif

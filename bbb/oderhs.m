@@ -89,7 +89,8 @@ c ... Common blocks:
       Use(Phyvar)       # ev
       Use(Comtra)       # fricflf,sigvi_floor
       Use(Share)        # cutlo
-
+      Use(Verbose)
+      Use(ParallelOptions)
 c ... External functions:
       real rra, rsa
 
@@ -98,7 +99,12 @@ c ... Local variables:
       integer ldir
       real rdum, dloglam, epar, parcurrent, umass, lmfpe, lmfpi,
      .     ltmax, tif, flxlimf, umassni, massni
-
+      if (VerboseCall.gt.0)  write(iout,*) ' *********** calling mombal **************'
+      if (OMPParallelJac.gt.0) then
+			      write(iout,*) 'This routine is not validated for paralel shared memory (openmp) construction of the jacobian'
+			      write(iout,*) 'due to mppl preprocessing of variable declaration in severla subroutines of fmombal (and maybe others)'
+			      call xerrab('Exiting...')
+			      endif
 c ... Determine a flux-limit factor for all input terms by finding the min
 c ... scale length. First consider the electrons
       den(1,1) = 0.5 * (ne(ix,iy) + ne(ix1,iy))
@@ -180,7 +186,6 @@ c           but space is available to store zero returned by imprates.
                   nuion(misa,nz) = den(1,1)*nuion(misa,nz) #sigv-->ne*sigv
                   nurec(misa,nz) = den(1,1)*nurec(misa,nz)
                elseif (ismctab .eq. 2) then
-               write(*,*) 'mcrates with misa,misotope,natomic',misa,misotope,natomic(misa)
                   call mcrates(den(1,1), tempa(1), 0., nz, natomic(misa),
      .                znucl(ifld), nuion(misa,nz), nurec(misa,nz), rdum)
                   nuion(misa,nz) = den(1,1)*nuion(misa,nz) #sigv-->ne*sigv
@@ -783,8 +788,7 @@ c...  Initialize values and arrays
         mvolcurt = mvolcurt + mvolcur(ifld)
       enddo
       do igsp = 1, ngsp
-        call s2fill (nx+2, ny+2, 0., volpsor(0,0,igsp), 1, nx+2)
-        call s2fill (nx+2, ny+2, 0., volmsor(0,0,igsp), 1, nx+2)
+        call s2fill (nx+2, ny+2, 0., volpsorg(0,0,igsp), 1, nx+2)
         ivolcurgt = ivolcurgt + ivolcurg(igsp)
       enddo
 cccMER NOTE: generalize the following for multiple x-points
@@ -996,7 +1000,7 @@ c ... Beginning of execution for call rhsvd (by vodpk), check constraints
          call cnstrt (neq,ylprevc,ylchng,icnstr,tau,rlxl,ifail,ivar)
          if (ifail .ne. 0) then
             call remark ('***Constraint failure in VODPK, dt reduced***')
-            write (*,*) 'variable index = ',ivar,'   time = ',t
+            write(iout,*) 'variable index = ',ivar,'   time = ',t
             goto 20
          endif
 
@@ -1018,7 +1022,7 @@ c ... Beginning of execution for call rhsdpk (by daspk), check constraints
          call cnstrt (neq,ylprevc,ylchng,icnstr,tau,rlxl,ifail,ivar)
          if (ifail .ne. 0) then
             call remark ('***Constraint failure in DASPK, dt reduced***')
-            write (*,*) 'variable index = ',ivar,'   time = ',t
+            write(iout,*) 'variable index = ',ivar,'   time = ',t
             goto 20
          endif
       else
@@ -1085,11 +1089,13 @@ c ... Common blocks:
       Use(Parallv)                 # nxg,nyg
       Use(Time_dep_nwt)            # nufak,dtreal,ylodt,dtuse
       Use(Selec)                   # yinc
+      Use(OmpOptions)
 c ... Functions:
       intrinsic isnan
       logical tstguardc
       real(Size4) gettime
 cc      real(Size4) ranf
+      character(80):: filename
 c ... Local variables:
       integer nnz, ii, iv, ii1, ii2, xc, yc, ix, iy
       real yold, dyl, jacelem
@@ -1102,9 +1108,8 @@ c ... Pause from BASIS if a ctrl_c is typed
 c ... Count Jacobian evaluations, both for total and for this case
       ijactot = ijactot + 1
       ijac(ig) = ijac(ig) + 1
-      if (svrpkg.eq.'nksol') write(*,*) ' Updating Jacobian, npe =  ',
+      if (svrpkg.eq.'nksol') write(iout,*) ' Updating Jacobian, npe =  ',
      .                                                          ijac(ig)
-       write(*,*) 'ml,mu,neq',ml, mu,neq
 c ... Set up diagnostic arrays for debugging
       do iv = 1, neq
         yldot_unpt(iv) = yldot00(iv)  # for diagnostic only
@@ -1186,9 +1191,16 @@ c ...  Add a pseudo timestep to the diagonal ## if eqn is not algebraic
      .             jacelem = jacelem - nufak  #omit .and. iseqalg(iv).eq.0)
 cc     .                   jacelem = jacelem - nufak*suscal(iv)/sfscal(iv)
             endif
+            if (ii==iidebugprint.and.iv==ivdebugprint) then
+        write(iout,'(a,i3,a,i7,i7,i7, E20.12,E20.12,E20.12,E20.12,E20.12,E20.12)') '#', 0,' : ',iv,nnz,
+     .ii,jacelem,wk(ii),yldot00(ii),sfscal(iv),jaccliplim,nufak
+
+        call DebugHelper('dumpregular.txt')
+        endif
+
             if (abs(jacelem*sfscal(iv)) .gt. jaccliplim) then
                if (nnz .gt. nnzmx) then
-                  write(STDOUT,*)
+                  write(iout,*)
      .             '*** jac_calc -- More storage needed for Jacobian.',
      .             ' Storage exceeded at (i,j) = (',ii,',',iv,').',
      .             ' Increase lenpfac.'
@@ -1197,6 +1209,7 @@ cc     .                   jacelem = jacelem - nufak*suscal(iv)/sfscal(iv)
 cc               if (rdoff.ne.0.e0) jacelem=jacelem*(1.0e0+ranf()*rdoff)
                rcsc(nnz) = jacelem
                icsc(nnz) = ii
+
                nnz = nnz + 1
             endif
 
@@ -1209,7 +1222,7 @@ cc               if (rdoff.ne.0.e0) jacelem=jacelem*(1.0e0+ranf()*rdoff)
 ccc               call convsr_vo (xc, yc, yl)  # was one call to convsr
 ccc               call convsr_aux (xc, yc, yl)
                call remark("***** non-zero jac_elem at irstop,icstop")
-               write(*,*) 'irstop = ', irstop, ', icstop = ', icstop
+               write(iout,*) 'irstop = ', irstop, ', icstop = ', icstop
                call xerrab("")
             endif
          enddo  # end of ii loop over equations
@@ -1218,34 +1231,43 @@ c ... Restore dependent variable and plasma variables near its location.
 ccc         call convsr_vo (xc, yc, yl)  # was one call to convsr
 ccc         call convsr_aux (xc, yc, yl)
          call pandf1 (xc, yc, iv, neq, t, yl, wk)
+         if( isjacreset.ge.1) then
          yldot_pert(1:neq)=wk(1:neq)
 ccc 18   continue
 c...  If this is the last variable before jumping to new cell, reset pandf
-         if (mod(iv,numvar).eq.0 .and. isjacreset.ge.1) then
-c            call DebugHelper('dump0.txt')
+cJG this call to pandf1 can be safely ignored with ijacreset=0 (and save some time...)
+         if (mod(iv,numvar).eq.0) then
             call pandf1 (xc, yc, iv, neq, t, yl, wk)
          endif
+
          do ii=1,neq
          if (yldot_pert(ii).ne.wk(ii)) then
-      write(*,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call at ii=',
+      write(iout,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call to pandf1 at ii=',
      . ii,yldot_pert(ii),wk(ii)
-c         call DebugHelper('dump1.txt')
          call xerrab('*** Stop ***')
+         endif
          if (isnan(yldot_pert(ii))) then
-         call xerrab('*** Stop ***')
+         write(iout,*) 'ii=',ii
+         call xerrab('*** Nan in wk array in jac_calc ***')
          endif
-         endif
-         enddo
 
+         enddo
+         endif
 
 c ... End loop over dependent variables and finish Jacobian storage.
 c##############################################################
       enddo             # end of main loop over yl variables
 c##############################################################
       TimeBuild=gettime(sec4)-TimeBuild
-      write(*,*)'Time to build jac:',TimeBuild
+      write(iout,*)'Time to build jac:',TimeBuild
       jcsc(neq+1) = nnz
-       write(*,*) 'nnzcum=',nnz
+       write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnz
+cJG for Debug purpose
+       if (WriteJacobian.eq.1) then
+       write(filename,'(a,5i5,a)') "jac_regular_",ijac(ig),".txt"
+       call jac_write(trim(filename),neq, rcsc, icsc, jcsc)
+       endif
+
 c ... Convert Jacobian from compressed sparse column to compressed
 c     sparse row format.
       call csrcsc (neq, 1, 1, rcsc, icsc, jcsc, jac, ja, ia)
@@ -1291,6 +1313,7 @@ c ... Output arguments:
 
 c ... Common blocks:
       Use(Timing)                  # ttmatfac
+      Use(Verbose)
       Use(Decomp)                  # lbw,ubw
       Use(Grid)                    # ngrid,ig,ijac
       Use(Condition_number)        # rconds
@@ -1302,23 +1325,24 @@ c ... Common blocks:
       Use(Temporary_work_arrays)   # rwk1,rwk2,iwk1,iwk2,iwk3
 
 c ... Function:
-      real(Size4) gettime
+      real(Size4) gettime,TimePreMeth
 
 c ... Local variables:
       integer lowd, ierr, i, idum(1)
       real rcond, dum(1)
-      real(Size4) sec4
+      real(Size4) sec4,TimePreMath
       real tsmatfac
 
 c ... Convert compressed sparse row to banded format and use exact
 c     factorization routine sgbco from Linpack/SLATEC.
-      write(*,*) '******** jac_lu_decomp ********'
+      if (VerboseCall.gt.0) write(iout,*) '**************** calling jac_lu_decomp ********************'
       if (premeth .eq. 'banded') then
+      TimePreMeth=gettime(sec4)
          lowd = 2 * lbw + ubw + 1
          call csrbnd (neq, jac, ja, ia, 0, wp, lowd, lowd,
      .                lbw, ubw, ierr)
          if (ierr .ne. 0) then
-            write(STDOUT,*)
+            write(iout,*)
      .         '*** jac_lu_decomp -- csrbnd returned ierr =', ierr
             call xerrab("")
          endif
@@ -1327,7 +1351,7 @@ c     factorization routine sgbco from Linpack/SLATEC.
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
-
+      if (ShowTime.gt.0) write(iout,*) 'Time in premath banded:',TimePreMeth-gettime(sec4)
 c ... Save condition number.
          i = ijac(ig)
          if (i .le. 300) rconds(i,ig) = rcond
@@ -1337,7 +1361,7 @@ c ... Save condition number.
 c ... If sparse Jacobian matrix is in compressed sparse row storage
 c     format, ...
       if (premeth .eq. 'ilut') then
-
+         TimePreMeth=gettime(sec4)
 c ... Reorder Jacobian rows and columns, if desired.
          call jac_reorder (neq, jac, ja, ia, wp, iwp(neq+2), iwp)
 
@@ -1347,8 +1371,8 @@ c ... Use incomplete factorization routine ilut from SparsKit.
      .              iwp,lenplumx,rwk1,rwk2,iwk1,
      .              iwk2,iwk3,ierr)
          if (ierr .ne. 0) then
-            write(STDOUT,*) ' Error return from ilut:  ierr = ',ierr
-            write(STDOUT,9000)
+            write(iout,*) ' Error return from ilut:  ierr = ',ierr
+            write(iout,9000)
  9000       format(
      ./'    ierr >  0   --> Zero pivot encountered at step number ierr.'
      ./'    ierr = -1   --> Error. input matrix may be wrong.'
@@ -1365,7 +1389,7 @@ c ... Use incomplete factorization routine ilut from SparsKit.
      .)
             call xerrab("")
          endif
-
+      if (ShowTime.gt.0) write(iout,*) 'Time in premath ilut:',TimePreMeth-gettime(sec4)
 c ... Use incomplete factorization routine precond5 from INEL.
 c     SparsKit routines are used in preliminary steps to convert to
 c     diagonal format.
@@ -1389,7 +1413,7 @@ c ... Convert to diagonal format.
 c ... Reorder rows to be in increasing column order.
          call cdiagsrt (neq, adiag, ndiag, iwp(3), iwkd1, iwkd2,
      .                  rwkd)
-
+      TimePreMeth=gettime(sec4)
 c ... Finally, calculate approximate LU decomposition.
          tsmatfac = gettime(sec4)
          call precond5 (neq, ndiag, ndiagm, adiag, wp, rwk2, rwk1,
@@ -1398,6 +1422,7 @@ c ... Finally, calculate approximate LU decomposition.
 
 c ... Accumulate cpu time spent here.
  99   ttmatfac = ttmatfac + (gettime(sec4) - tsmatfac)
+      if (ShowTime.gt.0) write(iout,*) '**** Time in jac_lu_decomp:',gettime(sec4) - tsmatfac
       return
       end
 c-----------------------------------------------------------------------
@@ -1647,7 +1672,7 @@ c     format.
       call csrbnd (neq, jac, jacj, jaci, 0, pd, lowd, lowd,
      .             lbw, ubw, ierr)
       if (ierr .ne. 0) then
-         write(STDOUT,*) '*** jacd1 -- ierr =', ierr
+         write(iout,*) '*** jacd1 -- ierr =', ierr
          call xerrab("")
       endif
 
@@ -1758,7 +1783,7 @@ c ... Common blocks:
 
 c ... Local variables:
       real tp
-      write(*,*) '***** jacnw *********'
+      write(iout,*) '***** jacnw *********'
 c ... Flag these calls to RHS (pandf) as for the Jacobian
       yl(neq+1) = 1.
 
@@ -1955,17 +1980,20 @@ c ... Common blocks:
       Use(Jacobian)       # nnzmx,jac,jacj,jaci
       Use(Math_problem_size)   # neqmx
       Use(Dim)            # nx,ny
+      Use(Stat)
       Use(Time_dep_nwt)   # nufak,ydt_max,ydt_max0,alfnuf,expnuf,nufak0
                           # inufaknk,dtoptx,dtoptv
       Use(Indexes)        # idxn,idxu,idxte,idxti,idxng,idxphi
       Use(UEpar)          # isnion,isupon,isteon,istion,isngon,isphion,isnionxy,
                           # isuponxy,isteonxy,istionxy,isngonxy,isphionxy
       Use(Jac_work_arrays) # iwwp,wwp,liwp,lwp  # diagnostic arrays in this sub
+      Use(Verbose)
+      Use(ParallelOptions)
 
 c ... Local variables:
       real tp
       integer i
-      write(*,*) '**************** psetnk ********************'
+      if (VerboseCall.gt.0) write(iout,*) '**************** calling psetnk ********************'
 c ... Calculate maximum of f0*sf to control yl(neq+2) = nufak
       ydt_max = 1.e-100
       do i = 1, neq    # need to avoid neq+1 and neq+2
@@ -1979,7 +2007,7 @@ c ... Calculate maximum of f0*sf to control yl(neq+2) = nufak
       else
          yl(neq+2) = 0.
       endif
-      if (expnuf.ne.0.) write(*,*) ' nufak = ', nufak
+      if (expnuf.ne.0.) write(iout,*) ' nufak = ', nufak
       ydt_max0 = ydt_max
 
 c ... Flag these calls to RHS (pandf) as for the Jacobian
@@ -1990,13 +2018,20 @@ c ... Call pandf to set terms with yl(neq+1) flag on for Jacobian
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-      if (ParallelJac.gt.0) then
-      call jac_calc_para (neq, tp, yl, f0, lbw, ubw, wk,
+      if (OMPParallelJac.gt.0 .and.MPIParallelJac.eq.0) then
+      call jac_calc_omp (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
+      elseif (OMPParallelJac.eq.0 .and.MPIParallelJac.gt.0) then
+            call jac_calc_mpi (neq, tp, yl, f0, lbw, ubw, wk,
+     .               nnzmx, jac, jacj, jaci)
+      elseif (OMPParallelJac.gt.1 .and.MPIParallelJac.gt.0) then
+c            call jac_mpiomp (neq, tp, yl, f0, lbw, ubw, wk,
+c     .               nnzmx, jac, jacj, jaci)
       else
       call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
       endif
+
       yl(neq+1) = -1.             # Turn-off Jacobian flag for pandf
       call rhsnk (neq, yl, f0)    # Reset f0 with nufak off
 
@@ -2371,24 +2406,34 @@ c ... Common blocks:
       Use(Dim)                 # nx,ny
       Use(Time_dep_nwt)        # ydt_max0,nufak0
       Use(Share)               # cutlo
+      Use(Verbose)
+      Use(ParallelOptions)
 
 c ... Local variables:
       real tp
+      real wk(neq)
       integer i
-      write(*,*) '**************** sfsetnk ********************'
+      if (VerboseCall.gt.0) write(iout,*) '**************** calling sfsetnk ********************'
 c ... Flag these calls to RHS (pandf) as Jacobian calculations
       yl(neq+1) = 1.  # with ccc, dont include nufak in scaling Jacobian
-
+      wk(1:neq)=0.0
 c ... Calculate right-hand sides at unperturbed values of variables.
       call rhsnk (neq, yl, yldot0)
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-      if (ParallelJac.gt.0) then
-      call jac_calc_para (neq, tp, yl, yldot0, lbw, ubw, sf,
+
+            if (OMPParallelJac.gt.0 .and.MPIParallelJac.eq.0) then
+      call jac_calc_omp (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
+      elseif (OMPParallelJac.eq.0 .and.MPIParallelJac.gt.0) then
+            call jac_calc_mpi (neq, tp, yl, yldot0, lbw, ubw, wk,
+     .               nnzmx, jac, jacj, jaci)
+      elseif (OMPParallelJac.gt.1 .and.MPIParallelJac.gt.0) then
+c            call jac_mpiomp (neq, tp, yl, yldot0, lbw, ubw, wk,
+c     .               nnzmx, jac, jacj, jaci)
       else
-      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
+      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
       endif
 
@@ -2407,9 +2452,8 @@ c ... Also find initial maximum of yldot*sf = ydt_max0 for scaling nufak
       nufak0 = nufak                    # record initial nufak value
       ydt_max0 = cutlo
       do i = 1, neq
-c      write(*,*) 'i,sf(i)',i,sf(i),jac(i),jacj(i),jaci(i)
          if (abs(sf(i)) .lt. 1e20*cutlo) then
-            write(*,*) '*** Error: Jacobian row = 0 for eqn iv =', i
+            write(iout,*) '*** Error: Jacobian row = 0 for eqn iv =', i
             call xerrab("")
          else
             sf(i) = 1./sf(i)
@@ -2711,17 +2755,17 @@ c_mpi      integer my_pe
 c ... Allocate full Jacobian for jacmap; warning of size
       call remark("*** CAUTION: allocating large jacfull(neq,neq)***")
       call gallot("Jacobian_full",0)
-      write (STDOUT,*) '*** Full Jacobian size is neq**2 = ', neq*neq
+      write(iout,*) '*** Full Jacobian size is neq**2 = ', neq*neq
 
 c ... Issue a warning if reordering is on which may rearrange Jacobian
       if (ireorder .eq. 1) then
-         write (STDOUT,*) '***ireorder=1, Jacobian may be rearranged***'
+         write(iout,*) '***ireorder=1, Jacobian may be rearranged***'
       endif
 
 cccc ... Attempt to allocate space for Jacobian in full storage format;
 cccc     tell user and abort if space is insufficient.
 ccc      if (allot('jacfull', neq*neq) .ne. 0) then
-ccc         write (STDOUT,*)
+ccc         write(iout,*)
 ccc     .      '*** jacmap cannot get space for full Jacobian storage.'
 ccc         call xerrab("")
 ccc      endif
@@ -2729,7 +2773,7 @@ ccc      endif
 c ... Convert Jacobian matrix to full storage format.
       call csrdns (neq, neq, jac, jacj, jaci, jacfull, neq, ierr)
       if (ierr .ne. 0) then
-         write (STDOUT,*)
+         write(iout,*)
      .      '*** jacmap got error return ierr =', ierr,
      .      ' from csrdns.'
          call xerrab("")
@@ -2750,7 +2794,7 @@ c_mpi      endif
 
 c ... Close file, and report file name.
       close(us)
-      write (STDOUT,*) ' Jacobian map in data file:  ', filename
+      write(iout,*) ' Jacobian map in data file:  ', filename
 
       return
       end
@@ -2796,7 +2840,7 @@ c ... Open a file, and output data.
 
 c ... Close file, and report file name.
       close(us)
-      write (STDOUT,*) ' Jacobian matrix in data file:  ', filename
+      write(iout,*) ' Jacobian matrix in data file:  ', filename
 
       return
       end
@@ -3701,25 +3745,25 @@ cccMER NOTE: generalize the following for 2 or more x-points
 # Write the data -
       call freeus (nunit)
       open (nunit, file=fname, form='formatted', status='unknown')
-      write (nunit,*) runid
-      write (nunit,*) ' '
-      write (nunit,*) nx,ny,nncut
-      write (nunit,*)
+      write(nunit,*) runid
+      write(nunit,*) ' '
+      write(nunit,*) nx,ny,nncut
+      write(nunit,*)
      &              (nxcut1(i),nxcut2(i),nycut1(i),nycut2(i),i=1,nncut)
       if (nncut .gt. 2) then
-         write (nunit,*) nniso
-         write (nunit,*)
+         write(nunit,*) nniso
+         write(nunit,*)
      &              (nxiso1(i),nxiso2(i),nyiso1(i),nyiso2(i),i=1,nniso)
       endif
-      write (nunit,*) ' '
+      write(nunit,*) ' '
       do ix=1,nx
          do iy=1,ny
             if (mhdgeo .eq. 1) then
-               write (nunit,'(4e15.7)') (rm(ix,iy,iv(i)),i=1,4)
-               write (nunit,'(4e15.7)') (zm(ix,iy,iv(i)),i=1,4)
+               write(nunit,'(4e15.7)') (rm(ix,iy,iv(i)),i=1,4)
+               write(nunit,'(4e15.7)') (zm(ix,iy,iv(i)),i=1,4)
             else
-               write (nunit,'(4e15.7)') (zm(ix,iy,iv(i)),i=1,4)
-               write (nunit,'(4e15.7)') (rm(ix,iy,iv(i)),i=1,4)
+               write(nunit,'(4e15.7)') (zm(ix,iy,iv(i)),i=1,4)
+               write(nunit,'(4e15.7)') (rm(ix,iy,iv(i)),i=1,4)
             endif
          enddo
       enddo
@@ -3733,7 +3777,7 @@ cccMER NOTE: generalize the following for 2 or more x-points
 #----------------------------------------------------------------------#
 
 
-      subroutine write31 (fname, runid)
+      subroutine write31(fname, runid)
       implicit none
       character*(*) fname, runid
 
@@ -3834,7 +3878,7 @@ Use(Comgeo)         # vol,rr
 
 #----------------------------------------------------------------------#
 
-      subroutine write_eirene
+      subroutine writet_eirene
       implicit none
 
 # This subroutine writes the geometry (fort.30) and plasma (fort.31)
@@ -3910,17 +3954,17 @@ Use(Ext_neutrals) 		 # ext_verbose
       open (nunit, file=fname, form='formatted', status='unknown')
 
 c write geometry data
-      write (nunit,*) runidtag
-      write (nunit,*) nx,ny,nxpt
+      write(nunit,*) runidtag
+      write(nunit,*) nx,ny,nxpt
       do jx=1,nxpt
-         write (nunit,*) iysptrx1(jx),iysptrx2(jx)
-         write (nunit,*) ixlb(jx),ixpt1(jx),ixmdp(jx),ixpt2(jx),ixrb(jx)
+         write(nunit,*) iysptrx1(jx),iysptrx2(jx)
+         write(nunit,*) ixlb(jx),ixpt1(jx),ixmdp(jx),ixpt2(jx),ixrb(jx)
       enddo
-      write (nunit,*) (((rm(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
-      write (nunit,*) (((zm(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
-      write (nunit,*) (((br(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
-      write (nunit,*) (((bz(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
-      write (nunit,*) (((bphi(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
+      write(nunit,*) (((rm(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
+      write(nunit,*) (((zm(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
+      write(nunit,*) (((br(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
+      write(nunit,*) (((bz(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
+      write(nunit,*) (((bphi(ix,iy,n),ix=1,nx),iy=1,ny),n=0,4)
 
 c write plasma data
       call gchange("MCN_bkgd",0)
@@ -3998,26 +4042,26 @@ c compute UEDGE flow velocity at cell centers:
 c write plasma data (charged species only)
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) ((ni(ix,iy,ifld),ix=1,nx),iy=1,ny)
+            write(nunit,*) ((ni(ix,iy,ifld),ix=1,nx),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) ((vr(ix,iy,ifld),ix=1,nx),iy=1,ny)
+            write(nunit,*) ((vr(ix,iy,ifld),ix=1,nx),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) ((vz(ix,iy,ifld),ix=1,nx),iy=1,ny)
+            write(nunit,*) ((vz(ix,iy,ifld),ix=1,nx),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) ((vphi(ix,iy,ifld),ix=1,nx),iy=1,ny)
+            write(nunit,*) ((vphi(ix,iy,ifld),ix=1,nx),iy=1,ny)
          endif
       enddo
-      write (nunit,*) ((ti(ix,iy),ix=1,nx),iy=1,ny)
-      write (nunit,*) ((te(ix,iy),ix=1,nx),iy=1,ny)
+      write(nunit,*) ((ti(ix,iy),ix=1,nx),iy=1,ny)
+      write(nunit,*) ((te(ix,iy),ix=1,nx),iy=1,ny)
 
 c loop over nxpt mesh regions
       do jx=1,nxpt
@@ -4060,29 +4104,29 @@ c compute UEDGE flow velocity at left target plate:
 c write inner target data
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (ni(ixt,iy,ifld),iy=1,ny)
+            write(nunit,*) (ni(ixt,iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vrtg1(iy,ifld),iy=1,ny)
+            write(nunit,*) (vrtg1(iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vztg1(iy,ifld),iy=1,ny)
+            write(nunit,*) (vztg1(iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vphitg1(iy,ifld),iy=1,ny)
+            write(nunit,*) (vphitg1(iy,ifld),iy=1,ny)
          endif
       enddo
-      write (nunit,*) (ti(ixt,iy),iy=1,ny)
-      write (nunit,*) (te(ixt,iy),iy=1,ny)
+      write(nunit,*) (ti(ixt,iy),iy=1,ny)
+      write(nunit,*) (te(ixt,iy),iy=1,ny)
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (-fnix(ixt,iy,ifld),iy=1,ny)
+            write(nunit,*) (-fnix(ixt,iy,ifld),iy=1,ny)
          endif
       enddo
 
@@ -4125,29 +4169,29 @@ c compute UEDGE flow velocity at right target plate:
 c write outer target data
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (ni(ixt,iy,ifld),iy=1,ny)
+            write(nunit,*) (ni(ixt,iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vrtg2(iy,ifld),iy=1,ny)
+            write(nunit,*) (vrtg2(iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vztg2(iy,ifld),iy=1,ny)
+            write(nunit,*) (vztg2(iy,ifld),iy=1,ny)
          endif
       enddo
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (vphitg2(iy,ifld),iy=1,ny)
+            write(nunit,*) (vphitg2(iy,ifld),iy=1,ny)
          endif
       enddo
-      write (nunit,*) (ti(ixt,iy),iy=1,ny)
-      write (nunit,*) (te(ixt,iy),iy=1,ny)
+      write(nunit,*) (ti(ixt,iy),iy=1,ny)
+      write(nunit,*) (te(ixt,iy),iy=1,ny)
       do ifld=1,nisp
          if (zi(ifld) .ne. 0) then
-            write (nunit,*) (fnix(ixt1,iy,ifld),iy=1,ny)
+            write(nunit,*) (fnix(ixt1,iy,ifld),iy=1,ny)
          endif
       enddo
 
@@ -4822,7 +4866,7 @@ c-------------------------------------------------------------
 
 c  This function serves to output the jacobian for viewing purposes
 c  The output is the file jacwrite.txt
-
+      Use(Output)
       integer n,j,k
       real jac(*)
       integer jacj(*), jaci(n+1)
@@ -4838,7 +4882,27 @@ c  The output is the file jacwrite.txt
       end do
 
       close(88)
-      write(*,*)"Jacobian written successfully to jacwrite.txt"
+      write(iout,*)"Jacobian written successfully to jacwrite.txt"
       end
+c ***** End of subroutine jacwrite **********
+
+      subroutine jac_write(filename,neq, jac, jaccol, jacrow)
+
+c  This function serves to output the jacobian for viewing purposes
+c  The output is the file jacwrite.txt
+      character(*)::filename
+      integer neq,j,k
+      real jac(*)
+      integer jacrow(*), jaccol(*)
+
+      open(UNIT=88,FILE=trim(filename),STATUS='REPLACE')
+
+      do j=1,neq
+        do k=jacrow(j),jacrow(j+1)-1
+          write(88,*)j,jacrow(j),jaccol(k),jac(k)
+        end do
+      end do
+      close(88)
+      end subroutine jac_write
 c ***** End of subroutine jacwrite **********
 

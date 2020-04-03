@@ -519,6 +519,13 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
+cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
+       else
+              do iy = j2, j5
+                do  ix = i2, i5
+                resng(ix,iy,igsp) = 0.0
+       enddo
+       enddo
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -631,7 +638,7 @@ c ------------------
       methgx = mod(methg, 10)
       methgy = methg/10
 
-c      write (*,*) "neudifpg"
+c      write(iout (*,*) "neudifpg"
       do 895 igsp = 1, ngsp
 
 c *********************************************
@@ -1098,7 +1105,7 @@ c ... is it correct to use ng instead of ni??? i.e. will ng enter jacobian?
             if (igsp.eq.1 .and. ishymol.eq.1)
      .            resng(ix,iy,igsp) = resng(ix,iy,igsp) + psordis(ix,iy)
             resng(ix,iy,igsp) = resng(ix,iy,igsp) - cfneutdiv*
-     .          cfneutdiv_fng*((fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
+     .          (cfneutdiv_fng*(fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
      .          fluxfacy*(fngy(ix,iy,igsp) - fngy(ix,iy-1,igsp)) )
 
 c ... IJ 2016/10/19 add MC neut flux if flags set
@@ -1115,6 +1122,13 @@ c ... IJ 2016/10/19 add MC neut flux if flags set
 
  891      continue
  892    continue
+cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
+       else
+              do iy = j2, j5
+                do  ix = i2, i5
+                resng(ix,iy,igsp) = 0.0
+       enddo
+       enddo
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -1516,7 +1530,15 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
+cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
+       else
+              do iy = j2, j5
+                do  ix = i2, i5
+                resng(ix,iy,igsp) = 0.0
+       enddo
+       enddo
       endif
+
 
  895  continue   # end of igsp loop from the beginning of subroutine
 

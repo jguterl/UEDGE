@@ -160,6 +160,8 @@ c ... This routine only unloads the yl variables into ni, up, etc.,
 c ... The other variables are added in the routine convr_auxo
 
 
+            use Output 
+c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
             use Dim                  ! nx,ny,nhsp,nzsp,nisp,nusp,ngsp
             use Xpoint_indices       ! ixpt1,ixpt2
             use Math_problem_size    ! neqmx
@@ -194,8 +196,6 @@ c ... The other variables are added in the routine convr_auxo
       integer ifld, id,ix,iy,igsp,ix1,ix2
       real t1,t2
       integer inegt, inegng, inegni, ixneg, iyneg, ifldneg, igspneg
-
-c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
       integer ifake  !forces Forthon scripts to put implicit none above here
 
 c ... Set mpi indices, etc
@@ -306,12 +306,12 @@ c_mpi      integer ierr
 
       if (inegni .gt. 0 .and. itrap_negni.eq.1) then
          call remark("***  ni is negative - calculation stopped")
-	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
+	 write(iout,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
          call xerrab("")
       endif
       if (inegng .gt. 0 .and. itrap_negng.eq.1) then
          call remark("***  ng is negative - calculation stopped")
-	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' igsp =', igspneg
+	 write(iout,*) 'At  ix =', ixneg, ' iy =', iyneg, ' igsp =', igspneg
          call xerrab("")
       endif
 cc Since Te and Ti have temin eV floors, this not used

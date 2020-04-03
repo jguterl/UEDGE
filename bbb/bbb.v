@@ -1843,6 +1843,7 @@ lewt                integer        #location in rwork where ewt**-1 begins
 npsn(ngrid)        _integer        #cum. number of Jacobian solves for Newton
 njen(ngrid)        _integer        #cum. Jacobian evals. for Newton iter.
 
+
 ***** Poten:
 #Variables required for the calculation of the potential.
 newbcl(nxptmx)     integer /nxptmx*0/ +restart #switch on new sheath model
@@ -2722,7 +2723,6 @@ jaci(neqp1)	_integer	# Nonzero structure of Jacobian matrix jac.
 				# in row i of jac.
 jacj(nnzmx)	_integer	# Column indices of nonzero entries in jac.
 isjacstnlon     integer    /0/  # Compute 9-pt stencil in ivl2gstnl - serial
-ParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ***** Jacobian_csc:
 #Jacobian matrix in compressed sparse column format
 rcsc(nnzmx)	_real		# Nonzero entries of the Jacobian matrix.
@@ -2847,7 +2847,7 @@ newapi		integer /1/	     #=1, call readmc for new imp. data;=0, no
 pyrestart_file    character*80 /""/ #Python file that can also be used to restart
 read_diffs		integer /0/	     #=0,a flag to signal whether to read diffusivities
 dif_io		integer /0/	     #=0,a flag to signal whether to read/write dif_use
-tra_io		integer /0/	     #=0,a flag to signal whether to read/write tra_use
+tra_io		integer /0/	     #=0,a flag to signal whether to read/write(iout tra_use
 dutm_io		integer /0/	     #=0,a flag to signal whether to read/write dutm_use
 kye_io		integer /0/	     #=0,a flag to signal whether to read/write kye_use
 kyi_io		integer /0/	     #=0,a flag to signal whether to read/write kyi_use

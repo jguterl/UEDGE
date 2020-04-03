@@ -781,7 +781,7 @@ c...  xny    -- calculated poloidal location for intermediate mesh (nxold,ny)
 c...  yny    -- calculated radial location for intermediate mesh (nxold,ny)
 c...  indxx  -- poloidal index ixo used in constructing intermediate mesh
 c...  indxy  -- radial index iy used in constructing intermediate mesh
-
+      Use(Output)
       implicit none
 
 c --  Input variables
@@ -853,7 +853,7 @@ c...  Special case for xno = 0,1; yyn could be more general if xn.ne.0,1
             if (icount .gt. 500) then
                call remark('***** grdinty cannot find straddling grid
      .points, check vel. grd at nx')
-               write(*,*) 'ixo,iy,ixm,iyom = ',ixo,iy,ixm,iyom,
+               write(iout,*) 'ixo,iy,ixm,iyom = ',ixo,iy,ixm,iyom,
      .                    '  ixf,ixof,iyf,iyof = ',ixf,ixof,iyf,iyof
                call xerrab("")
             endif

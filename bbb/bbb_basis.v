@@ -2869,18 +2869,18 @@ newaph			integer  /1/ #=1 calls aphread for hyd. atomic data;=0 not
 newapi		integer /1/	     #=1, call readmc for new imp. data;=0, no						
 pyrestart_file    character*80 /""/ #Python file that can also be used to restart
 read_diffs		integer /0/	     #=0,a flag to signal whether to read diffusivities
-dif_io		integer /0/	     #=0,a flag to signal whether to read/write dif_use
-tra_io		integer /0/	     #=0,a flag to signal whether to read/write tra_use
-dutm_io		integer /0/	     #=0,a flag to signal whether to read/write dutm_use
-kye_io		integer /0/	     #=0,a flag to signal whether to read/write kye_use
-kyi_io		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-vy_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-vyup_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-vyte_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-vyti_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-fniyos_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-feeyosn_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
-feiyosn_io 		integer /0/	     #=0,a flag to signal whether to read/write kyi_use
+dif_io		integer /0/	     #=0,a flag to signal whether to read/write(iout dif_use
+tra_io		integer /0/	     #=0,a flag to signal whether to read/write(iout tra_use
+dutm_io		integer /0/	     #=0,a flag to signal whether to read/write(iout dutm_use
+kye_io		integer /0/	     #=0,a flag to signal whether to read/write(iout kye_use
+kyi_io		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+vy_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+vyup_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+vyte_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+vyti_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+fniyos_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+feeyosn_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
+feiyosn_io 		integer /0/	     #=0,a flag to signal whether to read/write(iout kyi_use
 isvolsorext             integer /0/   #volsor sources if =0; or user sors if =1
 
 ***** Interp:
@@ -3226,9 +3226,9 @@ csrcsc(neq,job,ipos,rcsc:real,icsc,jcsc,\
 allocate()                                	 subroutine
 walsor()                                  	 subroutine
 volsor()                                  	 subroutine
-write_profs()                                  	 subroutine
+write(iout_profs()                                  	 subroutine
 read_profs()                                  	 subroutine
-write_profs_boris(fname:string)		      	 subroutine
+write(iout_profs_boris(fname:string)		      	 subroutine
   	# in fname   the filename
 read_profs_boris(fname:string,ierr)		       	 subroutine
   	# in fname   the filename
@@ -3329,7 +3329,7 @@ ebindz(za:integer, zn:integer)                   real function
       	# in za   atomic charge
       	# in zn   nuclear charge
 wtottim()					 subroutine
-      	# writes out timing information
+      	# write(iouts out timing information
 rundt()						 subroutine
       	# time-advances solution using nksol with dtreal
 domain_dc()					 subroutine
@@ -3337,25 +3337,25 @@ domain_dc()					 subroutine
 map_var_jac()					 subroutine
         # calculates indices of Jacobian; array ivl2gstnl is main output
 bbb2wdf()                                        subroutine
-      	# write file containing plasma information for DEGAS namelist
-write30 (fname:string, runid:string)		subroutine
-      	# write geometry data file 'fname' for EIRENE code
+      	# write(iout file containing plasma information for DEGAS namelist
+write(iout30 (fname:string, runid:string)		subroutine
+      	# write(iout geometry data file 'fname' for EIRENE code
       	# in fname
       	# in runid
-write31 (fname:string, runid:string)		subroutine
-      	# write plasma data file 'fname' for EIRENE code
+write(iout31 (fname:string, runid:string)		subroutine
+      	# write(iout plasma data file 'fname' for EIRENE code
       	# in fname
       	# in runid
-write_eirene					subroutine
-      	# write geometry and plasma data files for EIRENE code
+write(iout_eirene					subroutine
+      	# write(iout geometry and plasma data files for EIRENE code
 read32(fname:string)		subroutine
       	# read source term data file fname='fort.32' from EIRENE code
 	# in fname
 read44(fname:string)		subroutine
       	# read diagnostic data file fname='fort.44' from EIRENE code
 	# in fname
-writemcnfile(fname:string, runid:string)		subroutine
-      	# write geometry and plasma background data for DEGAS2 code
+write(ioutmcnfile(fname:string, runid:string)		subroutine
+      	# write(iout geometry and plasma background data for DEGAS2 code
       	# in fname			filename
       	# in runid			case id
 readmcntest(fname:string)							subroutine
@@ -3847,7 +3847,7 @@ uedge_date character*80 /'Version date in README_Uedge_vers in dir uedge'/
 ***** Logging:
 # Variables/Methods required for logging output to file instead of console
 logfname            character*64         /'uedgelog'/
-     # name of the log file to which to write
+     # name of the log file to which to write(iout
 
 ***** Convdiffeqn:
 
@@ -3875,5 +3875,5 @@ timo(1:ntim)         _real     /0./     # output times
 
 setLogFile(filename:string)   subroutine
      # sets the filename base to which to direct log output
-writeToLog(message:string)    subroutine
-     # writes a message to the uedge log file
+write(ioutToLog(message:string)    subroutine
+     # write(iouts a message to the uedge log file

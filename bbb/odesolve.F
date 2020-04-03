@@ -46,6 +46,7 @@
             use Indices_domain_dcl  ! ivloc2sdgl
             use Xpoint_indices 
             use Indices_domain_dcg 
+            use Verbose 
 c_mpi      Use(MpiVars)  !module defined in com/mpivarsmod.F.in
 
 
@@ -74,7 +75,7 @@ c     local variables
       integer i,ifld,lid,ilg,ix,iy,igsp,iv
 
       real(kind=4):: gettime, sec4
-      write(*,*) '*********  uedriv  *********'
+      if (VerboseCall.gt.0) write(iout,*) '**************** calling uedriv ********************'
 c **- For parallel mpi case, set up preliminary mpi stuff
 c      if (ismpion .eq. 1) call uedriv_pll
 
@@ -100,7 +101,7 @@ c...  imeth = inewton(igrid) is set in allocate & selects between
 c...  time-dependent solvers(imeth=0) and Newton solvers(imeth=1)
 
       if (imeth .eq. 0) then
-      write(*,*) '****** imeth=0  *********'
+      write(iout,*) '****** imeth=0  *********'
          istep = 0
          tbout = 1.
          if (nsteps .gt. 1) tbout = exp (log(trange)/(nsteps-1))
@@ -200,7 +201,7 @@ c        Note that iwork(27) & iwork(28) were set in subroutine allocate.
      .                 rwork,lrw,iwork,liw,rpar,ipar,jacd2,psold,srtolpk)
          endif
          if (idid.lt.0) then
-            write(*,*) 'idid = ',idid
+            write(iout,*) 'idid = ',idid
             call xerrab("")
          endif
          if (info(14).eq.1) goto 200   !init. only, jump out of time loop
@@ -236,15 +237,15 @@ ccc          call xerrab("")
 c_mpicvode          CALL FCVODE (tout, ts, yl, itask, istate)
 
       else
-         write(*,*)
-         write(*,*) 'Invalid solver option, check variable svrpkg'
-         write(*,*) 'Allowed values are: '
-         write(*,*) '      vodpk'
-         write(*,*) '      cvode'
-         write(*,*) '      daspk'
-         write(*,*) '      nksol'
-         write(*,*) '      newton'
-         write(*,*)
+         write(iout,*)
+         write(iout,*) 'Invalid solver option, check variable svrpkg'
+         write(iout,*) 'Allowed values are: '
+         write(iout,*) '      vodpk'
+         write(iout,*) '      cvode'
+         write(iout,*) '      daspk'
+         write(iout,*) '      nksol'
+         write(iout,*) '      newton'
+         write(iout,*)
          call xerrab("")
        endif
 
@@ -283,7 +284,6 @@ c_mpicvode          CALL FCVODE (tout, ts, yl, itask, istate)
        ts = tout
 
       elseif(imeth .eq. 1) then    ! Second option for imeth if test
-      write(*,*) '****** imeth=1  *********'
          if (issfon .eq. 1) then
            if (icntnunk .eq. 0 .and. isdtsfscal.eq.0) then
              if (npes <= 1) then
@@ -295,7 +295,6 @@ c_mpicvode          CALL FCVODE (tout, ts, yl, itask, istate)
             call sfill (neq, 1., sfscal(1), 1)
          endif
          if((svrpkg .eq. 'nksol') .or.(svrpkg .eq. 'petsc') ) then  !not above issfon because newton poss
-            write(*,*) '****** imeth=1 set_dt  *********'
             call set_dt(neq, yl, yldot)  ! sets dtuse for time-step models
             if (isdtsfscal.eq.1) call sfsetnk (neq, yl, suscal, sfscal)
                                          ! allow dt in calc of sfscal
@@ -311,7 +310,6 @@ c     iwork(3) & iwork(4) were set in sub. allocate; allocate prob., lwp, liwp
             iwork(7) = 1-errmsgflag
             iwork(8) = itermx
             iwork(9) = incpset
-            iwork(10)= DebugTime
             rwork(1) = stepmx
             rwork(2) = del2nksol
             rwork(3) = taunksol
@@ -325,9 +323,9 @@ cpetsc          initguess(i)=yl(i)
 cpetsc        end do
 cpetsc        call rhsnk(neq,yl,yldot)
 cpetsc        fnrm = vnormnk(neq,yldot,sfscal)
-cpetsc        write(*,*)"fnrm =",fnrm
-cpetsc        write(*,*)"kspatol =",(r1mach9(4)+epscon1*min(epscon2,fnrm))*fnrm
-cpetsc        write(*,*)"restart =",mmaxu
+cpetsc        write(iout,*)"fnrm =",fnrm
+cpetsc        write(iout,*)"kspatol =",(r1mach9(4)+epscon1*min(epscon2,fnrm))*fnrm
+cpetsc        write(iout,*)"restart =",mmaxu
 cpetsc      endif
 
 cpetsc*     Set up the stopping criteria for the nonlinear/linear solver
@@ -365,7 +363,6 @@ cpetsc      endif
 
 cpetsc      if ((svrpkg.eq.'nksol' .and. npes.eq.1) .or. (snesdebug. eq. 1)) then
 *-------------------------------------------------------------------------
-            write(*,*) '****** calling newton  *********'
             call nksol(neq,yl,yldot,rhsnk,jacvnk,suscal,sfscal,ftol,
      .                 stptol,rwork,
      .                 lrw,iwork,liw,iopts,iterm,psetnk,psolnk,mfnksol,
@@ -379,7 +376,7 @@ cpetsc        snesminusnksol=0
 cpetsc        do i=1,neq
 cpetsc          snesminusnksol=snesminusnksol+(yl(i)-snesans(i))*(yl(i)-snesans(i))
 cpetsc        end do
-cpetsc        write(*,*)"2-norm of difference SNES-NKSOL: ",snesminusnksol
+cpetsc        write(iout,*)"2-norm of difference SNES-NKSOL: ",snesminusnksol
 cpetsc*       Hopefully this will be the output of nksol
 cpetsc*       Ive hardwired this to only output the first 6 N-K iterations
 cpetsc        open(UNIT=55,FILE='nkout.m',STATUS='REPLACE')
@@ -402,7 +399,6 @@ cpetsc      if (snesdebug. eq. 1) then
 cpetsc      endif
 *-------------------------------------------------------------------------
          else
-            write(*,*) '****** calling netwon  *********'
             call newton (ffun,neq,yl,yldot0,yldot1,npsn(igrid),
      .                   rwork,iwork,jacnw,psolnw)
             njen(igrid) = ijac(igrid)
@@ -425,7 +421,7 @@ c...  If nksol is in time-dependent mode, increment istep and toutlsod
          else
             toutlsod(istep+1) = toutlsod(istep) + dtreal
          endif
-         if (nsteps_nk .gt. 1) write(*,*) 'Step number = ' ,istep+1,
+         if (nsteps_nk .gt. 1) write(iout,*) 'Step number = ' ,istep+1,
      .                          '   Total time = ', toutlsod(istep+1)
       endif
 c...  Store the variables at the output times
@@ -520,11 +516,11 @@ c **- Diagnostic output for parallel mpi version
 
 c_mpi      if (mype .eq. 0) then
 c_mpi         if(svrpkg .eq. 'cvode') then
-c_mpi            write(*,*) 'tout, te(0,2)/1.6e-19, mype, nx =',
+c_mpi            write(iout,*) 'tout, te(0,2)/1.6e-19, mype, nx =',
 c_mpi     .            tout, te(0,2)/1.6e-19, mype, nx
-c_mpi            write(*,*) 'dt, nst, nfe, nni, nli, mpe = ',
+c_mpi            write(iout,*) 'dt, nst, nfe, nni, nli, mpe = ',
 c_mpi     .            ropt(4),iopt(4),iopt(5),iopt(7),iopt(15),mype
-c_mpi            write(*,*) 'npe, ncfn, nps, ncfl = ',
+c_mpi            write(iout,*) 'npe, ncfn, nps, ncfl = ',
 c_mpi     .            iopt(14), iopt(8), iopt(16), iopt(17)
 c_mpi         elseif(svrpkg .eq. 'kinsol') then
 c_mpicvode            call fkinbbdopt(lenrpw, lenipw, nge)
@@ -561,25 +557,25 @@ c_mpi      endif
       endif
 
       if (svrpkg.eq.'cvode' .and. nx.eq.6 .and. ny.eq.0) then
-         write(*,*) 'IOPT(4) NST =', IOPT(4)
-         write(*,*) 'IOPT(5) NFE =', IOPT(5)
-         write(*,*) 'IOPT(7) NNI =', IOPT(7)
-         write(*,*) ni
-         write(*,*) up
-         write(*,*) te
-         write(*,*) ti
-         write(*,*) ng
+         write(iout,*) 'IOPT(4) NST =', IOPT(4)
+         write(iout,*) 'IOPT(5) NFE =', IOPT(5)
+         write(iout,*) 'IOPT(7) NNI =', IOPT(7)
+         write(iout,*) ni
+         write(iout,*) up
+         write(iout,*) te
+         write(iout,*) ti
+         write(iout,*) ng
       endif
       if (svrpkg.eq.'vodpk' .and. nx.eq.6 .and. ny.eq.2) then
-         write(*,*) 'iwork(11) NST =', iwork(11)
-         write(*,*) 'iwork(12) NFE =', iwork(12)
-         write(*,*) 'iwork(13) NPE =', iwork(13)
-         write(*,*) 'iwork(20) NNI =', iwork(20)
-         write(*,*) ni
-         write(*,*) up
-         write(*,*) te
-         write(*,*) ti
-         write(*,*) ng
+         write(iout,*) 'iwork(11) NST =', iwork(11)
+         write(iout,*) 'iwork(12) NFE =', iwork(12)
+         write(iout,*) 'iwork(13) NPE =', iwork(13)
+         write(iout,*) 'iwork(20) NNI =', iwork(20)
+         write(iout,*) ni
+         write(iout,*) up
+         write(iout,*) te
+         write(iout,*) ti
+         write(iout,*) ng
       endif
 
       tend = gettime(sec4)
@@ -644,7 +640,7 @@ c ... Call the RHS routine, and compute initial sumf.
       sumf(0) = sumf(0)/real(neq)
 
 c ... Print initial sumf.
-      write(*,*) 'Entering Newton; sumf(0) = ', sumf(0)
+      write(iout,*) 'Entering Newton; sumf(0) = ', sumf(0)
 
 c ... Begin iterations.
       npsn = 0
@@ -704,7 +700,7 @@ c ... Calculate and print more diagnostics.
       sumnew1(npsn) = sumnew
       sumr1dy(npsn) = sumrdy
       saux2(npsn) = saux
-      write(*,*) 'sumnew1(',npsn,') = ', sumnew,
+      write(iout,*) 'sumnew1(',npsn,') = ', sumnew,
      .      ', saux2(',npsn,') = ', saux,
      .      ', sumr1dy(',npsn,') = ', sumrdy
       do i = 1, neq
@@ -723,7 +719,7 @@ c     change diagnostics.
       enddo
       sumfl2 = vnormnk (neq, rw1, sfscal)
       sumf(npsn) = sumf(npsn)/real(neq)
-      write(*,*) 'sumf(',npsn,') = ', sumf(npsn), ', imxchng = ',
+      write(iout,*) 'sumf(',npsn,') = ', sumf(npsn), ', imxchng = ',
      .     imxchng, ', ix,iy = ', igyl(imxchng,1), ',',
      .     igyl(imxchng,2), ', fnrm =', sumfl2
 
@@ -813,18 +809,18 @@ c ... Writes out total timing data
 
       implicit none
 
-         write(*,*) ' '
-         write(*,900) 'Total time for last solution = ', tend-tstart
-         write(*,901) 'Total full f evaluation = ', ttotfe
-         write(*,902) 'Impur. part of full f evaluation = ', ttimpfe
-         write(*,901) 'Total Jacobian f evaluation = ', ttotjf
-         write(*,902) 'Impur. part of Jacobian eval. = ', ttimpjf
+         write(iout,*) ' '
+         write(iout,900) 'Total time for last solution = ', tend-tstart
+         write(iout,901) 'Total full f evaluation = ', ttotfe
+         write(iout,902) 'Impur. part of full f evaluation = ', ttimpfe
+         write(iout,901) 'Total Jacobian f evaluation = ', ttotjf
+         write(iout,902) 'Impur. part of Jacobian eval. = ', ttimpjf
          if (nisp .gt. nhsp) call wapitim
-         write(*,901) 'Total Matrix factorization = ', ttmatfac
-         write(*,901) 'Total Matrix backsolve = ', ttmatsol
-         write(*,901) 'Total row normalization = ', ttjrnorm
-         write(*,901) 'Total row and column reordering = ', ttjreorder
-         write(*,901) 'Total in other Jacobian work = ', ttjstor-ttotjf
+         write(iout,901) 'Total Matrix factorization = ', ttmatfac
+         write(iout,901) 'Total Matrix backsolve = ', ttmatsol
+         write(iout,901) 'Total row normalization = ', ttjrnorm
+         write(iout,901) 'Total row and column reordering = ', ttjreorder
+         write(iout,901) 'Total in other Jacobian work = ', ttjstor-ttotjf
  900     format(a36,20x,f10.4,' sec')
  901     format(a36,10x,f10.4,10x,' sec')
  902     format(a36,f10.4,20x,' sec')

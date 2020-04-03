@@ -41,7 +41,7 @@ c ... Calculate quantities dependent on variables at plates.
      .   (neyf * lambdap * linelen)) ** 0.333333333333333
 c ... The 1.e-7 factor below accounts for use of MKS rather than cgs
       betad = 8.e-7 * Pi * densd * (ted + tid) / btotyf**2
-      kt = (1. + gammasi) * zavg * 
+      kt = (1. + gammasi) * zavg *
      .                      sqrt(0.5 * betad * lambdan) / cubrtnu**2
 
 c ... Calculate normalized L-mode diffusivity lmodechin.
@@ -134,7 +134,7 @@ c ... Calculate variables that are independent of ky.
       kappa = 2. * (2. * ti0 / ted) * kappabar * lte
       epsilon = rhos / lte
       turbdelta = (ti0 / ted) * lte / (zavg * lpi * lambdap)
-      
+
 c ... Calculate terms and factors that enter coefficients in normalized
 c     dispersion relation for L-mode turbulence.
       bcoef0 = third * ci * (lambdap * cubrtnu)**2
@@ -149,12 +149,12 @@ c     routines.
       call mnbrak (iprint, maxmag, a, b, c, fa, fb, fc, lmode_funct)
       gammamax = -brent (iprint, nky, a, b, c, lmode_funct, tol, kymax)
       if (kymax .lt. kybeg) then
-         write(*,90) '*** Max. growth rate for L-mode turbulence',
+         write(iout,90) '*** Max. growth rate for L-mode turbulence',
      .      ' found at ky < kybeg = ', kybeg
          call xerrab("")
       endif
       if (kymax .gt. kyend) then
-         write(*,90) '*** Max. growth rate for L-mode turbulence',
+         write(iout,90) '*** Max. growth rate for L-mode turbulence',
      .      ' found at ky > kyend = ', kyend
          call xerrab("")
       endif

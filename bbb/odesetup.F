@@ -63,7 +63,7 @@ cc      Use(Rccoef)
 
 *=======================================================================
 *//computation//
-      write(*,*) '*** allocating'
+
       id = 1
       call gallot("Grid",0)
       call gallot("Stat",0)
@@ -77,6 +77,10 @@ c...  Be sure nufak and dtreal are large if this is time-dependent run
          nufak = 1.e-20
          dtreal = 1.e20
       endif
+
+
+
+
 
 c ... Set mesh dimensions and x-point parameters
       if (isallloc .eq. 0) then       ! skip if allocating local proc
@@ -188,7 +192,7 @@ c ... Check that number neutral gas species is not larger than ngspmx
 c ... Check that isupcore=2 is not being used
       do igsp = 1, ngsp
         if (isngcore(igsp) == 2) then
-          write(*,*) "*** isngcore=2 option unvailable; igsp = ",igsp
+          write(iout,*) "*** isngcore=2 option unvailable; igsp = ",igsp
           call xerrab("")
         endif
       enddo
@@ -346,8 +350,8 @@ c 'banded'.
       if (inewton(igrid) .eq. 1) then
          if (svrpkg .ne. 'nksol' .and. svrpkg.ne.'petsc') then
             if ((premeth .eq. 'ilut') .or. (premeth .eq. 'inel')) then
-              write(STDOUT,*) "*** Invalid option:  premeth=",premeth
-              write(STDOUT,*) "When using standard Newton, premeth ",
+              write(iout,*) "*** Invalid option:  premeth=",premeth
+              write(iout,*) "When using standard Newton, premeth ",
      .                        "must equal banded."
               call xerrab("")
             endif
@@ -362,6 +366,10 @@ c     if necessary.
       else
         nnzmx = lenpfac*neq
       endif
+
+cJG    Init OMP variables after assignment of nnzmx, which is used in InitOMP
+        call InitOMP()
+        call InitMPI()
       if (premeth .eq. 'ilut') then
          lwp = nnzmx + lenplufac*neq   ! extra space for fill in
          lenplumx = lwp
@@ -371,13 +379,12 @@ c save preconditioner reordering info for icntnunk=1 case.
       elseif (premeth .eq. 'banded') then
          lwp = lda*neq
          liwp = 3+neq
-         write(*,*) 'Banded storage: lwp,liwp,lda:',lwp,liwp,lda
       elseif (premeth .eq. 'inel') then
          lwp = (neq+1)*ndiagmx
          liwp = 2+ndiagmx
          call gallot("Nonzero_diagonals",0)
       else
-         write(STDOUT,*) "*** Invalid option:  premeth=",premeth
+         write(iout,*) "*** Invalid option:  premeth=",premeth
          call xerrab("")
       endif
 
@@ -421,7 +428,7 @@ cc     do not reset if icntnunk=1 (saved Jac) as storage changes if mmaxu reset
          lrw = 4 + 4*neq + lenk + lwp
          liw = 20 + mmaxu + liwp
       else
-         write(STDOUT,*) "*** Invalid option:  svrpkg=",svrpkg
+         write(iout,*) "*** Invalid option:  svrpkg=",svrpkg
          call xerrab("")
       endif
 
@@ -502,7 +509,7 @@ c preserves preconditioner data for icntnunk=1
       call gallot("Temporary_work_arrays",0)
 
 c ... Load optional inputs available only in this routine.
-cc      write(*,*) 'Just before nksol,iwork', '  iwork =', iwork
+cc      write(iout,*) 'Just before nksol,iwork', '  iwork =', iwork
 cc      if (svrpkg .eq. 'nksol') then
 cc         iwork(3) = lwp
 cc         iwork(4) = liwp
@@ -643,7 +650,7 @@ c     For mimicing an isolated X-pt:
 c...  Get space for two indices
 cc      nxpt = 2
 cc      call gchange("Xpoint_indices",0)
-cc      write(*,*) "After gchange; iysptrx1=", iysptrx1
+cc      write(iout,*) "After gchange; iysptrx1=", iysptrx1
 c...  Set indices
       implicit none
 
@@ -724,6 +731,7 @@ c-----------------------------------------------------------------------
             use Save_terms  ! psorcold, etc
             use Cut_indices 	! ixcut1,iycut1,ixcut2,iycut2,ixcut3,iycut3
                         ! ixcut4,iycut4
+                              use Verbose 
 
 
       implicit none
@@ -747,7 +755,7 @@ c-----------------------------------------------------------------------
 *  ---------------------------------------------------------------------
 
 *  -- check nx, ny, nhsp --
-      write(*,*) '*********  ueinit  *********'
+      if (VerboseCall.gt.0) write(iout,*) '**************** calling ueinit ********************'
       if (nx.lt.1 .or. ny.lt.1 .or. nhsp.lt.1) then
          call xerrab ('ueinit -- faulty argument nx, ny, nhsp')
       end if
@@ -862,14 +870,14 @@ cJG: add a condition to avoid the memory leak
                 znucl(ifld) = znuclin(ifld)
             enddo
          else
-         write(*,*) 'no allocation of mi,zi,znucl:ifld>nisp, ifld_lcs:',ifld_lcs,nispmx
+         write(iout,*) 'no allocation of mi,zi,znucl:ifld>nisp, ifld_lcs:',ifld_lcs,nispmx
          call xerrab('no allocation of mi,zi,znucl:ifld>nisp')
          endif
 
          if (ngsp .gt. nhgsp) then  ! impurity gas is present
             igsp_lcs = igsp_lcs + 1
             if (igsp_lcs.gt.ngspmx) then
-            write(*,*) 'igsp_lcs,ngsp:',igsp_lcs,ngsp
+            write(iout,*) 'igsp_lcs,ngsp:',igsp_lcs,ngsp
             call xerrab ('uenit:faulty input mg:z')
             endif
             mg(igsp_lcs) = mi(ifld_lcs)
@@ -1520,7 +1528,7 @@ c.... If the grid does not change, but restart from saved variables
                    up(ix,iy,ifld) = ups(ix,iy,ifld)
                    if (nis(ix,iy,ifld) <= 0.) then
                       call remark('*** Error: nis <= 0 ***')
-                      write (*,*) 'Error at ix=', ix,'  iy=',iy,' ifld=',ifld
+                      write(iout,*) 'Error at ix=', ix,'  iy=',iy,' ifld=',ifld
                       call xerrab("")
                    endif
                 enddo
@@ -1532,7 +1540,7 @@ c.... If the grid does not change, but restart from saved variables
                    ng(ix,iy,igsp) = ngs(ix,iy,igsp)
                    if (ngs(ix,iy,igsp) <= 0.) then
                       call remark('*** Error: ngs <= 0 ***')
-                      write (*,*) 'Error at ix=', ix,'  iy=',iy
+                      write(iout,*) 'Error at ix=', ix,'  iy=',iy
                       call xerrab("")
                    endif
                    lng(ix,iy,igsp) = log(ng(ix,iy,igsp))
@@ -1700,7 +1708,7 @@ c...  Check if any ion density is zero
           do ix = 0, nx+1
             if (ni(ix,iy,ifld) <= 0) then
               call remark('****** ERROR: ni <= 0 ******')
-              write(*,*) 'begins at ix,iy,ifld = ',ix,iy,ifld
+              write(iout,*) 'begins at ix,iy,ifld = ',ix,iy,ifld
               call xerrab("")
             endif
           enddo
@@ -1747,7 +1755,7 @@ c...  Check if any ion density is zero
         enddo
       enddo
 
-ccc      write(*,*)  'Just initialized psorc, etc.in ueinit; nisp = ',nisp
+ccc      write(iout,*)  'Just initialized psorc, etc.in ueinit; nisp = ',nisp
 
       do ifld = 1, nusp
          call s2fill (nx+2, ny+2, 0., fmixy(0,0,ifld), 1, nx+2)
@@ -1860,15 +1868,15 @@ c ... Enable Jac stencil comp if not parallel
       if (isjacstnlon == 1) then
         call domain_dc   ! comp Jacobian stencil ivl2gstnl
       endif
-      write(*,*) '******** Summary **********'
-      write(*,*) 'nisp',nisp
-      write(*,*) 'nhsp',nhsp
-      write(*,*) 'ngsp',ngsp
-      write(*,*) 'nzspt',nzspt
-      write(*,*)  'nusp',nusp
-      write(*,*) 'iigsp',iigsp
+      write(iout,*) '******** Summary **********'
+      write(iout,*) 'nisp',nisp
+      write(iout,*) 'nhsp',nhsp
+      write(iout,*) 'ngsp',ngsp
+      write(iout,*) 'nzspt',nzspt
+      write(iout,*)  'nusp',nusp
+      write(iout,*) 'iigsp',iigsp
 
-      write(*,*) '***************************'
+      write(iout,*) '***************************'
       return
       end
 c***** end of subroutine ueinit ****************************************
@@ -3453,7 +3461,7 @@ c_mpi      integer my_pe
 c ... Allocate full Jacobian for jacmap; warning of size
       call remark("*** CAUTION: allocating large jacfull(neq,neq)***")
       call gallot("Jacobian_full",0)
-      write (STDOUT,*) '*** Full Jacobian size is neq**2 = ', neq*neq
+      write(iout,*) '*** Full Jacobian size is neq**2 = ', neq*neq
 
 c ... Fill the full matrix with 1 wherever an elements might exist
       do iv = 1, neq
@@ -3479,7 +3487,7 @@ c_mpi      endif
 
 c ... Close file, and report file name.
       close(us)
-      write (STDOUT,*) ' Jacobian map in data file:  ', filename
+      write(iout,*) ' Jacobian map in data file:  ', filename
 
       return
       end
@@ -6463,11 +6471,11 @@ c_mpi         call MPI_BARRIER(uedgeComm, ierr)
            ifexmain = 1
            call allocate
            ifexmain = 0
-	   if (icall == 0) write(*,*) 'UEDGE ',uedge_ver
+	   if (icall == 0) write(iout,*) 'UEDGE ',uedge_ver
            icall = 1
          elseif (ismpion.eq.1 .and. icall==0) then
            call init_pll
-	   write(*,*) 'UEDGE version ',uedge_ver
+	   write(iout,*) 'UEDGE version ',uedge_ver
            icall = 1
          endif
 
@@ -6578,20 +6586,21 @@ c-----------------------------------------------------------------------
 *     This has been separated to make it easier to duplicate EXMAIN
 *     in parser code.
 
+            use Output 
             use Err_msg_out    ! errmsgflag,errunit
             use Dim            ! nx,ny,nisp,ngsp  in UEpar 
             use UEpar          ! label
 
       implicit none
-
       character*8 cdate, ctime, rtime, rdate, rmach
-
+      integer:: ComSize,Rank,ierror
 c  -- set output label --
 
 ccc  Commented out since Basis11 & Basis12 uses diff arguments
 ccc      call glbheadi(cdate,ctime,rtime,rdate,rmach)
 ccc      label = 'UEDGE CODE, run at '//rtime//' on '//rdate//
 ccc     .   ', machine '//rmach
+
 
 *  -- set flag and output unit for error messages --
 
@@ -7155,7 +7164,7 @@ c_mpi      uedgeComm = COMM
       npes = N_PES()
       mype = MY_PE()
       if (mype .eq. 0) then
-!         write (*, *) "set_uedgeComm: UEDGE has communicator, ", uedgeComm,
+!         write(iout, *) "set_uedgeComm: UEDGE has communicator, ", uedgeComm,
 !     . ", and ", npes, " processors on that."
       endif
 cpetsc      call PetscInitWrap()
@@ -7173,13 +7182,13 @@ c_mpi      integer(int4) :: ireturn
       integer :: lcomm
 !      Initialize MPI, Get NPES and MYPE
        if (hascomm==0) then
-! c_mpi         write(*,*) "Initializing MPI on rank ", mype, "."
+! c_mpi         write(iout,*) "Initializing MPI on rank ", mype, "."
 c_mpi         call MPI_Init(ireturn)
-! c_mpi         if(ireturn/=0) write(*,*) "ireturn=", ireturn
+! c_mpi         if(ireturn/=0) write(iout,*) "ireturn=", ireturn
          lcomm = 0
 c_mpi         lcomm = mpi_comm_world
          call set_uedgeComm(lcomm)
-! c_mpi         write(*,*) "MPI initialized on rank ", mype, "."
+! c_mpi         write(iout,*) "MPI initialized on rank ", mype, "."
        endif
       return
       end
@@ -7319,7 +7328,7 @@ c... ** End of subroutine uedge_reset -------------------- c
       enddo
       delx = 1./real(nxx-1)
       delt = courant*min(delx/vrzmax, 0.5*delx**2/drzmax)
-      write(*,*) 'delt = ',delt
+      write(iout,*) 'delt = ',delt
       dtdx = delt/delx
       delto = tend/real(ntim)
       ito = 1
