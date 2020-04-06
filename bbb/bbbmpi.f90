@@ -278,7 +278,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
                 write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
             endif
         endif
-        call MPI_barrier(MPI_COMM_WORLD,ierr)
+
             ! collect on the master proc
         if (MPIRank.eq.0) then
             if (MPIDebug.gt.0) then
