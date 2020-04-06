@@ -98,7 +98,9 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer:: ith,iv,nnz,i,iproc
     integer (kind=4) :: ierr
     character(len = 80) ::  filename
-
+    integer::iJacCol(1:nnzmxperproc)
+    real ::rJacElem(1:nnzmxperproc)
+    integer ::iJacRow(1:neq)
     !   Get the range of the iv index for each thread
     call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
 
@@ -137,7 +139,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     TimeBuild=gettime(sec4)
     call MPI_barrier(MPI_COMM_WORLD,ierr)
 
-    call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,MPIiJacCol,MPIrJacElem,MPIiJacRow,nnz)
+    call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
 
     TimeBuild=gettime(sec4)-TimeBuild
     if (MPIVerbose.gt.0) write(iout,*)'*MPI* Time to build jac:',TimeBuild
@@ -145,7 +147,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     call MPI_barrier(MPI_COMM_WORLD,ierr)
     !   collect jacobian ##############################################################
     TimeBuild=gettime(sec4)
-    call MPICollectBroadCastJacobian(MPIiJacRow,MPIiJacCol,MPIrJacElem,nnz)
+    call MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     TimeBuild=gettime(sec4)-TimeBuild
     if (MPIVerbose.gt.0) write(iout,*)'*MPI* Time to collect/broadcast jac:',TimeBuild
     !   end collect jacobian ##############################################################
