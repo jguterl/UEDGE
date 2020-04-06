@@ -34,9 +34,9 @@ ioutmpi           integer /6/ # Unit for stdout for common mpi write statements
 ***** MpiJacobian:
 MPIivmin(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 MPIivmax(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-MPIiJacRow(MPIneq) _integer #
-MPIiJacCol(nnzmxperproc) _integer #
-MPIrJacElem(nnzmxperproc) _real #
+#MPIiJacRow(MPIneq) _integer #
+#MPIiJacCol(nnzmxperproc) _integer #
+#MPIrJacElem(nnzmxperproc) _real #
 
 ***** OmpOptions:
 OMPAllocDebug integer /0/ #Print info on allocation and association of variables

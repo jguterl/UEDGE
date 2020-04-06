@@ -69,8 +69,8 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
-    use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian
-    use MPIJacobian,only:MPIiJacCol,MPIrJacElem,MPIiJacRow,MPIivmin,MPIivmax
+    use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank
+    use MPIJacobian,only:MPIivmin,MPIivmax
     use UEpar, only: svrpkg
     implicit none
     ! ... Input arguments:
@@ -113,9 +113,10 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     endif
 
 
-    MPIiJacCol(1:nnzmxperproc)=0
-    MPIrJacElem(1:nnzmxperproc)=0.0
-    MPIiJacRow(1:neq)=0
+    !iJacCol(1:nnzmxperproc)=0
+    !rJacElem(1:nnzmxperproc)=0.0
+    !iJacRow(1:neq)=0
+    !nnz=0
     if (MPIDebug.gt.0) then
         write(iout,*) '*MPI* Jacobian arrays set to zero'
     endif
@@ -137,15 +138,14 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     !   build jacobian ##############################################################
     TimeBuild=gettime(sec4)
-    call MPI_barrier(MPI_COMM_WORLD,ierr)
 
     call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
 
     TimeBuild=gettime(sec4)-TimeBuild
-    if (MPIVerbose.gt.0) write(iout,*)'*MPI* Time to build jac:',TimeBuild
+    if (MPIVerbose.gt.0) write(iout,*)'*MPI* Rank:',MPIRank ,'Time to build jac:',TimeBuild
     !   end build jacobian ##############################################################
-    call MPI_barrier(MPI_COMM_WORLD,ierr)
     !   collect jacobian ##############################################################
+    
     TimeBuild=gettime(sec4)
     call MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     TimeBuild=gettime(sec4)-TimeBuild
@@ -201,7 +201,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
     if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-TimeJacCalc
-
+    call MPI_barrier(MPI_COMM_WORLD,ierr)
     return
 end subroutine jac_calc_mpi
 !-----------------------------------------------------------------------
@@ -245,7 +245,8 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     Use Jacobian,only:nnzmx
 
     implicit none
-    integer nnzcumlocal(Nprocs),iproc,ith
+    integer:: nnzcumlocal(Nprocs),ith
+    integer(kind=4)::iproc,nnzmxperproclocal,mpineqlocal
     integer ,intent(in):: nnz
     integer,intent(in)::iJacCol(nnzmxperproc)
     integer,intent(in):: iJacRow(mpineq)
@@ -255,6 +256,9 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     real(kind=4) gettime
     real(kind=4) sec4, TimeJacCalc
     TimeCollect=gettime(sec4)
+    nnzmxperproclocal=nnzmxperproc
+    mpineqlocal=mpineq
+       call MPI_barrier(MPI_COMM_WORLD,ierr)
     ! First we collect data from the master proc (Mpirank=0)
     if (MPIDebug.gt.0) write(ioutmpi,*) 'Rank',MPIrank,'nnz-1:',nnz-1
     if (MPIRank.eq.0) then
@@ -264,16 +268,19 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         icsc(1:nnz-1)= iJacCol(1:nnz-1)
     endif
     ! Then we collect from each non-master process (MPIrank>0)
-    call MPI_barrier(MPI_COMM_WORLD,ierr)
+
     loopproc:do iproc=1,Nprocs-1
+    call MPI_barrier(MPI_COMM_WORLD,ierr)
         ith=iproc+1
-        write(iout,*) 'Rank',MPIrank,'/',Nprocs,':nnz=',nnz
         if (MPIRank.eq.iproc) then
             ! send to the master proc
-            CALL MPI_SSEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
-!            CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
-!            CALL MPI_SEND(iJacCol,nnzmxperproc,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
-!            CALL MPI_SEND(rJacElem,nnzmxperproc,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
+             if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank',MPIRAnk,' sending data to 0'
+            endif
+            CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,7,MPI_COMM_WORLD,ierr)
+            CALL MPI_SEND(iJacRow,mpineqlocal,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
+            CALL MPI_SEND(iJacCol,nnzmxperproclocal,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
+            CALL MPI_SEND(rJacElem,nnzmxperproclocal,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
             endif
@@ -283,16 +290,16 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
                 write(ioutmpi,*) '*MPI* Rank 0 getting data from:',iproc
             endif
             CALL MPI_RECV(nnz,1,MPI_INTEGER8,iproc,7,MPI_COMM_WORLD,req0,ierr)
-            !CALL MPI_RECV(iJacRow,mpineq,MPI_INTEGER8,iproc,9,MPI_COMM_WORLD,req1,ierr)
-            !CALL MPI_RECV(iJacCol,nnzmxperproc,MPI_INTEGER8,iproc,10,MPI_COMM_WORLD,req2,ierr)
-            !CALL MPI_RECV(rJacElem,nnzmxperproc,MPI_REAL8,iproc,11,MPI_COMM_WORLD,req3,ierr)
+            CALL MPI_RECV(iJacRow,mpineqlocal,MPI_INTEGER8,iproc,9,MPI_COMM_WORLD,req1,ierr)
+            CALL MPI_RECV(iJacCol,nnzmxperproclocal,MPI_INTEGER8,iproc,10,MPI_COMM_WORLD,req2,ierr)
+            CALL MPI_RECV(rJacElem,nnzmxperproclocal,MPI_REAL8,iproc,11,MPI_COMM_WORLD,req3,ierr)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank 0 got data from:',iproc, '; ivmin:ivmax=',MPIivmin(iproc),MPIivmax(iproc)
             endif
             CALL MPI_WAIT(req0, MPI_STATUS_IGNORE, ierr)
-!            CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
-!            CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
-!            CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
+            CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
+            CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
+            CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank 0 going next'
             endif
@@ -311,7 +318,9 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
             icsc(nnzcumlocal(ith-1)+1:nnzcumlocal(ith))=iJacCol(1:nnz-1)
 
         endif
-        call MPI_barrier(MPI_COMM_WORLD,ierr)
+        if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank:',MPIRank,' at end of loop'
+            endif
     enddo loopproc
 
     call MPI_barrier(MPI_COMM_WORLD,ierr)
@@ -320,15 +329,15 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         if (MPIVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcumlocal(Nprocs)
     endif
 
-
-
     call MPI_barrier(MPI_COMM_WORLD,ierr)
+
+  
     ! And now broadcast it to all the procs
     call MPI_BCAST(rcsc, nnzmx, MPI_REAL8, 0, MPI_COMM_WORLD, IERR)
     call MPI_BCAST(jcsc, mpineq+1, MPI_INTEGER8, 0, MPI_COMM_WORLD, IERR)
     call MPI_BCAST(icsc, nnzmx, MPI_INTEGER8, 0, MPI_COMM_WORLD, IERR)
 
-
+    call MPI_barrier(MPI_COMM_WORLD,ierr)
     TimeCollect=gettime(sec4)-TimeCollect
     if (MPIVerbose.gt.0) write(iout,*)'*MPI* Time to collect jac:',TimeCollect
 end subroutine MPICollectBroadCastJacobian
