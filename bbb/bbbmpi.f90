@@ -264,7 +264,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         icsc(1:nnz-1)= iJacCol(1:nnz-1)
     endif
     ! Then we collect from each non-master process (MPIrank>0)
-
+    call MPI_barrier(MPI_COMM_WORLD,ierr)
     loopproc:do iproc=1,Nprocs-1
         ith=iproc+1
         write(iout,*) 'Rank',iproc,'/',Nprocs,':nnz=',nnz
@@ -278,6 +278,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
                 write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
             endif
         endif
+        call MPI_barrier(MPI_COMM_WORLD,ierr)
             ! collect on the master proc
         if (MPIRank.eq.0) then
             if (MPIDebug.gt.0) then
