@@ -254,7 +254,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     real(kind=4) sec4, TimeJacCalc
     TimeCollect=gettime(sec4)
     ! First we collect data from the master proc (Mpirank=0)
-    if (MPIDebug.gt.0) write(ioutmpi,*) 'Rank',rank,'nnz-1:',nnz-1
+    if (MPIDebug.gt.0) write(ioutmpi,*) 'Rank',MPIrank,'nnz-1:',nnz-1
     if (MPIRank.eq.0) then
         nnzcumlocal(1)=nnz-1
         jcsc(MPIivmin(0):MPIivmax(0))= iJacRow(MPIivmin(0):MPIivmax(0))
