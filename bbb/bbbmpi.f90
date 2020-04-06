@@ -135,9 +135,8 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     !   build jacobian ##############################################################
     TimeBuild=gettime(sec4)
-    if (MPIDebug.gt.0) write(iout,*)'*MPI* Before barrier'
     call MPI_barrier(MPI_COMM_WORLD,ierr)
-    if (MPIDebug.gt.0) write(iout,*)'*MPI* After barrier'
+
     call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,MPIiJacCol,MPIrJacElem,MPIiJacRow,nnz)
 
     TimeBuild=gettime(sec4)-TimeBuild
@@ -268,14 +267,20 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         ith=iproc+1
         if (Rank.eq.iproc) then
             ! send to the master proc
-            CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
+            CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
             CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
             CALL MPI_SEND(iJacCol,nnzmxperproc,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
             CALL MPI_SEND(rJacElem,nnzmxperproc,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
+            if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
+            endif
         endif
             ! collect on the master proc
         if (Rank.eq.0) then
-            CALL MPI_RECV(nnz,1,MPI_INTEGER8,iproc,9,MPI_COMM_WORLD,req0,ierr)
+            if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank 0 getting data from:',iproc
+            endif
+            CALL MPI_RECV(nnz,1,MPI_INTEGER8,iproc,8,MPI_COMM_WORLD,req0,ierr)
             CALL MPI_RECV(iJacRow,mpineq,MPI_INTEGER8,iproc,9,MPI_COMM_WORLD,req1,ierr)
             CALL MPI_RECV(iJacCol,nnzmxperproc,MPI_INTEGER8,iproc,10,MPI_COMM_WORLD,req2,ierr)
             CALL MPI_RECV(rJacElem,nnzmxperproc,MPI_REAL8,iproc,11,MPI_COMM_WORLD,req3,ierr)
@@ -283,12 +288,14 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
             CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
             CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
             CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
-
+            if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank 0 got data from:',iproc
+            endif
 
             ! Now build the jacobian vector iteratively
             nnzcumlocal(ith)=nnzcumlocal(ith-1)+nnz-1
             if (MPIDebug.gt.0) then
-                write(ioutmpi,*) '*MPI* Rank:',rank,'nnz:',nnz, 'nnzcum:',nnzcumlocal(iproc)
+                write(ioutmpi,*) '*MPI* Rank:',iproc,'nnz:',nnz, 'nnzcum:',nnzcumlocal(ith)
             endif
             if (nnzcumlocal(ith).gt.nnzmx) then
                 write(iout,*) 'nnzcum=',nnzcumlocal(ith),'nnzmx=',nnzmx

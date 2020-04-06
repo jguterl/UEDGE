@@ -159,7 +159,7 @@ if petsc:
 
 if parallel:
     #library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
-    libraries = fcompiler.libs + ['mpich','mpichfort']
+    libraries = fcompiler.libs + ['mpich']
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:
