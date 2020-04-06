@@ -277,24 +277,24 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
             endif
-        endif
-
             ! collect on the master proc
-        if (MPIRank.eq.0) then
+        elseif (MPIRank.eq.0) then
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank 0 getting data from:',iproc
             endif
-            CALL MPI_RECV(nnz,1,MPI_INTEGER8,iproc,8,MPI_COMM_WORLD,req0,ierr)
+            CALL MPI_RECV(nnz,1,MPI_INTEGER8,iproc,7,MPI_COMM_WORLD,req0,ierr)
             !CALL MPI_RECV(iJacRow,mpineq,MPI_INTEGER8,iproc,9,MPI_COMM_WORLD,req1,ierr)
             !CALL MPI_RECV(iJacCol,nnzmxperproc,MPI_INTEGER8,iproc,10,MPI_COMM_WORLD,req2,ierr)
             !CALL MPI_RECV(rJacElem,nnzmxperproc,MPI_REAL8,iproc,11,MPI_COMM_WORLD,req3,ierr)
-
+            if (MPIDebug.gt.0) then
+                write(ioutmpi,*) '*MPI* Rank 0 got data from:',iproc, '; ivmin:ivmax=',MPIivmin(iproc),MPIivmax(iproc)
+            endif
             CALL MPI_WAIT(req0, MPI_STATUS_IGNORE, ierr)
 !            CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
 !            CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
 !            CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
             if (MPIDebug.gt.0) then
-                write(ioutmpi,*) '*MPI* Rank 0 got data from:',iproc, '; ivmin:ivmax=',MPIivmin(iproc),MPIivmax(iproc)
+                write(ioutmpi,*) '*MPI* Rank 0 going next'
             endif
 
             ! Now build the jacobian vector iteratively
