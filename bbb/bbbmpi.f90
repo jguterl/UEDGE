@@ -267,10 +267,10 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     call MPI_barrier(MPI_COMM_WORLD,ierr)
     loopproc:do iproc=1,Nprocs-1
         ith=iproc+1
-        write(iout,*) 'Rank',iproc,'/',Nprocs,':nnz=',nnz
+        write(iout,*) 'Rank',MPIrank,'/',Nprocs,':nnz=',nnz
         if (MPIRank.eq.iproc) then
             ! send to the master proc
-            CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
+            CALL MPI_SSEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
 !            CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
 !            CALL MPI_SEND(iJacCol,nnzmxperproc,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
 !            CALL MPI_SEND(rJacElem,nnzmxperproc,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
