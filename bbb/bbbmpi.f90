@@ -271,9 +271,9 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         if (MPIRank.eq.iproc) then
             ! send to the master proc
             CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
-            CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
-            CALL MPI_SEND(iJacCol,nnzmxperproc,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
-            CALL MPI_SEND(rJacElem,nnzmxperproc,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
+!            CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
+!            CALL MPI_SEND(iJacCol,nnzmxperproc,MPI_INTEGER8,0,10,MPI_COMM_WORLD,ierr)
+!            CALL MPI_SEND(rJacElem,nnzmxperproc,MPI_REAL8,0,11,MPI_COMM_WORLD,ierr)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank',iproc,'has sent data to 0'
             endif
@@ -289,9 +289,9 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
             !CALL MPI_RECV(rJacElem,nnzmxperproc,MPI_REAL8,iproc,11,MPI_COMM_WORLD,req3,ierr)
 
             CALL MPI_WAIT(req0, MPI_STATUS_IGNORE, ierr)
-            CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
-            CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
-            CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
+!            CALL MPI_WAIT(req1, MPI_STATUS_IGNORE, ierr)
+!            CALL MPI_WAIT(req2, MPI_STATUS_IGNORE, ierr)
+!            CALL MPI_WAIT(req3, MPI_STATUS_IGNORE, ierr)
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank 0 got data from:',iproc, '; ivmin:ivmax=',MPIivmin(iproc),MPIivmax(iproc)
             endif
@@ -356,19 +356,13 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         write(iout,*) '*MPI* Starting distribution of jacobian calculation'
     endif
 
-    loopproc: do iproc=0,Nprocs-1 !ith from 1 to Nthread, tid from 0 to Nthread-1
-        if (MPIrank.eq.iproc) then
+!    loopproc: do iproc=0,Nprocs-1 !ith from 1 to Nthread, tid from 0 to Nthread-1
+!        if (MPIrank.eq.iproc) then
             if (MPIDebug.gt.0) write(ioutmpi,*) '*MPI* Building jacobian on proc:',MPIrank
 
-            call LocalJacBuilder(MPIivmin(iproc),MPIivmax(iproc),neq, t, yl,yldot00,ml,mu,wk,&
-                iJacCol,rJacElem,iJacRow,iproc,nnz,nnzmxperproc,Nprocs)
-
-        endif
-    enddo loopproc
-
-
-    if (MPIDebug.gt.0) then
-        write(iout,*) '*MPI* End of parallel loop....'
-    endif
+            call LocalJacBuilder(MPIivmin(MPIrank),MPIivmax(MPIrank),neq, t, yl,yldot00,ml,mu,wk,&
+                iJacCol,rJacElem,iJacRow,MPIrank,nnz,nnzmxperproc,Nprocs)
+!        endif
+!    enddo loopproc
 
 end subroutine MPIJacBuilder

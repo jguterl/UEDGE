@@ -9,7 +9,7 @@ subroutine InitOMP()
     Use Jacobian,only:nnzmx
     Use Lsode, only:neq
     Use ParallelOptions,only:OMPParallelJac
-    
+
     implicit none
     integer:: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
     ! do the allocation for omp variables
@@ -61,8 +61,8 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian
     use OmpJacobian,only:iJacCol,rJacElem,iJacRow,ivmin,ivmax,nnz,nnzcum
-    use UEpar, only: svrpkg 
-    
+    use UEpar, only: svrpkg
+
     implicit none
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
@@ -71,7 +71,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real,intent(in)   :: yldot00(neq+2) ! right-hand sides evaluated at yl
     integer,intent(in):: ml, mu         ! lower and upper bandwidths
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
-    
+
     ! ... Output arguments:
     real,intent(out)   :: jac(nnzmx)     ! nonzero Jacobian elements
     integer,intent(out):: ja(nnzmx)   ! col indices of nonzero Jacobian elements
@@ -102,7 +102,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         enddo
     endif
 
-    nnz(1:Nthreads)=-1  
+    nnz(1:Nthreads)=-1
     nnzcum(1:Nthreads)=-1
     iJacCol(1:nnzmxperthread,1:Nthreads)=0
     rJacElem(1:nnzmxperthread,1:Nthreads)=0.0
@@ -126,19 +126,19 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         yldot_pert(iv) = 0.
     enddo
 
-    !   build jacobian ##############################################################  
+    !   build jacobian ##############################################################
     TimeBuild=gettime(sec4)
-    
+
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
 
     TimeBuild=gettime(sec4)-TimeBuild
     if (OMPVerbose.gt.0) write(iout,*)'*OMP* Time to build jac:',TimeBuild
-    !   end build jacobian ##############################################################    
+    !   end build jacobian ##############################################################
 
     !   collect jacobian ##############################################################
     TimeCollect=gettime(sec4)
     nnzcum(1)=nnz(1)-1
-    
+
     do ith=2,Nthreads
         nnzcum(ith)=nnzcum(ith-1)+nnz(ith)-1
     enddo
@@ -147,7 +147,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     write(iout,*) '*OMP* nnzcum:',nnzcum(1:Nthreads)
     endif
     if (OMPVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
-    
+
     if (nnzcum(Nthreads).gt.nnzmx) then
         call xerrab(' Problem: nnzcum > nnzmx...')
     endif
@@ -170,14 +170,14 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     if (OMPVerbose.gt.0) write(iout,*)'*OMP* Time to collect jac:',TimeCollect
     !   end collect jacobian ##############################################################
 
- 
+
     !   for Debug purpose
     if (WriteJacobian.eq.1) then
         write(filename,'(a,3i3,a)') "jac_omp_",ijac(ig),".txt"
         call jac_write(filename,neq, rcsc, icsc, jcsc)
     endif
-    
-    if (OMPCheckNaN.gt.0) then    
+
+    if (OMPCheckNaN.gt.0) then
         do i=1,nnzmx
             if (isnan(rcsc(i))) then
                 write(iout,*) 'rcsc is NaN at i=',i,rcsc(i)
@@ -192,7 +192,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
             endif
         enddo
     endif
-    
+
     !   Convert Jacobian from compressed sparse column to compressedsparse row format.
     time1=gettime(sec4)
     call csrcsc (neq, 1, 1, rcsc, icsc, jcsc, jac, ja, ia)
@@ -219,7 +219,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
     if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-TimeJacCalc
-    
+
     return
 end subroutine jac_calc_omp
 !-----------------------------------------------------------------------
@@ -231,7 +231,7 @@ subroutine SplitIndex(neq,Nthreads,ivmin,ivmax)
 
     Nsize=neq/Nthreads
     R=MOD(neq, Nthreads)
-    
+
     if (Nthreads.gt.1) then
         if (R.eq.0) then
             do i=1,Nthreads
@@ -250,7 +250,7 @@ subroutine SplitIndex(neq,Nthreads,ivmin,ivmax)
         ivmin(Nthreads)=1
         ivmax(Nthreads)=neq
     endif
-    
+
 end subroutine SplitIndex
 !-----------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
@@ -259,7 +259,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
-    
+
     implicit none
     integer,intent(inout)::nnz(Nthreads)
     integer,intent(in):: neq      ! total number of equations (all grid points)
@@ -282,7 +282,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
 
 
     if (OMPDebug.gt.0)write(iout,*) '*OMP* Copying data....'
-    
+
     if (OMPCopyArray.gt.0) then
         if (OMPDebug.gt.0)write(iout,*) '*OMP* Copying array....'
         call OmpCopyPointerbbb
@@ -311,7 +311,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     endif
     tid=-1
     nnzlocal=-10000
-    ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as   
+    ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
     !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
     !$omp& firstprivate(nnzmxperthreadcopy,nthreadscopy,iJacRowCopy,iJacColCopy,rJacElemCopy)
@@ -332,9 +332,9 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
 
     enddo loopthread
     !$omp  END PARALLEL DO
-    
+
     nnz(1:Nthreads)=nnzcopy(1:Nthreads) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
-    
+
     if (OMPDebug.gt.0) then
         write(iout,*) '*OMP* End of parallel loop....'
     endif
@@ -363,10 +363,10 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
     use OmpOptions,only:iidebugprint,ivdebugprint
     use Jacobian_csc,only:yldot_pert
-    
+
     implicit none
-    integer,intent(in):: ith,nnzmxperthread,nthreads,ivmin,ivmax,neq 
-    integer,intent(inout)::nnz 
+    integer,intent(in):: ith,nnzmxperthread,nthreads,ivmin,ivmax,neq
+    integer,intent(inout)::nnz
     real,intent(in):: t           ! physical time
     real,intent(inout) ::yl(*)       ! dependent variables
     integer,intent(inout)::iJacCol(nnzmxperthread),iJacRow(neq)
@@ -439,7 +439,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
 
         !yl(iv) = yold - dyl    ! for 2nd order Jac
         !call pandf1 (xc, yc, iv, neq, t, yl, yldot0) ! for 2nd order Jac
-        
+
         !Calculate possibly nonzero Jacobian elements for this variable,
         !and store nonzero elements in compressed sparse column format.
         iJacRow(iv) = nnz      ! sets index for first Jac. elem. of var. iv
@@ -447,7 +447,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
         loopii: do ii = ii1, ii2
             jacelem = (wk(ii) - yldot00(ii)) / dyl
             !jacelem = (wk/(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
-            
+
             !Add diagonal 1/dt for nksol
             ifdiagonal:if (((svrpkg.eq."nksol") .or. (svrpkg.eq."petsc")) .and. iv.eq.ii) then
                 if (iseqalg(iv)*(1-isbcwdt).eq.0) then
@@ -465,7 +465,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
                 if (iv.eq.ii .and. yl(neq+1).eq.1) jacelem = jacelem - nufak  !omit .and. iseqalg(iv).eq.0)
             !     .                   jacelem = jacelem - nufak*suscal(iv)/sfscal(iv)
             endif
-            
+
             ! Debug
             debug: if (ii==iidebugprint.and.iv==ivdebugprint) then
                 tid=omp_get_thread_num()
@@ -498,7 +498,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
                 write(iout,*) 'irstop = ', irstop, ', icstop = ', icstop
                 call xerrab("")
             endif check
-            
+
         enddo loopii
 
         ! ... Restore dependent variable and plasma variables near its location.
@@ -558,32 +558,32 @@ end subroutine WriteArrayInteger
 !JG This routine was created with the OMPDebugger.py script, which also contains methods to analyze the outpout of this routine.
 !JG This routine can be called within the jacobian constructor to determine which variables behave differenlty in serial vs openmp jacobian calculations
       subroutine DebugHelper(FileName)
-      Use Bcond 
-      Use Cfric 
-      Use Coefeq 
-      Use Comflo 
-      Use Comgeo 
-      Use Compla 
-      Use Comtra 
-      Use Conduc 
-      Use Dim 
-      Use Gradients 
-      Use Imprad 
-      Use Locflux 
-      Use MCN_sources 
-      Use PNC_params 
-      Use Rhsides 
-      Use Save_terms 
-      Use Selec 
-      Use Time_dep_nwt 
-      Use Timing 
-      Use UEpar 
-      Use Wkspace 
-      
+      Use Bcond
+      Use Cfric
+      Use Coefeq
+      Use Comflo
+      Use Comgeo
+      Use Compla
+      Use Comtra
+      Use Conduc
+      Use Dim
+      Use Gradients
+      Use Imprad
+      Use Locflux
+      Use MCN_sources
+      Use PNC_params
+      Use Rhsides
+      Use Save_terms
+      Use Selec
+      Use Time_dep_nwt
+      Use Timing
+      Use UEpar
+      Use Wkspace
+
       implicit none
       integer:: iunit
       character(len = *) ::  filename
-      
+
       open (newunit = iunit, file = trim(filename))
       write(iunit,*) "alfneo"
       call WriteArrayReal(alfneo,size(alfneo),iunit)
