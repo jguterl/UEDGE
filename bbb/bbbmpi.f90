@@ -13,7 +13,7 @@
 !end subroutine
 
 subroutine InitMPI
-    Use MpiOptions,only:Nprocs,ComSize,Rank,mpilenpfac,mpineq,MPIVerbose,nnzmxperproc
+    Use MpiOptions,only:Nprocs,ComSize,MPIRank,mpilenpfac,mpineq,MPIVerbose,nnzmxperproc
     Use ParallelOptions, only: MPIParallelJac
     use mpi
     use Output
@@ -26,12 +26,12 @@ subroutine InitMPI
 
     ! check the size of the common world
     ifparalleljac: if (MPIParallelJac.eq.1) then
-    write(iout,'(a,i3)') '*MPI* Init MPI'
+    write(iout,*) '*MPI* Init MPI'
     call MPI_COMM_SIZE(MPI_COMM_WORLD, iComSize, ierr)
     call MPI_COMM_RANK(MPI_COMM_WORLD, iRank, ierr)
-    rank=irank       ! irank is integer(kind=4)
+    MPIrank=irank       ! irank is integer(kind=4)
     ComSize=iComSize !
-            write(iout,'(a,i3)') '*MPI* MPI actived'
+            write(iout,'(a,i3)') '*MPI* MPI actived with ComSize=',ComSize
             if (Nprocs.gt.ComSize) then
                 write(iout,*) '*MPI* Warning: # processors requested is larger the max number of processors available. Nprocmax:'&
                     ,ComSize
@@ -236,7 +236,7 @@ end subroutine MPISplitIndex
 subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     use Output
     use mpi
-    use MpiOptions,only:Nprocs,Rank,mpineq,nnzmxperproc,MPIVerbose,MPIDebug,ioutmpi
+    use MpiOptions,only:Nprocs,MpiRank,mpineq,nnzmxperproc,MPIVerbose,MPIDebug,ioutmpi
     use MpiJacobian,only: MPIivmin,MPIivmax
     use Jacobian_csc,only:rcsc,jcsc,icsc
     use LSode,only:neq
@@ -253,19 +253,19 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     real(kind=4) gettime
     real(kind=4) sec4, TimeJacCalc
     TimeCollect=gettime(sec4)
-    ! First we collect data from the master proc (rank=0)
+    ! First we collect data from the master proc (Mpirank=0)
     if (MPIDebug.gt.0) write(ioutmpi,*) 'Rank',rank,'nnz-1:',nnz-1
-    if (Rank.eq.0) then
+    if (MPIRank.eq.0) then
         nnzcumlocal(1)=nnz-1
         jcsc(MPIivmin(0):MPIivmax(0))= iJacRow(MPIivmin(0):MPIivmax(0))
         rcsc(1:nnz-1)= rJacElem(1:nnz-1)
         icsc(1:nnz-1)= iJacCol(1:nnz-1)
     endif
-    ! Then we collect from each non-master process (rank>0)
+    ! Then we collect from each non-master process (MPIrank>0)
 
     loopproc:do iproc=1,Nprocs-1
         ith=iproc+1
-        if (Rank.eq.iproc) then
+        if (MPIRank.eq.iproc) then
             ! send to the master proc
             CALL MPI_SEND(nnz,1,MPI_INTEGER8,0,8,MPI_COMM_WORLD,ierr)
             CALL MPI_SEND(iJacRow,mpineq,MPI_INTEGER8,0,9,MPI_COMM_WORLD,ierr)
@@ -276,7 +276,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
             endif
         endif
             ! collect on the master proc
-        if (Rank.eq.0) then
+        if (MPIRank.eq.0) then
             if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank 0 getting data from:',iproc
             endif
@@ -309,7 +309,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     enddo loopproc
 
     call MPI_barrier(MPI_COMM_WORLD,ierr)
-    if (Rank.eq.0) then
+    if (MPIRank.eq.0) then
         jcsc(neq+1) = nnzcumlocal(Nprocs)+1
         if (MPIVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcumlocal(Nprocs)
     endif
@@ -328,7 +328,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
 end subroutine MPICollectBroadCastJacobian
 !-----------------------------------------------------------------------
 subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    use MPIOptions,only:MPIDebug,Nprocs,nnzmxperproc,Rank,ioutmpi
+    use MPIOptions,only:MPIDebug,Nprocs,nnzmxperproc,MPIRank,ioutmpi
     use MPIJacobian, only:MPIivmin,MPIivmax
     use Output
     Use Jacobian,only:nnzmx
@@ -352,8 +352,8 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     endif
 
     loopproc: do iproc=0,Nprocs-1 !ith from 1 to Nthread, tid from 0 to Nthread-1
-        if (rank.eq.iproc) then
-            if (MPIDebug.gt.0) write(ioutmpi,*) '*MPI* Building jacobian on proc:',rank
+        if (MPIrank.eq.iproc) then
+            if (MPIDebug.gt.0) write(ioutmpi,*) '*MPI* Building jacobian on proc:',MPIrank
 
             call LocalJacBuilder(MPIivmin(iproc),MPIivmax(iproc),neq, t, yl,yldot00,ml,mu,wk,&
                 iJacCol,rJacElem,iJacRow,iproc,nnz,nnzmxperproc,Nprocs)

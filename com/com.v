@@ -19,7 +19,7 @@ MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel 
 OMPMPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 
 ***** MpiOptions:
-Rank integer /0/ # Rank of the processor
+MPIRank integer /0/ # Rank of the processor
 ComSize integer /1/ # Size of the common world
 MPIDebug integer /0/ #Print debug info for omp constructs
 MPIVerbose integer /1/ #Print info for omp jacobian calculation
