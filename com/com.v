@@ -53,11 +53,14 @@ OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadpri
 OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
-
+OMPIsCalcWeighted integer /0/ #
+OMPIsLoadOptimized integer /0/ #
 ***** OmpJacobian:
 ivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 ivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-iJacRow(ompneq,Nthreads) _integer #
+OMPweight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
+OMPTimeLocalJac(1:Nthreads)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when IsLoadOptimized=1
+iJacRow(ompneq,Nthreads) _integer  #
 iJacCol(nnzmxperthread,Nthreads) _integer #
 rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer

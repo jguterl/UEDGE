@@ -26,7 +26,7 @@ except:
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
 machine = sys.platform
-debug = 1
+debug = 0
 fcomp = 'mpif90'
 parallel = 1
 petsc = 0
