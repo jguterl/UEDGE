@@ -41,15 +41,17 @@ subroutine InitMPI
             if (Nprocs.le.0) then
                 call xerrab('Nprocs must be >0')
             endif
-            if (MPIVerbose.gt.0) write(iout,'(a,i3)') '**** Number of procs for MPI calculations:',Nprocs
+            if (MPIVerbose.gt.0) write(iout,'(a,i3)') '*MPI* Number of procs for MPI calculations:',Nprocs
 
         if (Nprocs.gt.1) then
             nnzmxperproc=ceiling(real(nnzmx)/real(Nprocs-1))*mpilenpfac
         else
             nnzmxperproc=nnzmx
         endif
+        if (MPIVerbose.gt.0) write(iout,'(a,i10)') '*MPI* nnzmxperproc:',nnzmxperproc
         mpineq=neq
         call gchange('MpiJacobian',0)
+        if (MPIVerbose.gt.0) write(iout,'(a)') '*MPI*  MPI variables allocated'
     else ifparalleljac
         write(iout,'(a)') '*MPI* MPI not actived'
     endif ifparalleljac
@@ -70,7 +72,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
     use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank
-    use MPIJacobian,only:MPIivmin,MPIivmax
+    use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow
     use UEpar, only: svrpkg
     implicit none
     ! ... Input arguments:
@@ -98,9 +100,10 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer:: ith,iv,nnz,i,iproc
     integer (kind=4) :: ierr
     character(len = 80) ::  filename
-    integer::iJacCol(1:nnzmxperproc)
-    real ::rJacElem(1:nnzmxperproc)
-    integer ::iJacRow(1:neq)
+    !integer::iJacCol(1:nnzmxperproc)
+    !real ::rJacElem(1:nnzmxperproc)
+    !integer ::iJacRow(1:neq)
+    if (MPIDebug.gt.0) write(*,*) '*MPI* Starting jac_calc_mpi'
     !   Get the range of the iv index for each thread
     call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
 
@@ -139,7 +142,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   build jacobian ##############################################################
     TimeBuild=gettime(sec4)
 
-    call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
+    call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,MPIiJacCol,MPIrJacElem,MPIiJacRow,nnz)
 
     TimeBuild=gettime(sec4)-TimeBuild
     if (MPIVerbose.gt.0) write(iout,*)'*MPI* Rank:',MPIRank ,'Time to build jac:',TimeBuild
@@ -147,7 +150,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   collect jacobian ##############################################################
     
     TimeBuild=gettime(sec4)
-    call MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
+    call MPICollectBroadCastJacobian(MPIiJacRow,MPIiJacCol,MPIrJacElem,nnz)
     TimeBuild=gettime(sec4)-TimeBuild
     if (MPIVerbose.gt.0) write(iout,*)'*MPI* Time to collect/broadcast jac:',TimeBuild
     !   end collect jacobian ##############################################################
@@ -321,9 +324,9 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
         if (MPIDebug.gt.0) then
                 write(ioutmpi,*) '*MPI* Rank:',MPIRank,' at end of loop'
             endif
+        call MPI_barrier(MPI_COMM_WORLD,ierr)
     enddo loopproc
 
-    call MPI_barrier(MPI_COMM_WORLD,ierr)
     if (MPIRank.eq.0) then
         jcsc(neq+1) = nnzcumlocal(Nprocs)+1
         if (MPIVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcumlocal(Nprocs)

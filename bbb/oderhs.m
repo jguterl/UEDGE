@@ -1351,7 +1351,7 @@ c     factorization routine sgbco from Linpack/SLATEC.
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
-      if (ShowTime.gt.0) write(iout,*) 'Time in premath banded:',TimePreMeth-gettime(sec4)
+      if (ShowTime.gt.0) write(iout,*) 'Time in premath banded:',gettime(sec4)-TimePreMeth
 c ... Save condition number.
          i = ijac(ig)
          if (i .le. 300) rconds(i,ig) = rcond

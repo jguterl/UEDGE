@@ -25,7 +25,7 @@ class UEDGESimulation(object):
             exec('self.' + pkg + '=' + pkg,globals(),locals())
         
             
-    def ReadInput(self,FileName:str):
+    def ReadInput(self,FileName:str,Verbose:bool=True):
         for pkg in self.ListPkg:
             exec('from uedge import '+pkg)
         print('### Looking for input file:',FileName)
@@ -49,7 +49,8 @@ class UEDGESimulation(object):
         count=1
         for L in Lines:
             if not L.strip().startswith('#'):
-                print('{} : {}'.format(count,L))
+                if Verbose:
+                    print('{} : {}'.format(count,L))
                 exec(L)
             count=count+1
             
@@ -367,8 +368,8 @@ Sim=UEDGESimulation()
 def RunTime(*arg,**kwargs):
     Sim.RunTime(*arg,**kwargs)
 
-def ReadInput(FileName):
-    Sim.ReadInput(FileName)
+def ReadInput(FileName,Verbose=False):
+    Sim.ReadInput(FileName,Verbose=Verbose)
     
 def ir():
     Sim.InitRun()
