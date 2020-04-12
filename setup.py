@@ -27,7 +27,8 @@ except:
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
 machine = sys.platform
 debug = 0
-fcomp = 'mpif90'
+fcomp = None
+#'mpif90'
 parallel = 1
 petsc = 0
 
@@ -55,7 +56,7 @@ if petsc == 1 and os.getenv('PETSC_ARCH') == None:
 sys.argv = ['setup2.py']+args
 fcompiler = FCompiler(machine=machine,
                       debug=debug,
-                      fcompname='mpif90',fcompexec='mpif90')
+                      fcompname=fcomp)
 print('Compiler:',fcompiler.fcompname)
 
 class uedgeBuild(build):
@@ -159,7 +160,7 @@ if petsc:
 
 if parallel:
     #library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
-    libraries = fcompiler.libs + ['mpich']
+    libraries = fcompiler.libs
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:
@@ -200,7 +201,7 @@ setup(name="uedge",
                              libraries=libraries,
                              define_macros=define_macros,
                              extra_objects=uedgeobjects,
-                             extra_link_args=['-fopenmp','-g','-O3','-DFORTHON'] +
+                             extra_link_args=['-g','-O3','-DFORTHON'] +
                              fcompiler.extra_link_args,
                              extra_compile_args=fcompiler.extra_compile_args+['-g']
                              )],

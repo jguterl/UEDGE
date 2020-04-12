@@ -369,8 +369,11 @@ c     if necessary.
 
 cJG    Init OMP variables after assignment of nnzmx, which is used in InitOMP
         call InitOMP()
+c!ifdef MPI
         call InitMPI()
-      if (premeth .eq. 'ilut') then
+c!endif
+
+         if (premeth .eq. 'ilut') then
          lwp = nnzmx + lenplufac*neq   # extra space for fill in
          lenplumx = lwp
          liwp = max(lwp+neq, nnzmx+neq+1)   # see jac_lu_decomp

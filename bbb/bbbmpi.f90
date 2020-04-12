@@ -11,7 +11,7 @@
 !          if
 !          then open(newunit='log)
 !end subroutine
-
+#ifdef MPI
 subroutine InitMPI
     Use MpiOptions,only:Nprocs,ComSize,MPIRank,mpilenpfac,mpineq,MPIVerbose,nnzmxperproc
     Use ParallelOptions, only: MPIParallelJac
@@ -379,3 +379,4 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
 !    enddo loopproc
 
 end subroutine MPIJacBuilder
+#endif

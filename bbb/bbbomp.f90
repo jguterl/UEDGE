@@ -30,10 +30,7 @@ subroutine InitOMP()
             if (OMPVerbose.gt.0) write(iout,'(a,i3)') '**** Number of threads for omp calculations:',Nthreads
         endif
         !$omp END parallel
-#else
-        Nthreads=1
-        write(iout,'(a,i3)') '*OMP* OMP not actived'
-#endif
+
         if (Nthreads.gt.1) then
             nnzmxperthread=ceiling(real(nnzmx)/real(Nthreads-1))*omplenpfac
         else
@@ -43,7 +40,12 @@ subroutine InitOMP()
         call gchange('OmpJacobian',0)
     else ifparalleljac
         write(iout,'(a)') '*OMP* OMP not actived'
-    endif ifparalleljac
+     endif ifparalleljac
+
+#else
+      Nthreads=1
+      write(iout,'(a,i3)') '*OMP* OMP not actived'
+#endif
 
 end subroutine InitOMP
 

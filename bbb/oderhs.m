@@ -4432,9 +4432,8 @@ c *** Input and output variables
 
 c *** Local variables
       integer iy, ix, ix1, ix2, iy1, iy2
-      integer omp_get_thread_num
       real fs0, signps
-       if (omp_get_thread_num().ne.0) call xerrab('non-master omp thread not supposed to run here')
+ 
       fs0 = 1. - 4*fsprd    # fraction to central cell
 
             do iy = j2, j5
