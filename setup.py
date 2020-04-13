@@ -200,7 +200,7 @@ setup(name="uedge",
                              libraries=libraries,
                              define_macros=define_macros,
                              extra_objects=uedgeobjects,
-                             extra_link_args=['-fopenmp','-g','-O3','-DFORTHON'] +
+                             extra_link_args=['-fopenmp','-pg','-g','-O3','-DFORTHON'] +
                              fcompiler.extra_link_args,
                              extra_compile_args=fcompiler.extra_compile_args+['-g']
                              )],

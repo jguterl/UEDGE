@@ -16,7 +16,8 @@ VerboseJac         integer /1/
 ***** ParallelOptions:
 OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
-OMPMPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+ParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+
 
 ***** MpiOptions:
 MPIRank integer /0/ # Rank of the processor
@@ -30,6 +31,8 @@ MPIneq  integer # number of equation (=neq)
 Nprocs          integer /64/ # Number of threads to be used to calculate the Jacobian
 MPICheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 ioutmpi           integer /6/ # Unit for stdout for common mpi write statements
+MPIIsCalcWeighted integer /0/ #
+MPIIsLoadOptimized integer /1/ #
 
 ***** MpiJacobian:
 MPIivmin(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
@@ -37,6 +40,9 @@ MPIivmax(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(i
 MPIiJacRow(MPIneq) _integer #
 MPIiJacCol(nnzmxperproc) _integer #
 MPIrJacElem(nnzmxperproc) _real #
+MPIweight(0:Nprocs-1)  _real  # weight for load distribution of jacobian calculation among threads
+MPITimeLocalJac(0:Nprocs-1)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when IsLoadOptimized=1
+
 
 ***** OmpOptions:
 OMPAllocDebug integer /0/ #Print info on allocation and association of variables
@@ -46,21 +52,22 @@ OMPCopyDebug integer /0/ #Print debug info for omp constructs
 iidebugprint      integer /-1/ # index ii of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. iv is determined by ivdebugprint
 ivdebugprint      integer /-1/ # index iv of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. ii is determined by iidebugprint
 WriteJacobian     integer /0/ # Write jacobian in an ascii text file
-omplenpfac       integer /1/ # Factor to increase nnzmxperthread
+OMPlenpfac       integer /1/ # Factor to increase nnzmxperthread
 nnzmxperthread   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
-ompneq  integer # number of equation (=neq)
-OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation
-OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation
+OMPneq  integer # number of equation (=neq)
+OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
+OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 OMPIsCalcWeighted integer /0/ #
 OMPIsLoadOptimized integer /1/ #
+
 ***** OmpJacobian:
 ivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 ivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPweight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
 OMPTimeLocalJac(1:Nthreads)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when IsLoadOptimized=1
-iJacRow(ompneq,Nthreads) _integer  #
+iJacRow(OMPneq,Nthreads) _integer  #
 iJacCol(nnzmxperthread,Nthreads) _integer #
 rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer

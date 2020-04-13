@@ -367,9 +367,11 @@ c     if necessary.
         nnzmx = lenpfac*neq
       endif
 
-cJG    Init OMP variables after assignment of nnzmx, which is used in InitOMP
-        call InitOMP()
-        call InitMPI()
+
+#ifdef PARALLEL
+cJG    Init OMP/MPI/Hybrid variables after assignment of nnzmx, which is used in InitOMP/InitMPI/InitHybrid
+        call InitParallel
+#endif
       if (premeth .eq. 'ilut') then
          lwp = nnzmx + lenplufac*neq   ! extra space for fill in
          lenplumx = lwp

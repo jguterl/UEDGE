@@ -1,4 +1,4 @@
-DEBUG = -v --cargs "-fopenmp" --fargs "-fmax-errors=15 -Ofast -DHAS_READLINE -DFORTHON -cpp -fopenmp  -Wconversion -fimplicit-none"
+DEBUG = -v --cargs "-pg" --fargs "-g -pg -fmax-errors=15 -Ofast -DHAS_READLINE -DFORTHON -cpp -fopenmp  -Wconversion -fimplicit-none"
 #-fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=snan "  
 #  " -g #--fargs "-C=array"
  #--fargs "-CB -traceback" #-Wall -Wextra -Warray-temporaries

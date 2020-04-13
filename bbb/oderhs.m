@@ -1337,7 +1337,7 @@ c ... Convert compressed sparse row to banded format and use exact
 c     factorization routine sgbco from Linpack/SLATEC.
       if (VerboseCall.gt.0) write(iout,*) '**************** calling jac_lu_decomp ********************'
       if (premeth .eq. 'banded') then
-      TimePreMeth=gettime(sec4)
+              TimePreMeth=gettime(sec4)
          lowd = 2 * lbw + ubw + 1
          call csrbnd (neq, jac, ja, ia, 0, wp, lowd, lowd,
      .                lbw, ubw, ierr)
@@ -1351,7 +1351,7 @@ c     factorization routine sgbco from Linpack/SLATEC.
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
-      if (ShowTime.gt.0) write(iout,*) 'Time in premath banded:',gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.0) write(iout,*) 'Time in premeth banded:',gettime(sec4)-TimePreMeth
 c ... Save condition number.
          i = ijac(ig)
          if (i .le. 300) rconds(i,ig) = rcond
@@ -1389,12 +1389,12 @@ c ... Use incomplete factorization routine ilut from SparsKit.
      .)
             call xerrab("")
          endif
-      if (ShowTime.gt.0) write(iout,*) 'Time in premath ilut:',TimePreMeth-gettime(sec4)
+      if (ShowTime.gt.0) write(iout,*) 'Time in premeth ilut:',gettime(sec4)-TimePreMeth
 c ... Use incomplete factorization routine precond5 from INEL.
 c     SparsKit routines are used in preliminary steps to convert to
 c     diagonal format.
       elseif (premeth .eq. 'inel') then
-
+      TimePreMeth=gettime(sec4)
 c ... Get the number of nonzero diagonals and the maximum in LU.
          call infdia (neq, ja, ia, iwkd1, ndiag)
          if (ndiag .gt. ndiagmx) then
@@ -1418,6 +1418,7 @@ c ... Finally, calculate approximate LU decomposition.
          tsmatfac = gettime(sec4)
          call precond5 (neq, ndiag, ndiagm, adiag, wp, rwk2, rwk1,
      .                  iwk3, iwk2, siginel, fmuinel, iwp(3))
+      if (ShowTime.gt.0) write(iout,*) 'Time in premeth inel:',gettime(sec4)-TimePreMeth
       endif
 
 c ... Accumulate cpu time spent here.
@@ -1988,7 +1989,7 @@ c ... Common blocks:
                           # isuponxy,isteonxy,istionxy,isngonxy,isphionxy
       Use(Jac_work_arrays) # iwwp,wwp,liwp,lwp  # diagnostic arrays in this sub
       Use(Verbose)
-      Use(ParallelOptions)
+      Use(ParallelOptions),only:ParallelJac
 
 c ... Local variables:
       real tp
@@ -2018,15 +2019,9 @@ c ... Call pandf to set terms with yl(neq+1) flag on for Jacobian
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-      if (OMPParallelJac.gt.0 .and.MPIParallelJac.eq.0) then
-      call jac_calc_omp (neq, tp, yl, f0, lbw, ubw, wk,
+      if (ParallelJac.eq.1) then
+      call jac_calc_parallel (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
-      elseif (OMPParallelJac.eq.0 .and.MPIParallelJac.gt.0) then
-            call jac_calc_mpi (neq, tp, yl, f0, lbw, ubw, wk,
-     .               nnzmx, jac, jacj, jaci)
-      elseif (OMPParallelJac.gt.1 .and.MPIParallelJac.gt.0) then
-c            call jac_mpiomp (neq, tp, yl, f0, lbw, ubw, wk,
-c     .               nnzmx, jac, jacj, jaci)
       else
       call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
@@ -2423,15 +2418,9 @@ c ... Calculate right-hand sides at unperturbed values of variables.
 c ... Calculate Jacobian matrix.
       tp = 0.
 
-            if (OMPParallelJac.gt.0 .and.MPIParallelJac.eq.0) then
-      call jac_calc_omp (neq, tp, yl, yldot0, lbw, ubw, wk,
+      if (ParallelJac.eq.1) then
+      call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
-      elseif (OMPParallelJac.eq.0 .and.MPIParallelJac.gt.0) then
-            call jac_calc_mpi (neq, tp, yl, yldot0, lbw, ubw, wk,
-     .               nnzmx, jac, jacj, jaci)
-      elseif (OMPParallelJac.gt.1 .and.MPIParallelJac.gt.0) then
-c            call jac_mpiomp (neq, tp, yl, yldot0, lbw, ubw, wk,
-c     .               nnzmx, jac, jacj, jaci)
       else
       call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
