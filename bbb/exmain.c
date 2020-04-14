@@ -24,7 +24,7 @@ static struct sigaction act,oact;
 static sigjmp_buf ev;
 
 
-/* 
+/*
     Handler for SIGINT signal
 */
 void int_handler() {
@@ -34,11 +34,11 @@ void int_handler() {
    printf("or a single line to be evaluated by Python.\n");
    while(1){
 #ifdef HAS_READLINE
-       ret = readline("RDebug>>> ");
+       ret = readline("Debug>>> ");
        if(ret == (char *)NULL)return;
-       add_history(ret); 
-       strncpy(mymyline,ret,sizeof(mymyline)-1); 
-       free(ret); 
+       add_history(ret);
+       strncpy(mymyline,ret,sizeof(mymyline)-1);
+       free(ret);
 #else
        printf("Debug>>> ");
        ret = fgets(mymyline,150,stdin);
@@ -63,13 +63,13 @@ void int_handler() {
           sigaction(SIGINT,&act,NULL);
        }
    }
-   
+
 }
 #endif
 
 
 
-/* FORTHON is defined by the Python build. This exmain does nothing when 
+/* FORTHON is defined by the Python build. This exmain does nothing when
    compiled for the basis version of the code, it just drops through to
    the Fortran routine.  */
 
@@ -87,7 +87,7 @@ void exmain_() {
        sigaction(SIGINT,&oact,NULL);
        return;
    }
-   
+
 
 /* setup to catch SIGINT and save the previous handler to be restored
    on return */
@@ -100,8 +100,8 @@ void exmain_() {
 
    PyRun_SimpleString("from uedge import bbb");
    PyRun_SimpleString("bbb.exmain_aborted = False");
-   
-   
+
+
 
 #endif
 
@@ -111,7 +111,7 @@ void exmain_() {
 #if defined(FC_FUNC)
    FC_FUNC(exmain_f, EXMAIN_F)();
 #else
-   exmain_f_(); 
+   exmain_f_();
 #endif
 #ifdef FORTHON
    sigaction(SIGINT,&oact,NULL);

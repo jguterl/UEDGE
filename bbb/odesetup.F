@@ -367,11 +367,9 @@ c     if necessary.
         nnzmx = lenpfac*neq
       endif
 
-
-#ifdef PARALLEL
 cJG    Init OMP/MPI/Hybrid variables after assignment of nnzmx, which is used in InitOMP/InitMPI/InitHybrid
         call InitParallel
-#endif
+
       if (premeth .eq. 'ilut') then
          lwp = nnzmx + lenplufac*neq   ! extra space for fill in
          lenplumx = lwp
@@ -6590,6 +6588,7 @@ c-----------------------------------------------------------------------
 
             use Output 
             use Err_msg_out    ! errmsgflag,errunit
+            use Dim            ! nx,ny,nisp,ngsp  in UEpar 
             use Dim            ! nx,ny,nisp,ngsp  in UEpar 
             use UEpar          ! label
 

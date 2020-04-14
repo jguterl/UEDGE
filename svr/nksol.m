@@ -943,8 +943,6 @@ c first check for illegal values.
       luprv = lx + n
       lfprv = luprv + n
       lwm = lfprv + n
-      write(*,*) 'lenk=',1 + 3*n + 3 + n*mmax + n + mmax**2
-      write(*,*) 'lenk=',1 + 3*n + 3 + n*mmax + n + 2 + 2*mmax*(mmax+1) + mmax
       if (methk .eq. 1) then
           lenk = 1 + 3*n + 3 + n*mmax + n + mmax**2
         else if (methk .eq. 2) then

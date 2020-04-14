@@ -5,29 +5,27 @@
 subroutine InitParallel
         Use Output
         Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac
+        Use HybridOptions,only:HybridOMPMPI
         implicit none
         if (OMPParallelJac==1 .and. MPIParallelJac==0) then
         call InitOMP
-        write(iout,'(a)') '*OMPJAC* Jacobian calculation: OMP enabled'
-        write(iout,'(a)') '*MPIJAC* Jacobian calculation: MPI not enabled'
         ParallelJac=1
         elseif (OMPParallelJac==0 .and. MPIParallelJac==1) then
         call InitMPI
-        write(iout,'(a)') '*OMPJAC* Jacobian calculation: OMP not enabled'
-        write(iout,'(a)') '*MPIJAC* Jacobian calculation: MPI enabled'
         ParallelJac=1
         elseif (OMPParallelJac==1 .and. MPIParallelJac==1) then
-        call InitHybrid()
-        write(iout,'(a)') '*OMPMPIJAC* Jacobian calculation: hybrid OMP/MPI enabled'
+        HybridOMPMPI=1
+        call InitMPI() ! MPI first to setup nnzmxperproc used by InitOMP
+        call InitOMP()
         ParallelJac=1
         else
-        write(iout,'(a)') '*OMPJAC* Jacobian calculation: OMP not enabled'
-        write(iout,'(a)') '*MPIJAC* Jacobian calculation: MPI not enabled'
+        write(iout,'(a)') '*OMPJac* Jacobian calculation: OMP not enabled'
+        write(iout,'(a)') '*MPIJac* Jacobian calculation: MPI not enabled'
         ParallelJac=0
         endif
 end subroutine InitParallel
-
-subroutine calc_jac_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
+!-------------------------------------------------------------------------------------------------
+subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     Use Output
     Use ParallelOptions,only:OMPParallelJac,MPIParallelJac
@@ -58,48 +56,104 @@ subroutine calc_jac_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
             call xerrab('Cannot call calc_jac_parallel OMP and MPI jac calc are not enabled')
         endif
 
-end subroutine calc_jac_parallel
-
+end subroutine jac_calc_parallel
+!-------------------------------------------------------------------------------------------------
+#ifdef _OPENMP
 subroutine InitOMP()
     Use Output
-    Use OmpOptions,only:Nthreads,nnzmxperthread,omplenpfac,ompneq,OMPVerbose
+    Use OmpOptions,only:Nthreads,nnzmxperthread,omplenpfac,ompneq,OMPVerbose,OMPStamp
+    Use MPIOptions,only:nnzmxperproc,MPIrank
+    Use HybridOptions,only: HybridOMPMPI,Hybridstamp
     Use Jacobian,only:nnzmx
     Use Lsode, only:neq
-    Use ParallelOptions,only:OMPParallelJac
 
     implicit none
     integer:: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
-    ! do the allocation for omp variables
+    character*8 :: MPIRankTag
+
+    ! prepare MPI/Hybrid stamps for output
+    if (HybridOMPMPI>0) then
+        write(MPIRankTag,'(I4)') MPIrank
+        write(OMPstamp,'(a,a,a)') '[',trim(adjustl(trim(MPIRankTag))),'] OMPJac* '
+    else
+        write(OMPstamp,'(a)') '*OMPJac* '
+    endif
 
         !$omp parallel
         if (OMP_GET_THREAD_NUM().eq.0) then
             if (Nthreads.gt.OMP_GET_NUM_THREADS()) then
-                write(iout,*) '*OMPJAC* Warning: Number of threads requested is larger the maximum number of threads available.&
+                write(iout,*) OMPStamp,' Warning: Number of threads requested is larger the maximum number of threads available.&
                 Nthreadsmax:'                ,OMP_GET_NUM_THREADS()
-                write(iout,*) '*OMPJAC* Resetting Nthreads to Nthreadsmax'
+                write(iout,*) OMPStamp,' Resetting Nthreads to Nthreadsmax'
                 Nthreads=OMP_GET_NUM_THREADS()
             endif
             if (Nthreads.le.0) then
                 call xerrab('Nthread must be >0')
             endif
-            if (OMPVerbose.gt.0) write(iout,'(a,i3)') '*OMPJAC* Number of threads for omp calculations:',Nthreads
+            if (OMPVerbose.gt.0) write(iout,'(a,i3)') OMPStamp,' Number of threads for omp calculations:',Nthreads
         endif
         !$omp END parallel
 
         if (Nthreads.gt.1) then
+            if (HybridOMPMPI>0) then
+            nnzmxperthread=ceiling(real(nnzmxperproc)/real(Nthreads-1))*omplenpfac
+            else
             nnzmxperthread=ceiling(real(nnzmx)/real(Nthreads-1))*omplenpfac
+            endif
         else
+            if (HybridOMPMPI>0) then
+            nnzmxperthread=nnzmxperproc
+            else
             nnzmxperthread=nnzmx
+            endif
         endif
         ompneq=neq
-        call gchange('Jacobian calculation: OmpJacobian',0)
-
-
-
-
-
+        call gchange('OmpJacobian',0)
 end subroutine InitOMP
+!-------------------------------------------------------------------------------------------------
+subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
+    use Output
+    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum
+    use OmpOptions,only:Nthreads,OMPDebug,OMPVerbose,OMPStamp
+    integer,intent(in):: neq
+    integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
+    real,intent(out)   :: rcsc(nnzmx)     ! nonzero Jacobian elements
+    integer,intent(out):: icsc(nnzmx)   ! col indices of nonzero Jacobian elements
+    integer,intent(out):: jcsc(neq+1)   ! pointers to beginning of each row in jac,ja
+    integer,intent(out):: nnzcumout
+    integer ith
+    nnzcum(1:Nthreads)=-1
+    nnzcum(1)=nnz(1)-1
 
+    do ith=2,Nthreads
+        nnzcum(ith)=nnzcum(ith-1)+nnz(ith)-1
+    enddo
+    if (OMPDebug.gt.0) then
+        write(iout,*) OMPStamp,' nnz:',nnz(1:Nthreads)
+        write(iout,*) OMPStamp,' nnzcum:',nnzcum(1:Nthreads)
+    endif
+    if (OMPVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
+
+    if (nnzcum(Nthreads).gt.nnzmx) then
+        call xerrab(' Problem: nnzcum > nnzmx...')
+    endif
+
+
+
+    jcsc(OMPivmin(1):OMPivmax(1))= iJacRow(OMPivmin(1):OMPivmax(1),1)
+    do ith=2,Nthreads
+        jcsc(OMPivmin(ith):OMPivmax(ith))= iJacRow(OMPivmin(ith):OMPivmax(ith),ith)+nnzcum(ith-1)
+    enddo
+
+    rcsc(1:nnz(1)-1)= rJacElem(1:nnz(1)-1,1)
+    icsc(1:nnz(1)-1)= iJacCol(1:nnz(1)-1,1)
+    do ith=2,Nthreads
+        rcsc(nnzcum(ith-1)+1:nnzcum(ith))=rJacElem(1:nnz(ith)-1,ith)
+        icsc(nnzcum(ith-1)+1:nnzcum(ith))=iJacCol(1:nnz(ith)-1,ith)
+    enddo
+    nnzcumout=nnzcum(Nthreads)
+end subroutine OMPCOllectJacobian
+!-------------------------------------------------------------------------------------------------
 subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     !   Calculate Jacobian matrix (derivatives with respect to each
@@ -113,9 +167,10 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
-        OMPIsCalcWeighted,OMPIsLoadOptimized
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,ivmin,ivmax,nnz,nnzcum,OMPweight,OMPTimeLocalJac
+        OMPLoadWeight,OMPAutoBalance,OMPStamp
+    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPweight,OMPTimeLocalJac
     use UEpar, only: svrpkg
+    use Math_problem_size,only:neqmx
 
     implicit none
     ! ... Input arguments:
@@ -135,20 +190,20 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real wk(neq)     ! work space available to this subroutine
     integer,allocatable :: iJacConstructor(:,:)
     real,allocatable:: rJacConstructor(:,:)
-
+    integer:: nnzcumout
     ! ... Functions
     logical tstguardc
     real(kind=4) gettime
 
     ! ... Local variables:
-    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,TimeBuild,TimeCollect,TimeJacCalc
+    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,OMPTimeBuild,OMPTimeCollect,OMPTimeJacCalc
     integer:: i,thread,ith,iv,TID, OMP_GET_THREAD_NUM
     character(len = 80) ::  filename
     ! Calculate load distribution for threads
-    if (OMPIsCalcWeighted.ne.1) then
+    if (OMPLoadWeight.ne.1) then
         OMPweight(1:Nthreads)=1.0
     endif
-    if (OMPIsLoadOptimized.eq.1) then
+    if (OMPAutoBalance.eq.1) then
         !Check that time are not zero
         if (minval(OMPTimeLocalJac).gt.0.0) then
             do i=1,Nthreads
@@ -159,25 +214,24 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         endif
     endif
     !   Get the range of the iv index for each thread
-    call SplitIndex(neq,Nthreads,ivmin,ivmax,OMPweight)
+    call OMPSplitIndex(1,neq,Nthreads,OMPivmin,OMPivmax,OMPweight)
 
-    if (OMPDebug.gt.0) then
-        write(iout,*)' *OMPJAC* neq=',neq
-        write(iout,*)' *OMPJAC* Ivmin(ithread),Ivmax(ithread), OMPweight(ithread) ***'
+    if (OMPVerbose.gt.0) then
+        write(iout,*)' *OMPJac* neq=',neq,neqmx
+        write(iout,*)' *OMPJac* Ivmin(ithread),Ivmax(ithread), OMPweight(ithread) ***'
         do ith=1,Nthreads
-            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    ithread ', ith,':',ivmin(ith),ivmax(ith),OMPweight(ith)
+            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPweight(ith)
         enddo
     endif
 
-    nnz(1:Nthreads)=-1
-    nnzcum(1:Nthreads)=-1
+
 !    iJacCol(1:nnzmxperthread,1:Nthreads)=0
 !    rJacElem(1:nnzmxperthread,1:Nthreads)=0.0
 !    iJacRow(1:neq,1:Nthreads)=0
 !    if (OMPDebug.gt.0) then
-!        write(iout,*) '*OMPJAC* Jacobian arrays set to zero'
+!        write(iout,*) OMPStamp,' Jacobian arrays set to zero'
 !    endif
-    TimeJacCalc= gettime(sec4)
+    OMPTimeJacCalc= gettime(sec4)
 
     !   Get initial value of system cpu timer.
     if (istimingon .eq. 1) tsjstor = gettime(sec4)
@@ -194,49 +248,22 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     enddo
 
     !   build jacobian ##############################################################
-    TimeBuild=gettime(sec4)
-
+    OMPTimeBuild=gettime(sec4)
+    nnz(1:Nthreads)=-1
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
 
-    TimeBuild=gettime(sec4)-TimeBuild
-    if (OMPVerbose.gt.0) write(iout,*)'*OMPJAC* Time to build jac:',TimeBuild
+    OMPTimeBuild=gettime(sec4)-OMPTimeBuild
+    if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to build jac:',OMPTimeBuild
     !   end build jacobian ##############################################################
 
     !   collect jacobian ##############################################################
-    TimeCollect=gettime(sec4)
-    nnzcum(1)=nnz(1)-1
-
-    do ith=2,Nthreads
-        nnzcum(ith)=nnzcum(ith-1)+nnz(ith)-1
-    enddo
-    if (OMPDebug.gt.0) then
-        write(iout,*) '*OMPJAC* nnz:',nnz(1:Nthreads)
-        write(iout,*) '*OMPJAC* nnzcum:',nnzcum(1:Nthreads)
-    endif
-    if (OMPVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
-
-    if (nnzcum(Nthreads).gt.nnzmx) then
-        call xerrab(' Problem: nnzcum > nnzmx...')
-    endif
-
-
-    jcsc(ivmin(1):ivmax(1))= iJacRow(ivmin(1):ivmax(1),1)
-    do ith=2,Nthreads
-        jcsc(ivmin(ith):ivmax(ith))= iJacRow(ivmin(ith):ivmax(ith),ith)+nnzcum(ith-1)
-    enddo
-
-    rcsc(1:nnz(1)-1)= rJacElem(1:nnz(1)-1,1)
-    icsc(1:nnz(1)-1)= iJacCol(1:nnz(1)-1,1)
-    do ith=2,Nthreads
-        rcsc(nnzcum(ith-1)+1:nnzcum(ith))=rJacElem(1:nnz(ith)-1,ith)
-        icsc(nnzcum(ith-1)+1:nnzcum(ith))=iJacCol(1:nnz(ith)-1,ith)
-    enddo
-    jcsc(neq+1) = nnzcum(Nthreads)+1
-
-    TimeCollect=gettime(sec4)-TimeCollect
-    if (OMPVerbose.gt.0) write(iout,*)'*OMPJAC* Time to collect jac:',TimeCollect
+    OMPTimeCollect=gettime(sec4)
+    call OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
+    OMPTimeCollect=gettime(sec4)-OMPTimeCollect
+    if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to collect jac:',OMPTimeCollect
     !   end collect jacobian ##############################################################
 
+    jcsc(neq+1) = nnzcumout+1 ! This is set here out of OMPJAcCollect for compatibility with hybrid jac_calc
 
     !   for Debug purpose
     if (WriteJacobian.eq.1) then
@@ -285,90 +312,65 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !      endif
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
-    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-TimeJacCalc
+    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-OMPTimeJacCalc
 
     return
 end subroutine jac_calc_omp
-!-----------------------------------------------------------------------
-subroutine SplitIndex(neq,Nthreads,ivmin,ivmax,weight)
+!-------------------------------------------------------------------------------------------------
+subroutine OMPSplitIndex(ieqmin,ieqmax,Nthreads,ivmin,ivmax,weight)
     implicit none
-    integer,intent(in) ::neq,Nthreads
+    integer,intent(in) ::ieqmin,ieqmax,Nthreads
     real::weight(Nthreads)
     integer,intent(out)::ivmin(Nthreads),ivmax(Nthreads)
     integer:: Nsize(Nthreads),Msize,R,i,imax
+    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
     if (Nthreads.gt.1) then
-        !        if (OMPIsCalcWeighted.eq.1) then
+        !        if (OMPLoadWeight.eq.1) then
 
         do i=1,Nthreads
-            if (weight(i)<=0) call xerrab('OMP ERROR: weight <0')
-            write(*,*) weight(i)
+            if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
+            !write(*,*) weight(i)
         enddo
 
         ! Normalized weights
         weight(1:Nthreads)=weight(1:Nthreads)/sum(weight(1:Nthreads))*real(Nthreads)
         do i=1,Nthreads
-            Nsize(i)=int(real(neq/Nthreads)*weight(i))
-            write(*,*) Nsize(i),weight(i)
+            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads)*weight(i))
+            !write(*,*) Nsize(i),weight(i)
         enddo
 
         do i=1,Nthreads
             if (Nsize(i)<0) call xerrab('Nsize<0')
             if (Nsize(i)<2) Nsize(i)=Nsize(i)+1
         enddo
-        if (neq.ne.sum(Nsize)) then
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
             imax=1
             do i=2,Nthreads
-                if (Nsize(i).gt.Nsize(i-1)) then
+                if (Nsize(i)>Nsize(i-1)) then
                     imax=i
                 endif
             enddo
-            Nsize(imax) = Nsize(imax) + (neq-sum(Nsize))
+            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
         endif
-        write(*,*) Nsize,neq,sum(Nsize)
-        if (neq.ne.sum(Nsize)) call xerrab('Nsize .ne. neq!!!')
-        ivmin(1)=1
-        ivmax(1)=1+Nsize(1)-1
+        !write(*,*) Nsize,neq,sum(Nsize)
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. neq!!!')
+        ivmin(1)=ieqmin
+        ivmax(1)=ieqmin+Nsize(1)-1
         do i=2,Nthreads
             ivmin(i)=ivmax(i-1)+1
             ivmax(i)=ivmin(i)+Nsize(i)-1
         enddo
-        if (ivmax(Nthreads).ne.neq) call xerrab('ivmax(Nthreads).neq.neq')
-    !        else
-
-    !        endif
+        if (ivmax(Nthreads)-ivmin(1)+1.ne.(ieqmax-ieqmin+1)) call xerrab('ivmax(Nthreads)!=neq')
     else
-        ivmin(Nthreads)=1
-        ivmax(Nthreads)=neq
+        ivmin(Nthreads)=ieqmin
+        ivmax(Nthreads)=ieqmax
     endif
 
-
-!    Nsize=neq/Nthreads
-!    R=MOD(neq, Nthreads)
-!
-!    if (Nthreads.gt.1) then
-!        if (R.eq.0) then
-!            do i=1,Nthreads
-!                ivmin(i)=1+Nsize*(i-1)
-!                ivmax(i)=Nsize*i
-!            enddo
-!        else
-!            do i=1,Nthreads-1
-!                ivmin(i)=1+Nsize*(i-1)
-!                ivmax(i)=Nsize*i
-!            enddo
-!            ivmin(Nthreads)=ivmax(Nthreads-1)+1
-!            ivmax(Nthreads)=neq
-!        endif
-!    else
-!        ivmin(Nthreads)=1
-!        ivmax(Nthreads)=neq
-!    endif
-
-end subroutine SplitIndex
-!-----------------------------------------------------------------------
+end subroutine OMPSplitIndex
+!-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread
-    use OMPJacobian, only:ivmin,ivmax,OMPTimeLocalJac
+    use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp
+    use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -395,16 +397,16 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer:: ith,tid,nnzlocal,ithcopy
     DOUBLE PRECISION :: TimeThread
 
-    if (OMPDebug.gt.0)write(iout,*) '*OMPJAC* Copying data....'
+    if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying data....'
 
     if (OMPCopyArray.gt.0) then
-        if (OMPDebug.gt.0)write(iout,*) '*OMPJAC* Copying array....'
+        if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying array....'
         call OmpCopyPointerbbb
         call OmpCopyPointercom
         call OmpCopyPointerapi
     endif
     if (OMPCopyScalar.gt.0) then
-        if (OMPDebug.gt.0)write(iout,*) '*OMPJAC* Copying scalar....'
+        if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying scalar....'
         call OmpCopyScalarbbb
         call OmpCopyScalarcom
         call OmpCopyScalarapi
@@ -412,8 +414,8 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !   We cannot use variables in the parallel construct declarations below when these variables are not in the scope of the subroutine
     Nthreadscopy=Nthreads
     nnzmxperthreadcopy=nnzmxperthread
-    ivmincopy(1:Nthreads)=ivmin(1:Nthreads)
-    ivmaxcopy(1:Nthreads)=ivmax(1:Nthreads)
+    ivmincopy(1:Nthreads)=OMPivmin(1:Nthreads)
+    ivmaxcopy(1:Nthreads)=OMPivmax(1:Nthreads)
     iJacColCopy(1:nnzmxperthread)=0
     rJacElemCopy(1:nnzmxperthread)=0.0
     iJacRowCopy(1:neq)=0
@@ -421,7 +423,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     wkcopy(1:neq)=wk(1:neq) ! Could be set equal to zero as well. The worker wk is not an output...
 
     if (OMPDebug.gt.0) then
-        write(iout,*) '*OMPJAC* Starting parallel loop'
+        write(iout,*) OMPStamp,' Starting parallel loop'
     endif
     tid=-1
     nnzlocal=-10000
@@ -436,12 +438,12 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         tid=omp_get_thread_num()
         ithcopy=ith
 
-        if (OMPDebug.gt.0) write(iout,*) '*OMPJAC* Thread id:',tid,' <-> ith:',ithcopy
+        if (OMPDebug.gt.0) write(iout,*) OMPStamp,' Thread id:',tid,' <-> ith:',ithcopy
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
 
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
-        if (OMPDebug.gt.0) write(iout,*) '*OMPJAC*,',tid,' nzlocal:',nnzlocal
+        if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
         !$omp  critical
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
@@ -449,7 +451,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         nnzcopy(ithcopy)=nnzlocal
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
-        write(*,*) '*OMPJAC* Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
+        write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
     enddo loopthread
     !$omp  END PARALLEL DO
 
@@ -457,11 +459,11 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     nnz(1:Nthreads)=nnzcopy(1:Nthreads) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
 
     if (OMPDebug.gt.0) then
-        write(iout,*) '*OMPJAC* End of parallel loop....'
+        write(iout,*) OMPStamp,' End of parallel loop....'
     endif
 
 end subroutine OMPJacBuilder
-! ----------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------
 subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ith,nnz,nnzmxperthread,nthreads)
 
     ! ... Calculate Jacobian matrix (derivatives with respect to each
@@ -563,7 +565,9 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
 
         !Calculate possibly nonzero Jacobian elements for this variable,
         !and store nonzero elements in compressed sparse column format.
+
         iJacRow(iv) = nnz      ! sets index for first Jac. elem. of var. iv
+                                       ! the index is set to start at 0
 
         loopii: do ii = ii1, ii2
             jacelem = (wk(ii) - yldot00(ii)) / dyl
@@ -656,8 +660,8 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     enddo loopiv
 ! ... End loop over dependent variables and finish Jacobian storage.
 end subroutine LocalJacBuilder
-
-
+!-------------------------------------------------------------------------------------------------
+! The routines below are for debugging of OMP implementation
 subroutine WriteArrayReal(array,s,iu)
     implicit none
     real:: array(*)
@@ -1342,3 +1346,4 @@ subroutine DebugHelper(FileName)
     call WriteArrayReal(znot,size(znot),iunit)
     close(iunit)
 end subroutine DebugHelper
+#endif

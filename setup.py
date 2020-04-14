@@ -24,15 +24,25 @@ try:
 except:
     raise SystemExit("Distutils problem")
 
-optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc'])
+
+optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','ompjac','mpijac','paralleljac'])
+
 machine = sys.platform
 debug = 0
-fcomp = 'mpif90'
+fcomp = None
+#'mpif90'
 parallel = 1
 petsc = 0
+SafeFortranOpt=True
+mpi=0
+omp=0
+##### OMP flag:
+ompargs=[]
+omppackages=['bbb','com','api']
+omplisthtreadprivatevars='../../ListVariableThreadPrivate_final.txt'
 
 for o in optlist:
-    if o[0] == '-g':
+    if o[0] == '-g': #This is confusing: the standard c compiler flags -g  only enables to print symbol but not the debug option for gcc/gfortran (enabled by the -Og flag). But Forthon adds -O0 when -g is called.  
         debug = 1
     elif o[0] == '-t':
         machine = o[1]
@@ -40,10 +50,18 @@ for o in optlist:
         fcomp = o[1]
     elif o[0] == '--parallel':
         parallel = 1
+    elif o[0] == '--mpijac':
+        mpi = 1
+    elif o[0] == '--ompjac':
+        
+        omp = 1
+    elif o[0] == '--paralleljac':
+        mpi = 1
+        omp = 1
     elif o[0] == '--petsc':
         petsc = 1
 
-
+print('Compilation with openmp requested...')
 if petsc == 1 and os.getenv('PETSC_DIR') == None:
     raise SystemExit("PETSc requested but PETSC_DIR not set")
 if os.getenv('PETSC_DIR') != None:
@@ -53,10 +71,56 @@ if petsc == 1 and os.getenv('PETSC_ARCH') == None:
 
 
 sys.argv = ['setup2.py']+args
+# Select Fortran compiler.
+if mpi: # setup for mpich
+    fcomp='mpifort' 
+
+    
 fcompiler = FCompiler(machine=machine,
                       debug=debug,
-                      fcompname='mpif90',fcompexec='mpif90')
-print('Compiler:',fcompiler.fcompname)
+                      fcompname=fcomp)
+
+print('>>>> Compiler name:{} ; Compiler executable:{}'.format(fcompiler.fcompname,fcompiler.fcompexec))
+
+# Compiler flags for pyUEDGE 
+#Note: the -g flag does not affect the runtime. It is not equivalent to -Og. See gcc documentation.
+## Default Fortran compiler flags
+fargs=['-g -fmax-errors=15 -DHAS_READLINE -DFORTHON -cpp -Wconversion -fimplicit-none' ]
+## Debug flag for Fortran compiler
+fargsdebug=' -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=snan -Og'
+## Optmization/debugging flag for Fortran compiler
+if not SafeFortranOpt:
+    fargsopt=['-Ofast'] #Be careful with this fast: -Ofast enables -ffast-math, -fallow-store-data-races and  -fstack-arrays. fallow-store-data-races may severly impend pyUEDGE performances on some plateforms.  
+else:
+    fargsopt=['-O3 -ffast-math -fstack-arrays']
+## Flags for c compiler  
+cargs=[]
+## Flags for Forthon wrapper
+ompargs=[]
+if mpi:
+    fargs=fargs+['-DMPIJAC']
+   
+if omp:
+    cargs=cargs+['-fopenmp']
+    fargs=fargs+['-fopenmp']
+    ompargs=ompargs+['--omppkg {} --ompvarlistfile {}'.format(','.join(omppackages),omplisthtreadprivatevars)]
+if debug==0:
+    fargs=fargs+fargsopt
+else:
+    fargs=fargs+fargsdebug
+
+     
+# Gather options for the make of Forthon
+#1. Get compilers info for the setup distutils called by Forthon (see Forthon_builder.py)
+FCOMPVAR='FCOMP = --fcomp "{}" --fcompexec "{}"'.format(fcompiler.fcompname,fcompiler.fcompexec)
+#2. Get flags to pass to C and Fortran compilers through Forthon  
+DEBUGVAR ='DEBUG = -v  --cargs="{}" --fargs="{}"'.format(' '.join(cargs),' '.join(fargs))
+OMPVAR='OMPFLAGS = {}'.format(' '.join(ompargs))
+
+
+    
+
+      
 
 class uedgeBuild(build):
     def run(self):
@@ -69,7 +133,7 @@ class uedgeBuild(build):
             build.run(self)
         else:
             if petsc == 0:
-                call(['make', '-f', 'Makefile.Forthon3'])
+                call(['make', DEBUGVAR,FCOMPVAR,OMPVAR,'-f', 'Makefile.Forthon3'])
             else:
                 call(['make', '-f', 'Makefile.PETSc3'])
             build.run(self)
@@ -130,7 +194,7 @@ if sys.hexversion < 0x03000000:
         uedgeobjects = uedgeobjects + []
 else:
     dummydist = Distribution()
-    dummydist.parse_command_line()
+    #dummydist.parse_command_line()
     dummybuild = dummydist.get_command_obj('build')
     dummybuild.finalize_options()
     builddir = dummybuild.build_temp
@@ -159,7 +223,7 @@ if petsc:
 
 if parallel:
     #library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
-    libraries = fcompiler.libs + ['mpich']
+    libraries = fcompiler.libs
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:
@@ -200,14 +264,14 @@ setup(name="uedge",
                              libraries=libraries,
                              define_macros=define_macros,
                              extra_objects=uedgeobjects,
-                             extra_link_args=['-fopenmp','-pg','-g','-O3','-DFORTHON'] +
+                             extra_link_args=['-g','-DFORTHON'] +
                              fcompiler.extra_link_args,
                              extra_compile_args=fcompiler.extra_compile_args+['-g']
                              )],
 
       cmdclass={'build': uedgeBuild, 'clean': uedgeClean},
       test_suite="pytests",
-      install_requires=['forthon', 'mppl'],
+      install_requires=['forthon', 'mppl','colorama','easygui'],
       # note that include_dirs may have to be expanded in the line above
       classifiers=['Programming Language :: Python',
                    'Programming Language :: Python :: 3']

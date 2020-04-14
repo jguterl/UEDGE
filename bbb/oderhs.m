@@ -1261,7 +1261,7 @@ c##############################################################
       TimeBuild=gettime(sec4)-TimeBuild
       write(iout,*)'Time to build jac:',TimeBuild
       jcsc(neq+1) = nnz
-       write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnz
+       write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnz-1
 cJG for Debug purpose
        if (WriteJacobian.eq.1) then
        write(filename,'(a,5i5,a)') "jac_regular_",ijac(ig),".txt"
@@ -4421,9 +4421,8 @@ c *** Input and output variables
 
 c *** Local variables
       integer iy, ix, ix1, ix2, iy1, iy2
-      integer omp_get_thread_num
       real fs0, signps
-       if (omp_get_thread_num().ne.0) call xerrab('non-master omp thread not supposed to run here')
+
       fs0 = 1. - 4*fsprd    # fraction to central cell
 
             do iy = j2, j5

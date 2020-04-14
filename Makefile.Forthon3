@@ -1,21 +1,11 @@
-DEBUG = -v --cargs "-pg" --fargs "-g -pg -fmax-errors=15 -Ofast -DHAS_READLINE -DFORTHON -cpp -fopenmp  -Wconversion -fimplicit-none"
-#-fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=snan "  
-#  " -g #--fargs "-C=array"
- #--fargs "-CB -traceback" #-Wall -Wextra -Warray-temporaries
-
-FCOMP= --fcomp "mpif90" --fcompexec "mpif90"
 SO = so
 PUBLICHOME = 
 BUILDDIR = build
 DIRLIST = com aph api bbb flx grd svr wdf
-#MYPYTHON = /home/gpython3
-#FORTHON =  /home/guterlj/boundary/anaconda3/bin/Forthon3
 MYPYTHON = python
 FORTHON = Forthon3
 BUILDBASE = -v --build-base $(BUILDDIR)
-OMPVARLIST=../../ListVariableThreadPrivate_final.txt
-OMPPKGLIST=bbb,com,api
-INSTALLARGS = --pkgbase uedge $(BUILDBASE) --omppkg $(OMPPKGLIST) --ompvarlistfile $(OMPVARLIST) 
+INSTALLARGS = --pkgbase uedge $(BUILDBASE) $(OMPFLAGS)
 ##MYPYTHON = /home1/rognlien/Python2/Python-2.4.2/python
 
 # Following 2 variables set in Makefile.PETSc, if used (if unset, ignored)
