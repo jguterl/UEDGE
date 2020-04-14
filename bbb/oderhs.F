@@ -83,7 +83,7 @@ c ... Common blocks:
             use Comtra        ! fricflf,sigvi_floor
             use Share         ! cutlo
             use Verbose 
-            use ParallelOptions 
+            use ParallelJacOptions 
 c ... External functions:
       implicit none
 
@@ -1351,7 +1351,7 @@ c     factorization routine sgbco from Linpack/SLATEC.
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
-      if (ShowTime.gt.0) write(iout,*) 'Time in premeth banded:',gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth banded:',gettime(sec4)-TimePreMeth
 c ... Save condition number.
          i = ijac(ig)
          if (i .le. 300) rconds(i,ig) = rcond
@@ -1389,7 +1389,7 @@ c ... Use incomplete factorization routine ilut from SparsKit.
      .)
             call xerrab("")
          endif
-      if (ShowTime.gt.0) write(iout,*) 'Time in premeth ilut:',gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth ilut:',gettime(sec4)-TimePreMeth
 c ... Use incomplete factorization routine precond5 from INEL.
 c     SparsKit routines are used in preliminary steps to convert to
 c     diagonal format.
@@ -1971,7 +1971,7 @@ c ... Common blocks:
                           ! isuponxy,isteonxy,istionxy,isngonxy,isphionxy
             use Jac_work_arrays  ! iwwp,wwp,liwp,lwp  ! diagnostic arrays in this sub
             use Verbose 
-            use ParallelOptions ,only:ParallelJac
+            use ParallelJacOptions ,only:ParallelJac
 
 c ... Local variables:
       implicit none
@@ -2391,7 +2391,7 @@ c ... Common blocks:
             use Time_dep_nwt         ! ydt_max0,nufak0
             use Share                ! cutlo
             use Verbose 
-            use ParallelOptions 
+            use ParallelJacOptions 
 
 c ... Local variables:
       implicit none

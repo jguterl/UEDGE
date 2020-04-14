@@ -96,7 +96,7 @@ else:
 ## Flags for c compiler  
 cargs=[]
 ## Flags for Forthon wrapper
-ompargs=[]
+ompargs=['--ompverbose']
 if mpi:
     fargs=fargs+['-DMPIJAC']
    

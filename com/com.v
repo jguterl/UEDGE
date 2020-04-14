@@ -9,11 +9,7 @@ iout  integer /6/     # switch used by OMFIT
 ***** OMFIT:
 iomfit  integer /1/     # switch used by OMFIT
 
-***** Verbose:
-VerboseCall        integer /0/     # Print name of subroutine when this one is called. Can be used to explore call trees
-VerboseJac         integer /1/
-
-***** ParallelOptions:
+***** ParallelJacOptions:
 OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ParallelJac     integer /0/        # [0]: serial jacobian calc [1] omp parallel jacobian calc
@@ -50,7 +46,6 @@ MPIrJacElem(nnzmxperproc) _real #
 MPIweight(0:Nprocs-1)  _real  # weight for load distribution of jacobian calculation among threads
 MPITimeLocalJac(0:Nprocs-1)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
 
-
 ***** OmpOptions:
 OMPAllocDebug integer /0/ #Print info on allocation and association of variables
 OMPDebug integer /0/ #Print debug info for omp constructs
@@ -80,6 +75,10 @@ iJacCol(nnzmxperthread,Nthreads) _integer #
 rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer
 nnzcum(Nthreads) _integer
+
+***** Verbose:
+VerboseCall        integer /0/     # Print name of subroutine when this one is called. Can be used to explore call trees
+VerboseJac         integer /1/
 
 ***** COMroutines:
 glbwrlog(ioun)          function

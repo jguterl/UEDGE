@@ -10,6 +10,73 @@ nispmxngspmx = nispmx*ngspmx # tot numb ion*gas species
 nstramx = 2 # maximum number of strata for MC neutrals code
 }
 
+***** ParallelJacOptions:
+OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
+ParallelJac     integer /0/        # [0]: serial jacobian calc [1] omp parallel jacobian calc
+
+***** HybridOptions:
+HybridOMPMPI    integer /0/        # Flag for HybridOMPMPI. Automatically turn on with OMPParallelJac and PMIParallelJac
+HybridDebug integer /0/ #Print debug info for omp constructs
+HybridVerbose integer /1/ #Print info for omp jacobian calculation
+HybridCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
+HybridStamp       character*20 # Stamp for hybrid output (not an user input)
+
+***** MpiOptions:
+MPIRank integer /0/ # Rank of the processor
+ComSize integer /1/ # Size of the common world
+MPIDebug integer /0/ #Print debug info for omp constructs
+MPIVerbose integer /1/ #Print info for omp jacobian calculation
+MPIWriteJacobian     integer /0/ # Write jacobian in an ascii text file
+MPIlenpfac       integer /1/ # Factor to increase nnzmxperthread
+nnzmxperproc   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
+MPIneq  integer # number of equation (=neq)
+Nprocs          integer /64/ # Number of threads to be used to calculate the Jacobian
+MPICheckNaN       integer /0/ # Check whether jacobian terms are NaN after jacobian calculation
+ioutmpi           integer /6/ # Unit for stdout for common mpi write statements
+MPILoadWeight integer /0/ #  User defined weights for each MPI tasks (overrided by MPIAutoBalance)
+MPIAutoBalance integer /1/ # Automatic load balancing for MPI tasks
+MPIStamp          character*20 # Stamp for MPI output (not an user input)
+
+***** MpiJacobian:
+MPIivmin(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread (not an user input)
+MPIivmax(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread (not an user input)
+MPIiJacRow(MPIneq) _integer #
+MPIiJacCol(nnzmxperproc) _integer #
+MPIrJacElem(nnzmxperproc) _real #
+MPIweight(0:Nprocs-1)  _real  # weight for load distribution of jacobian calculation among threads
+MPITimeLocalJac(0:Nprocs-1)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
+
+***** OmpOptions:
+OMPAllocDebug integer /0/ #Print info on allocation and association of variables
+OMPDebug integer /0/ #Print debug info for omp constructs
+OMPVerbose integer /1/ #Print info for omp jacobian calculation
+OMPCopyDebug integer /0/ #Print debug info for omp constructs
+iidebugprint      integer /-1/ # index ii of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. iv is determined by ivdebugprint
+ivdebugprint      integer /-1/ # index iv of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. ii is determined by iidebugprint
+WriteJacobian     integer /0/ # Write jacobian in an ascii text file
+OMPlenpfac       integer /1/ # Factor to increase nnzmxperthread
+nnzmxperthread   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
+OMPneq  integer # number of equation (=neq)
+OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
+OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
+Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
+OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
+OMPLoadWeight integer /0/ # User defined weights for each OMP tasks (overrided by MPIAutoBalance)
+OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks
+OMPStamp       character*20 # Stamp for hybrid output (not an user input)
+
+***** OmpJacobian:
+OMPivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPweight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
+OMPTimeLocalJac(1:Nthreads)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
+iJacRow(OMPneq,Nthreads) _integer  #
+iJacCol(nnzmxperthread,Nthreads) _integer #
+rJacElem(nnzmxperthread,Nthreads) _real #
+nnz(Nthreads) _integer
+nnzcum(Nthreads) _integer
+
 ***** Math_problem_size:
 neqmx		integer		# number of math. eqns to be solved/integrated
 numvar		integer		# number of physical variables per cell
