@@ -168,7 +168,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
-        OMPLoadWeight,OMPAutoBalance,OMPStamp
+        OMPLoadWeight,OMPAutoBalance,OMPStamp,OMPBalanceStrength
     use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPweight,OMPTimeLocalJac
     use UEpar, only: svrpkg
     use Math_problem_size,only:neqmx
@@ -206,9 +206,10 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     endif
     if (OMPAutoBalance.eq.1) then
         !Check that time are not zero
+        if (OMPBalanceStrength<=0) call xerrab('OMPBalanceStrength must be >0')
         if (minval(OMPTimeLocalJac).gt.0.0) then
             do i=1,Nthreads
-                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/(sum(OMPTimeLocalJac)/real(Nthreads)))
+                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
             enddo
         else
             OMPweight(1:Nthreads)=1.0
@@ -729,7 +730,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
     use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
-        MPILoadWeight,MPIAutoBalance,MPIStamp
+        MPILoadWeight,MPIAutoBalance,MPIStamp,MPIBalanceStrength
     use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPIweight,MPITimeLocalJac
     use UEpar, only: svrpkg
     implicit none
@@ -764,10 +765,11 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         MPIweight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
+    if (MPIBalanceStrength<=0) call xerrab('MPIBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(MPITimeLocalJac(0:Nprocs-1)).gt.0.0) then
             do i=0,Nprocs-1
-                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/(sum(MPITimeLocalJac(0:Nprocs-1))/real(Nprocs)))
+                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
             enddo
         else
             MPIweight(0:Nprocs-1)=1.0
@@ -1096,8 +1098,8 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
     use MPIOptions,only:Nprocs,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
-        MPILoadWeight,MPIAutoBalance
-    use OMPOptions,only:Nthreads,OMPLoadWeight,OMPAutoBalance
+        MPILoadWeight,MPIAutoBalance,MPIBalanceStrength
+    use OMPOptions,only:Nthreads,OMPLoadWeight,OMPAutoBalance,OMPBalanceStrength
     use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPIweight,MPITimeLocalJac
     use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,OMPweight,OMPTimeLocalJac
     use HybridOptions,only:HybridDebug,HybridVerbose,HybridCheckNaN,Hybridstamp
@@ -1134,10 +1136,11 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         MPIweight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
+        if (MPIBalanceStrength<=0) call xerrab('MPIBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(MPITimeLocalJac(0:Nprocs-1)).gt.0.0) then
             do i=0,Nprocs-1
-                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/(sum(MPITimeLocalJac(0:Nprocs-1))/real(Nprocs)))
+                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
             enddo
         else
             MPIweight(0:Nprocs-1)=1.0
@@ -1148,10 +1151,11 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         OMPweight(1:Nthreads)=1.0
     endif
     if (OMPAutoBalance.eq.1) then
+    if (OMPBalanceStrength<=0) call xerrab('OMPBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(OMPTimeLocalJac).gt.0.0) then
             do i=1,Nthreads
-                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/(sum(OMPTimeLocalJac)/real(Nthreads)))
+                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
             enddo
         else
             OMPweight(1:Nthreads)=1.0
