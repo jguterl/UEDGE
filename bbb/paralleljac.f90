@@ -1104,8 +1104,8 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
                         MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),MPITimeLocalJac(iproc),&
                         '| ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                     else
-                    write(iout,'(a7,I3,a7,I3,a3,I8,I8,f8.1,a3,a8,a8,a8)') 'rank', iproc,'thread', ithread,'|',&
-                        MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),&
+                    write(iout,'(a7,I3,a7,I3,a3,I8,I8,f8.1,f8.3,a3,a8,a8,a8)') 'rank', iproc,'thread', ithread,'|',&
+                        MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),MPITimeLocalJac(iproc),&
                         '| ','-','-','-'
                         endif
                 else
