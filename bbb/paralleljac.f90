@@ -91,7 +91,7 @@ subroutine InitOMP()
         if (Nthreads.le.0) then
             call xerrab('Nthread must be >0')
         endif
-        if (OMPVerbose.gt.0) write(iout,'(a,i3)') OMPStamp,' Number of threads for omp calculations:',Nthreads
+        if (OMPVerbose.gt.0) write(iout,'(a,a,i3)') OMPStamp,' Number of threads for omp calculations:',Nthreads
     endif
     !$omp END parallel
 
