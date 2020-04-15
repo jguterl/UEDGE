@@ -1100,17 +1100,17 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
             do ithread=1,Nthreads
                 if (ithread==1) then
                     if (iproc==MPIRank) then
-                    write(iout,'(a7,I3,a7,I3,a3,I8,I8,f8.1,f8.3,a3,I8,I8,f8.1)') 'rank', iproc,'thread', ithread,'|',&
+                    write(iout,'(a6,I3,a7,I3,a3,I10,I10,f10.1,f10.3,a3,I8,I8,f8.1)') 'rank', iproc,'thread', ithread,'|',&
                         MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),MPITimeLocalJac(iproc),&
                         '| ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                     else
-                    write(iout,'(a7,I3,a7,I3,a3,I8,I8,f8.1,f8.3,a3,a8,a8,a8)') 'rank', iproc,'thread', ithread,'|',&
+                    write(iout,'(a6,I3,a7,I3,a3,I10,I10,f10.1,f10.3,a3,a8,a8,a8)') 'rank', iproc,'thread', ithread,'|',&
                         MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),MPITimeLocalJac(iproc),&
                         '| ','-','-','-'
                         endif
                 else
                 if (HybridVerbose.gt.2) then
-                    write(iout,'(a7,a3,a7,I3,a3,a8,a8,a8,a8,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
+                    write(iout,'(a6,a3,a7,I3,a3,a10,a10,a10,a10,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
                         ' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 endif
                 endif
