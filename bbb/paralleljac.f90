@@ -1241,7 +1241,7 @@ subroutine MPISplitIndex(neq,Nprocs,ivmin,ivmax,weight)
         if (neq.ne.sum(Nsize(0:Nprocs-1))) call xerrab('Nsize .ne. neq!!!')
 
         ivmin(0)=1
-        ivmax(0)=1+Nsize(1)-1
+        ivmax(0)=1+Nsize(0)-1
         do i=1,Nprocs-1
             ivmin(i)=ivmax(i-1)+1
             ivmax(i)=ivmin(i)+Nsize(i)-1
