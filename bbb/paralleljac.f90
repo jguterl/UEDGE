@@ -783,7 +783,8 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         write(iout,*)MPIStamp,'neq=',neq
         write(iout,*)MPIStamp,' MPIivmin | MPIivmax | MPIweight | MPITimeLocalJac'
         do iproc=0,Nprocs-1
-    write(iout,'(a,I3,a,I7,I7,f5.1)') '  rank:  ', iproc,':',MPIivmin(iproc),MPIivmax(iproc),MPIweight(iproc),MPITimeLocalJac(iproc)
+    write(iout,'(a7,I3,a,I7,I7,f5.1,f8.3)') 'rank:', iproc,':',MPIivmin(iproc),MPIivmax(iproc),&
+    MPIweight(iproc),MPITimeLocalJac(iproc)
         enddo
     endif
     TimeJacCalc= gettime(sec4)
