@@ -779,7 +779,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Get the range of the iv index for each thread
     call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
 
-    if (MPIDebug.gt.0) then
+    if (MPIVerbose.gt.1) then
         write(iout,*)' *MPIJac* neq=',neq
         write(iout,*)' *MPIJac* Ivmin(iproc),Ivmax(iproc), MPIweight(iproc) ***'
         do iproc=0,Nprocs-1
