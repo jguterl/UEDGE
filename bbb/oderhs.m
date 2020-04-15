@@ -1330,7 +1330,7 @@ c ... Function:
 c ... Local variables:
       integer lowd, ierr, i, idum(1)
       real rcond, dum(1)
-      real(Size4) sec4,TimePreMath
+      real(Size4) sec4
       real tsmatfac
 
 c ... Convert compressed sparse row to banded format and use exact

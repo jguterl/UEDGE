@@ -1103,8 +1103,10 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
                         MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),&
                         '| ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 else
+                if (HybridVerbose.gt.2) then
                     write(iout,'(a7,a3,a7,I3,a3,a8,a8,a8,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
                         ' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
+                endif
                 endif
             enddo
         enddo
