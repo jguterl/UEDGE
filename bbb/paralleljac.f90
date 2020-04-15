@@ -168,8 +168,8 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
-        OMPLoadWeight,OMPAutoBalance,OMPStamp,OMPBalanceStrength
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPweight,OMPTimeLocalJac
+        OMPLoadBalance,OMPAutoBalance,OMPStamp,OMPBalanceStrength
+    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPLoadWeight,OMPTimeLocalJac
     use UEpar, only: svrpkg
     use Math_problem_size,only:neqmx
 
@@ -201,28 +201,28 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer:: i,thread,ith,iv,TID, OMP_GET_THREAD_NUM
     character(len = 80) ::  filename
     ! Calculate load distribution for threads
-    if (OMPLoadWeight.ne.1) then
-        OMPweight(1:Nthreads)=1.0
+    if (OMPLoadBalance.ne.1) then
+        OMPLoadWeight(1:Nthreads)=1.0
     endif
     if (OMPAutoBalance.eq.1) then
         !Check that time are not zero
         if (OMPBalanceStrength<=0) call xerrab('OMPBalanceStrength must be >0')
         if (minval(OMPTimeLocalJac).gt.0.0) then
             do i=1,Nthreads
-                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
+                OMPLoadWeight(i)=OMPLoadWeight(i)*1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
             enddo
         else
-            OMPweight(1:Nthreads)=1.0
+            OMPLoadWeight(1:Nthreads)=1.0
         endif
     endif
     !   Get the range of the iv index for each thread
-    call OMPSplitIndex(1,neq,Nthreads,OMPivmin,OMPivmax,OMPweight)
+    call OMPSplitIndex(1,neq,Nthreads,OMPivmin,OMPivmax,OMPLoadWeight)
 
     if (OMPVerbose.gt.0) then
         write(iout,*)' *OMPJac* neq=',neq,neqmx
-        write(iout,*)' *OMPJac* Ivmin(ithread),Ivmax(ithread), OMPweight(ithread) ***'
+        write(iout,*)' *OMPJac* Ivmin(ithread),Ivmax(ithread), OMPLoadWeight(ithread) ***'
         do ith=1,Nthreads
-            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPweight(ith)
+            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith)
         enddo
     endif
 
@@ -470,6 +470,7 @@ end subroutine OMPJacBuilder
 subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ith,nnz,nnzmxperthread,nthreads)
 
     ! ... Calculate Jacobian matrix (derivatives with respect to each
+    ! ... Calculate Jacobian matrix (derivatives with respect to each
     !     dependent variable of the right-hand side of each rate equation).
     !     Lower and upper bandwidths are used to select for computation
     !     only those Jacobian elements that may be nonzero.
@@ -694,15 +695,14 @@ subroutine InitMPI
     if (MPIVerbose>1) write(iout,*) MPIStamp,' MPI enabled with ComSize=',ComSize
     !
     if (Nprocs.gt.ComSize) then
-        write(iout,*) MPIStamp,' Warning: # processors requested is larger the max number of processors available.',&
+        if (MPIVerbose.gt.1) write(iout,*) MPIStamp,' # processors requested > # processors available.',&
             'Nprocmax:',ComSize
-        write(iout,*) MPIStamp,' Resetting Nproc to Nprocmax'
         Nprocs=ComSize
+        if (MPIVerbose.gt.0) write(iout,*) MPIStamp,' Resetting Nproc to Nprocmax: Nproc=',Nprocs
     endif
     if (Nprocs.le.0) then
         call xerrab('Nprocs must be >0')
     endif
-    if (MPIVerbose.gt.0) write(iout,'(a,a,i3)') MPIStamp,' Number of procs for MPI calculations:',Nprocs
 
     if (Nprocs.gt.1) then
         nnzmxperproc=ceiling(real(nnzmx)/real(Nprocs-1)*mpilenpfac)
@@ -730,8 +730,8 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
     use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
-        MPILoadWeight,MPIAutoBalance,MPIStamp,MPIBalanceStrength
-    use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPIweight,MPITimeLocalJac
+        MPILoadBalance,MPIAutoBalance,MPIStamp,MPIBalanceStrength
+    use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPILoadWeight,MPITimeLocalJac
     use UEpar, only: svrpkg
     implicit none
     ! ... Input arguments:
@@ -755,24 +755,26 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real(kind=4) gettime
 
     ! ... Local variables:
+    real factor
     real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,TimeBuild,TimeCollect,TimeJacCalc
     integer:: i,iv,iproc,nnz
     integer (kind=4) :: ierr
     character(len = 80) ::  filename
     !integer::iJacCol(1:nnzmxperproc)
     !real ::rJacElem(1:nnzmxperproc)
-    if (MPILoadWeight.ne.1) then
-        MPIweight(0:Nprocs-1)=1.0
+    if (MPILoadBalance.ne.1) then
+        MPILoadWeight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
     if (MPIBalanceStrength<=0) call xerrab('MPIBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(MPITimeLocalJac(0:Nprocs-1)).gt.0.0) then
             do i=0,Nprocs-1
-                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
+                factor=1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
+                MPILoadWeight(i)=MPILoadWeight(i)*factor
             enddo
         else
-            MPIweight(0:Nprocs-1)=1.0
+            MPILoadWeight(0:Nprocs-1)=1.0
         endif
     endif
     if (MPIDebug.gt.0) write(*,*) MPIStamp,' Starting jac_calc_mpi'
@@ -781,10 +783,10 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (MPIVerbose.gt.1) then
         write(iout,*)MPIStamp,'neq=',neq
-        write(iout,*)MPIStamp,' MPIivmin | MPIivmax | MPIweight | MPITimeLocalJac'
+        write(iout,*)MPIStamp,' MPIivmin | MPIivmax | MPILoadWeight | MPITimeLocalJac'
         do iproc=0,Nprocs-1
     write(iout,'(a7,I3,a,I7,I7,f5.1,f8.3)') 'rank:', iproc,':',MPIivmin(iproc),MPIivmax(iproc),&
-    MPIweight(iproc),MPITimeLocalJac(iproc)
+    MPILoadWeight(iproc),MPITimeLocalJac(iproc)
         enddo
     endif
     TimeJacCalc= gettime(sec4)
@@ -917,7 +919,7 @@ subroutine MPICollectBroadCastTime(TimeLocal)
     real(kind=4) gettime
     real(kind=4) sec4, TimeCollect
     TimeCollect=gettime(sec4)
-
+    if (MPIRank==0) MPITimeLocalJac(0)=Timelocal
     loopproc:do iproc=1,Nprocs-1
         if (MPIRank.eq.iproc) then
             ! send to the master proc
@@ -1098,10 +1100,10 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
     use MPIOptions,only:Nprocs,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
-        MPILoadWeight,MPIAutoBalance,MPIBalanceStrength
-    use OMPOptions,only:Nthreads,OMPLoadWeight,OMPAutoBalance,OMPBalanceStrength
-    use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPIweight,MPITimeLocalJac
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,OMPweight,OMPTimeLocalJac
+        MPILoadBalance,MPIAutoBalance,MPIBalanceStrength
+    use OMPOptions,only:Nthreads,OMPLoadBalance,OMPAutoBalance,OMPBalanceStrength
+    use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPILoadWeight,MPITimeLocalJac
+    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,OMPLoadWeight,OMPTimeLocalJac
     use HybridOptions,only:HybridDebug,HybridVerbose,HybridCheckNaN,Hybridstamp
     use UEpar, only: svrpkg
     implicit none
@@ -1126,39 +1128,42 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real(kind=4) gettime
 
     ! ... Local variables:
+    real factor
     real(kind=4)        :: sec4, tsjstor, tsimpjf, dtimpjf,time0,time1
     real(kind=4)        :: OMPTimeBuild,MPITimeJacCalc,OMPTimeCollect,MPITimeBuild,MPITimeCollect
     integer             :: i,iv,iproc,ithread,nnzcumout
     integer(kind=4)     :: ierr
     character(len = 80) ::  filename
 
-    if (MPILoadWeight.ne.1) then
-        MPIweight(0:Nprocs-1)=1.0
+    if (MPILoadBalance.ne.1) then
+        MPILoadWeight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
         if (MPIBalanceStrength<=0) call xerrab('MPIBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(MPITimeLocalJac(0:Nprocs-1)).gt.0.0) then
             do i=0,Nprocs-1
-                MPIweight(i)=MPIweight(i)*1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
+                factor=1/(MPITimeLocalJac(i)/sum(MPITimeLocalJac(0:Nprocs-1))*real(Nprocs))**MPIBalanceStrength
+                MPILoadWeight(i)=MPILoadWeight(i)*factor
             enddo
         else
-            MPIweight(0:Nprocs-1)=1.0
+            MPILoadWeight(0:Nprocs-1)=1.0
         endif
     endif
 
-    if (OMPLoadWeight.ne.1) then
-        OMPweight(1:Nthreads)=1.0
+    if (OMPLoadBalance.ne.1) then
+        OMPLoadWeight(1:Nthreads)=1.0
     endif
     if (OMPAutoBalance.eq.1) then
     if (OMPBalanceStrength<=0) call xerrab('OMPBalanceStrength must be >0')
         !Check that time are not zero
         if (minval(OMPTimeLocalJac).gt.0.0) then
             do i=1,Nthreads
-                OMPweight(i)=OMPweight(i)*1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
+                factor=1/(OMPTimeLocalJac(i)/sum(OMPTimeLocalJac)*real(Nthreads))**OMPBalanceStrength
+                OMPLoadWeight(i)=OMPLoadWeight(i)*factor
             enddo
         else
-            OMPweight(1:Nthreads)=1.0
+            OMPLoadWeight(1:Nthreads)=1.0
         endif
     endif
 
@@ -1167,19 +1172,20 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Get the range of the iv index for each thread
     call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
 
-    call OMPSplitIndex(MPIivmin(MPIRank),MPIivmax(MPIRank),Nthreads,OMPivmin,OMPivmax,OMPweight)
+    call OMPSplitIndex(MPIivmin(MPIRank),MPIivmax(MPIRank),Nthreads,OMPivmin,OMPivmax,OMPLoadWeight)
 
     if (HybridDebug.gt.0) then
         write(iout,*)HybridStamp, 'neq=',neq
-        write(iout,*)HybridStamp,'| MPIivmin MPIivmax MPIweight | OMPivmin OMPivmax OMPweight '
+        write(iout,*)HybridStamp,'| MPIivmin MPIivmax MPILoadWeight | OMPivmin OMPivmax OMPLoadWeight '
         do iproc=0,Nprocs-1
             do ithread=1,Nthreads
                 if (ithread==1) then
                     write(iout,'(a7,I3,a7,I3,a3,I8,I8,f8.1,a3,I8,I8,f8.1)') 'rank', iproc,'thread', ithread,'|',&
-                        MPIivmin(iproc),MPIivmax(iproc),MPIweight(iproc),'| ',OMPivmin(ithread),OMPivmax(ithread),OMPweight(ithread)
+                        MPIivmin(iproc),MPIivmax(iproc),MPILoadWeight(iproc),&
+                        '| ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 else
-                    write(iout,'(a7,a3,a7,I3,a3,a8,a8,a8,a3,I8,I8,f8.1)') ' ', ' ',  'thread#', ithread,'|',&
-                        ' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPweight(ithread)
+                    write(iout,'(a7,a3,a7,I3,a3,a8,a8,a8,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
+                        ' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 endif
             enddo
         enddo
