@@ -319,57 +319,6 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     return
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
-subroutine OMPSplitIndex(ieqmin,ieqmax,Nthreads,ivmin,ivmax,weight)
-    implicit none
-    integer,intent(in) ::ieqmin,ieqmax,Nthreads
-    real::weight(Nthreads)
-    integer,intent(out)::ivmin(Nthreads),ivmax(Nthreads)
-    integer:: Nsize(Nthreads),Msize,R,i,imax
-    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
-    if (Nthreads.gt.1) then
-        !        if (OMPLoadWeight.eq.1) then
-
-        do i=1,Nthreads
-            if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
-            !write(*,*) weight(i)
-        enddo
-
-        ! Normalized weights
-        weight(1:Nthreads)=weight(1:Nthreads)/sum(weight(1:Nthreads))*real(Nthreads)
-        do i=1,Nthreads
-            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads)*weight(i))
-            !write(*,*) Nsize(i),weight(i)
-        enddo
-
-        do i=1,Nthreads
-            if (Nsize(i)<0) call xerrab('Nsize<0')
-            if (Nsize(i)<2) Nsize(i)=Nsize(i)+1
-        enddo
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
-            imax=1
-            do i=2,Nthreads
-                if (Nsize(i)>Nsize(i-1)) then
-                    imax=i
-                endif
-            enddo
-            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
-        endif
-        !write(*,*) Nsize,neq,sum(Nsize)
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. neq!!!')
-        ivmin(1)=ieqmin
-        ivmax(1)=ieqmin+Nsize(1)-1
-        do i=2,Nthreads
-            ivmin(i)=ivmax(i-1)+1
-            ivmax(i)=ivmin(i)+Nsize(i)-1
-        enddo
-        if (ivmax(Nthreads)-ivmin(1)+1.ne.(ieqmax-ieqmin+1)) call xerrab('ivmax(Nthreads)!=neq')
-    else
-        ivmin(Nthreads)=ieqmin
-        ivmax(Nthreads)=ieqmax
-    endif
-
-end subroutine OMPSplitIndex
-!-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac
@@ -779,7 +728,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     endif
     if (MPIDebug.gt.0) write(*,*) MPIStamp,' Starting jac_calc_mpi'
     !   Get the range of the iv index for each thread
-    call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
+    call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax,MPILoadWeight)
 
     if (MPIVerbose.gt.1) then
         write(iout,*)MPIStamp,'neq=',neq
@@ -876,36 +825,6 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     return
 end subroutine jac_calc_mpi
 !-------------------------------------------------------------------------------------------------
-subroutine MPISplitIndex(neq,Nprocs,ivmin,ivmax)
-    implicit none
-    integer,intent(in) ::neq,Nprocs
-    integer,intent(out)::ivmin(0:Nprocs-1),ivmax(0:Nprocs-1)
-    integer:: Nsize,R,i
-
-    Nsize=neq/Nprocs
-    R=MOD(neq, Nprocs)
-
-    if (Nprocs.gt.1) then
-        if (R.eq.0) then
-            do i=1,Nprocs
-                ivmin(i-1)=1+Nsize*(i-1)
-                ivmax(i-1)=Nsize*i
-            enddo
-        else
-            do i=1,Nprocs-1
-                ivmin(i-1)=1+Nsize*(i-1)
-                ivmax(i-1)=Nsize*i
-            enddo
-            ivmin(Nprocs-1)=ivmax(Nprocs-2)+1
-            ivmax(Nprocs-1)=neq
-        endif
-    else
-        ivmin(0)=1
-        ivmax(0)=neq
-    endif
-
-end subroutine MPISplitIndex
-!-----------------------------------------------------------------------
 subroutine MPICollectBroadCastTime(TimeLocal)
     use Output
     use mpi
@@ -1170,7 +1089,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (HybridDebug.gt.0) write(*,*) Hybridstamp,' Starting jac_calc_hybrid'
     !   Get the range of the iv index for each thread
-    call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
+    call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax,MPILoadWeight)
 
     call OMPSplitIndex(MPIivmin(MPIRank),MPIivmax(MPIRank),Nthreads,OMPivmin,OMPivmax,OMPLoadWeight)
 
@@ -1287,8 +1206,105 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     return
 end subroutine jac_calc_hybrid
 #endif
-
 !-------------------------------------------------------------------------------------------------
+subroutine MPISplitIndex(neq,Nprocs,ivmin,ivmax,weight)
+    implicit none
+    integer,intent(in) ::neq,Nprocs
+    real,intent(inout) :: weight(0:Nprocs-1)
+    integer,intent(out)::ivmin(0:Nprocs-1),ivmax(0:Nprocs-1)
+    integer:: Nsize(0:Nprocs-1),imax,i
+
+    if (Nprocs.gt.1) then
+        do i=0,Nprocs-1
+                if (weight(i)<=0) call xerrab('MPISplitIndex: weight <0')
+        enddo
+        ! Normalized weights
+        weight(0:Nprocs-1)=weight(0:Nprocs-1)/sum(weight(0:Nprocs-1))*real(Nprocs)
+        do i=0,Nprocs-1
+            Nsize(i)=int(real(neq/Nprocs)*weight(i))
+        enddo
+
+        do i=0,Nprocs-1
+            if (Nsize(i)<0) call xerrab('Nsize<0')
+            if (Nsize(i)<2) Nsize(i)=Nsize(i)+1
+        enddo
+
+        if (neq.ne.sum(Nsize(0:Nprocs-1))) then
+            imax=0
+            do i=1,Nprocs-1
+                if (Nsize(i)>Nsize(i-1)) then
+                    imax=i
+                endif
+            enddo
+            Nsize(imax) = Nsize(imax) + (neq-sum(Nsize(0:Nprocs-1)))
+        endif
+        if (neq.ne.sum(Nsize(0:Nprocs-1))) call xerrab('Nsize .ne. neq!!!')
+
+        ivmin(0)=1
+        ivmax(0)=1+Nsize(1)-1
+        do i=1,Nprocs-1
+            ivmin(i)=ivmax(i-1)+1
+            ivmax(i)=ivmin(i)+Nsize(i)-1
+        enddo
+        if (ivmax(Nprocs-1)-ivmin(0)+1.ne.neq) call xerrab('ivmax(Nprocs-1)!=neq')
+    else
+        ivmin(0)=1
+        ivmax(0)=neq
+    endif
+
+end subroutine MPISplitIndex
+!-------------------------------------------------------------------------------------------------
+subroutine OMPSplitIndex(ieqmin,ieqmax,Nthreads,ivmin,ivmax,weight)
+    implicit none
+    integer,intent(in) ::ieqmin,ieqmax,Nthreads
+    real::weight(Nthreads)
+    integer,intent(out)::ivmin(Nthreads),ivmax(Nthreads)
+    integer:: Nsize(Nthreads),Msize,R,i,imax
+    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
+    if (Nthreads.gt.1) then
+        !        if (OMPLoadWeight.eq.1) then
+
+        do i=1,Nthreads
+            if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
+            !write(*,*) weight(i)
+        enddo
+
+        ! Normalized weights
+        weight(1:Nthreads)=weight(1:Nthreads)/sum(weight(1:Nthreads))*real(Nthreads)
+        do i=1,Nthreads
+            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads)*weight(i))
+            !write(*,*) Nsize(i),weight(i)
+        enddo
+
+        do i=1,Nthreads
+            if (Nsize(i)<0) call xerrab('Nsize<0')
+            if (Nsize(i)<2) Nsize(i)=Nsize(i)+1
+        enddo
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+            imax=1
+            do i=2,Nthreads
+                if (Nsize(i)>Nsize(i-1)) then
+                    imax=i
+                endif
+            enddo
+            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
+        endif
+        !write(*,*) Nsize,neq,sum(Nsize)
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. neq!!!')
+        ivmin(1)=ieqmin
+        ivmax(1)=ieqmin+Nsize(1)-1
+        do i=2,Nthreads
+            ivmin(i)=ivmax(i-1)+1
+            ivmax(i)=ivmin(i)+Nsize(i)-1
+        enddo
+        if (ivmax(Nthreads)-ivmin(1)+1.ne.(ieqmax-ieqmin+1)) call xerrab('ivmax(Nthreads)!=neq')
+    else
+        ivmin(Nthreads)=ieqmin
+        ivmax(Nthreads)=ieqmax
+    endif
+
+end subroutine OMPSplitIndex
+!-----------------------------------------------------------------------
 ! The routines below are for debugging of OMP implementation
 subroutine WriteArrayReal(array,s,iu)
     implicit none
