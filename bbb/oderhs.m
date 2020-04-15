@@ -1389,7 +1389,8 @@ c ... Use incomplete factorization routine ilut from SparsKit.
      .)
             call xerrab("")
          endif
-      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth ilut:',gettime(sec4)-TimePreMeth
+         timePreMeth=gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth ilut:',TimePreMeth
 c ... Use incomplete factorization routine precond5 from INEL.
 c     SparsKit routines are used in preliminary steps to convert to
 c     diagonal format.
@@ -1413,7 +1414,7 @@ c ... Convert to diagonal format.
 c ... Reorder rows to be in increasing column order.
          call cdiagsrt (neq, adiag, ndiag, iwp(3), iwkd1, iwkd2,
      .                  rwkd)
-      TimePreMeth=gettime(sec4)
+
 c ... Finally, calculate approximate LU decomposition.
          tsmatfac = gettime(sec4)
          call precond5 (neq, ndiag, ndiagm, adiag, wp, rwk2, rwk1,

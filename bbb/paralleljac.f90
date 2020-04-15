@@ -1139,17 +1139,17 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeBuild=gettime(sec4)
     call OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
-    if (HybridVerbose.gt.0) write(iout,*)Hybridstamp,' Time to build OMP jac:',OMPTimeBuild
+    if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to build OMP jac:',OMPTimeBuild
 
     ! Collect OMP part of the Jacobian ######################################################
     OMPTimeCollect=gettime(sec4)
     call OMPCollectJacobian(neq,nnzmxperproc,MPIrJacElem,MPIiJacCol,MPIiJacRow,nnzcumout)
     OMPTimeCollect=gettime(sec4)-OMPTimeCollect
-    if (HybridVerbose.gt.0) write(iout,*)Hybridstamp,' Time to collect OMP jac:',OMPTimeCollect
+    if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to collect OMP jac:',OMPTimeCollect
 
     ! broadcast  MPItimebuild for load balancing #############################################
     MPITimeBuild=OMPTimeCollect+OMPTimeBuild
-    if (HybridVerbose.gt.0) write(iout,*)Hybridstamp,' Time to build MPI jac:',MPITimeBuild
+    if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to build MPI jac:',MPITimeBuild
     call MPICollectBroadCastTime(real(MPITimeBuild,kind=8))
 
 
@@ -1159,7 +1159,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     ! but nnz=nnzcumout+1 is passed in the collector
     call MPICollectBroadCastJacobian(MPIiJacRow,MPIiJacCol,MPIrJacElem,nnzcumout+1)
     MPITimeCollect=gettime(sec4)-MPITimeCollect
-    if (HybridVerbose.gt.0) write(iout,*)Hybridstamp,' MPI: Time to collect/broadcast jac:',MPITimeCollect
+    if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' MPI: Time to collect/broadcast jac:',MPITimeCollect
 
 
     !   for Debug purpose
