@@ -1110,7 +1110,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
                 else
                 if (HybridVerbose.gt.2) then
                     write(iout,'(a6,a3,a7,I3,a3,a10,a10,a10,a10,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
-                        ' ',' ',' ',' ', | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
+                        ' ',' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 endif
                 endif
             enddo
