@@ -1093,7 +1093,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     call OMPSplitIndex(MPIivmin(MPIRank),MPIivmax(MPIRank),Nthreads,OMPivmin,OMPivmax,OMPLoadWeight)
 
-    if (HybridDebug.gt.0) then
+    if (HybridVerbose.gt.1) then
         write(iout,*)HybridStamp, 'neq=',neq
         write(iout,*)HybridStamp,'| MPIivmin MPIivmax MPILoadWeight | OMPivmin OMPivmax OMPLoadWeight '
         do iproc=0,Nprocs-1
