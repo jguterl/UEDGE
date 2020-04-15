@@ -320,7 +320,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp
+    use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac
     use OmpCopybbb
     use OmpCopycom
@@ -402,7 +402,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         nnzcopy(ithcopy)=nnzlocal
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
-        write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
+        if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
     enddo loopthread
     !$omp  END PARALLEL DO
 
