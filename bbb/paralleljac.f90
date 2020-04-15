@@ -780,10 +780,10 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     call MPISplitIndex(neq,Nprocs,MPIivmin,MPIivmax)
 
     if (MPIVerbose.gt.1) then
-        write(iout,*)' *MPIJac* neq=',neq
-        write(iout,*)' *MPIJac* Ivmin(iproc),Ivmax(iproc), MPIweight(iproc) ***'
+        write(iout,*)MPIStamp,'neq=',neq
+        write(iout,*)MPIStamp,' MPIivmin | MPIivmax | MPIweight | MPITimeLocalJac'
         do iproc=0,Nprocs-1
-            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    iproc  ', iproc,':',MPIivmin(iproc),MPIivmax(iproc),MPIweight(iproc)
+    write(iout,'(a,I3,a,I7,I7,f5.1)') '  rank:  ', iproc,':',MPIivmin(iproc),MPIivmax(iproc),MPIweight(iproc),MPITimeLocalJac(iproc)
         enddo
     endif
     TimeJacCalc= gettime(sec4)
@@ -942,7 +942,6 @@ subroutine MPICollectBroadCastTime(TimeLocal)
     TimeCollect=gettime(sec4)
     ! And now broadcast it to all the procs
     call MPI_BCAST(MPITimeLocalJac(0:Nprocs-1), int(Nprocs,kind=4), MPI_Real8, 0, MPI_COMM_WORLD, IERR)
-
     call MPI_barrier(MPI_COMM_WORLD,ierr)
 
     TimeCollect=gettime(sec4)-TimeCollect
