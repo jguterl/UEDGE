@@ -83,10 +83,9 @@ subroutine InitOMP()
     !$omp parallel
     if (OMP_GET_THREAD_NUM().eq.0) then
         if (Nthreads.gt.OMP_GET_NUM_THREADS()) then
-            write(iout,*) OMPStamp,' Warning: Number of threads requested is larger the maximum number of threads available.&
-                Nthreadsmax:'            ,OMP_GET_NUM_THREADS()
-            write(iout,*) OMPStamp,' Resetting Nthreads to Nthreadsmax'
+            if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Warning: # threads requested > # threads available'
             Nthreads=OMP_GET_NUM_THREADS()
+            write(iout,*) OMPStamp,' Nthreads:', Nthreads
         endif
         if (Nthreads.le.0) then
             call xerrab('Nthread must be >0')
@@ -1111,7 +1110,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
                 else
                 if (HybridVerbose.gt.2) then
                     write(iout,'(a6,a3,a7,I3,a3,a10,a10,a10,a10,a3,I8,I8,f8.1)') ' ', ' ',  'thread', ithread,'|',&
-                        ' ',' ',' ',' | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
+                        ' ',' ',' ',' ', | ',OMPivmin(ithread),OMPivmax(ithread),OMPLoadWeight(ithread)
                 endif
                 endif
             enddo
