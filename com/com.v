@@ -575,6 +575,14 @@ ttngfd2    real            /0./   # time spent in fd2tra for neudifpg
 ttngfxy    real            /0./   # time spent for fngxy in neudifpg
 DebugTime  integer         /0/    # Display execution times of various subroutines
 ShowTime       integer /1/     # Show execution time of routines
+SerialDebug       integer /0/     # Show execution time of routines
+MPITotJacCalc real  /0./ # time to calculate jacobian in jac_calc_mpi/jac_calc_hybrid
+OMPTotJacCalc real  /0./ # time to calculate jacobian in jac_calc_omp
+OMPTotTimeCollect real  /0./ # time to collect jacobian elements in jac_calc_omp
+OMPTotTimeBuild real  /0./ # time to calculate elements of jacobian in jac_calc_omp
+MPITotTimeCollect real  /0./ # time to collect jacobian elements in jac_calc_mpi/hybrid
+MPITotTimeBuild real  /0./ # time to calculate elements of jacobian in jac_calc_mpi/hybrid
+
 ***** Linkbbb:
 # information shared by bbb and wdf packages
 nxbbb	integer

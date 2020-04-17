@@ -1259,9 +1259,9 @@ c##############################################################
       enddo             # end of main loop over yl variables
 c##############################################################
       TimeBuild=gettime(sec4)-TimeBuild
-      write(iout,*)'Time to build jac:',TimeBuild
+      if (ShowTime.gt.0) write(iout,*)'Time to build jac:',TimeBuild
       jcsc(neq+1) = nnz
-       write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnz-1
+      if (SerialDebug.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnz-1
 cJG for Debug purpose
        if (WriteJacobian.eq.1) then
        write(filename,'(a,5i5,a)') "jac_regular_",ijac(ig),".txt"
@@ -1330,11 +1330,12 @@ c ... Function:
 c ... Local variables:
       integer lowd, ierr, i, idum(1)
       real rcond, dum(1)
-      real(Size4) sec4
+      real(Size4) sec4,TimeLU
       real tsmatfac
 
 c ... Convert compressed sparse row to banded format and use exact
 c     factorization routine sgbco from Linpack/SLATEC.
+      TimeLU = gettime(sec4)
       if (VerboseCall.gt.0) write(iout,*) '**************** calling jac_lu_decomp ********************'
       if (premeth .eq. 'banded') then
               TimePreMeth=gettime(sec4)
@@ -1351,7 +1352,8 @@ c     factorization routine sgbco from Linpack/SLATEC.
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
-      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth banded:',gettime(sec4)-TimePreMeth
+         TimePreMeth=gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.1) write(iout,*) '**** Time in premeth banded:',gettime(sec4)-TimePreMeth
 c ... Save condition number.
          i = ijac(ig)
          if (i .le. 300) rconds(i,ig) = rcond
@@ -1390,7 +1392,7 @@ c ... Use incomplete factorization routine ilut from SparsKit.
             call xerrab("")
          endif
          timePreMeth=gettime(sec4)-TimePreMeth
-      if (ShowTime.gt.0) write(iout,*) '**** Time in premeth ilut:',TimePreMeth
+      if (ShowTime.gt.1) write(iout,*) '**** Time in premeth ilut:',TimePreMeth
 c ... Use incomplete factorization routine precond5 from INEL.
 c     SparsKit routines are used in preliminary steps to convert to
 c     diagonal format.
@@ -1419,12 +1421,14 @@ c ... Finally, calculate approximate LU decomposition.
          tsmatfac = gettime(sec4)
          call precond5 (neq, ndiag, ndiagm, adiag, wp, rwk2, rwk1,
      .                  iwk3, iwk2, siginel, fmuinel, iwp(3))
-      if (ShowTime.gt.0) write(iout,*) 'Time in premeth inel:',gettime(sec4)-TimePreMeth
+      TimePreMeth=gettime(sec4)-TimePreMeth
+      if (ShowTime.gt.1) write(iout,*) '**** Time in premeth inel:',gettime(sec4)-TimePreMeth
       endif
 
 c ... Accumulate cpu time spent here.
+
  99   ttmatfac = ttmatfac + (gettime(sec4) - tsmatfac)
-      if (ShowTime.gt.0) write(iout,*) '**** Time in jac_lu_decomp:',gettime(sec4) - tsmatfac
+      if (ShowTime.gt.0) write(iout,*) '**** Time in jac_lu_decomp:',gettime(sec4) - TimeLU
       return
       end
 c-----------------------------------------------------------------------

@@ -3307,7 +3307,7 @@ ebindz(za:integer, zn:integer)                   real function
       	# in za   atomic charge
       	# in zn   nuclear charge
 wtottim()					 subroutine
-      	# writes out timing information
+      	# writes out timing information										
 rundt()						 subroutine
       	# time-advances solution using nksol with dtreal
 domain_dc()					 subroutine

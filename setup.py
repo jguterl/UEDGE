@@ -25,8 +25,9 @@ except:
     raise SystemExit("Distutils problem")
 
 
-optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','ompjac','mpijac','paralleljac'])
+optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','ompjac','mpijac','paralleljac','profiler'])
 
+profiler=0
 machine = sys.platform
 debug = 0
 fcomp = None
@@ -53,11 +54,14 @@ for o in optlist:
     elif o[0] == '--mpijac':
         mpi = 1
     elif o[0] == '--ompjac':
-        
         omp = 1
     elif o[0] == '--paralleljac':
         mpi = 1
         omp = 1
+    elif o[0] == '--profiler':
+        profiler=1
+    elif o[0] == '-pg':
+        profiler=1
     elif o[0] == '--petsc':
         petsc = 1
 
@@ -108,7 +112,11 @@ if debug==0:
     fargs=fargs+fargsopt
 else:
     fargs=fargs+fargsdebug
-
+if profiler:
+    cargs=cargs+['-pg']
+    fargs=fargs+['-pg']
+if len(cargs)<1:
+    cargs=['-g']
      
 # Gather options for the make of Forthon
 #1. Get compilers info for the setup distutils called by Forthon (see Forthon_builder.py)

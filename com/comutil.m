@@ -3601,7 +3601,7 @@ C
 
       Use(Timespl)
       real(Size4) sec4, gettime, tsint
-      write(*,*) 'B2Vahl called'
+c      write(*,*) 'B2Vahl called'
 
 C
 C***FIRST EXECUTABLE STATEMENT  B2VAhL

@@ -11,6 +11,7 @@ import numpy as np
 import os, sys, math, string, re
 from pathlib import Path
 from . import UEDGEToolBox
+from .UEDGEToolBox import *
 from uedge import *
 from colorama import Fore, Back, Style
 
@@ -24,25 +25,39 @@ class UEDGESimulation(object):
         for pkg in self.ListPkg:
             exec('self.' + pkg + '=' + pkg,globals(),locals())
         
-            
-    def ReadInput(self,FileName:str,Verbose:bool=True):
+   
+
+        
+    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True):
+        '''
+        Parse and execute each line of FileName.
+        FileName must a path toward a python script file (.py)
+        The existence of FileName is first checked with its absolute path.
+        If no path is specified, the path is the current working directory. 
+        If the file is not found, then the file is search for in the 'InputDir' defined in Settings.
+        
+        Parameters
+        ----------
+        FileName : str
+            Path to input file 
+        Verbose : bool, optional
+            Verbose mode when parsing the input file. The default is True.
+
+        Returns
+        -------
+        None.
+
+        '''
+        # Looking for file 
         for pkg in self.ListPkg:
             exec('from uedge import '+pkg)
-        print('### Looking for input file:',FileName)
-        if not os.path.exists(FileName):
-            print('### Cannot find {}'.format(os.path.abspath(FileName)))
-            FileName_=os.path.join(Settings.InputDir,FileName)
-            if not os.path.exists(FileName_):
-                raise IOError('Cannot find the requested file in InputDir either:{} '.format(FileName))
-            else:
-                print('### File found in InputDir:{}'.format(FileName_))
-        else: 
-            FileName_=os.path.abspath(FileName)
-            print('### File found :{}'.format(FileName_))
-            
-        print('### Loading {} '.format(FileName_))    
+        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=True)
+        if FilePath is None:
+            FilePath=UEDGEToolBox.Source(FileName,Folder='InputDir',Enforce=True,Verbose=True)
+        print('### Loading {} '.format(FilePath))    
         
-        f=open(FileName_,'r')
+        # parsing file    
+        f=open(FilePath,'r')
         lines=f.read()
         f.close()
         Lines=lines.splitlines()
@@ -368,8 +383,8 @@ Sim=UEDGESimulation()
 def RunTime(*arg,**kwargs):
     Sim.RunTime(*arg,**kwargs)
 
-def ReadInput(FileName,Verbose=False):
-    Sim.ReadInput(FileName,Verbose=Verbose)
+def ReadInput(FileName,Folder=None,Verbose=False):
+    Sim.ReadInput(FileName,Folder,Verbose=Verbose)
     
 def ir():
     Sim.InitRun()

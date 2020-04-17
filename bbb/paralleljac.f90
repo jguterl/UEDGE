@@ -163,7 +163,8 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Estimates of Jacobian elements are computed by finite differences.
     !   The Jacobian is stored in compressed sparse row format.
     Use Output
-    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime
+    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime,&
+    OMPTotTimeCollect,OMPTotTimeBuild,OMPTotJacCalc
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
@@ -254,6 +255,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
 
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
+    if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
     if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to build jac:',OMPTimeBuild
     !   end build jacobian ##############################################################
 
@@ -261,6 +263,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeCollect=gettime(sec4)
     call OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     OMPTimeCollect=gettime(sec4)-OMPTimeCollect
+    if (istimingon .eq. 1) OMPTotTimeCollect = OMPTimeCollect+OMPTotTimeCollect
     if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to collect jac:',OMPTimeCollect
     !   end collect jacobian ##############################################################
 
@@ -313,6 +316,9 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !      endif
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
+
+    OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
+    if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
     if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-OMPTimeJacCalc
 
     return
@@ -673,7 +679,8 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Estimates of Jacobian elements are computed by finite differences.
     !   The Jacobian is stored in compressed sparse row format.
     use Output
-    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime
+    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime,&
+    MPITotJacCalc,MPITotTimeCollect,MPITotTimeBuild
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
@@ -704,7 +711,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     ! ... Local variables:
     real factor
-    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,TimeBuild,TimeCollect,TimeJacCalc
+    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,MPITimeBuild,MPITimeCollect,MPITimeJacCalc
     integer:: i,iv,iproc,nnz
     integer (kind=4) :: ierr
     character(len = 80) ::  filename
@@ -737,7 +744,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     MPILoadWeight(iproc),MPITimeLocalJac(iproc)
         enddo
     endif
-    TimeJacCalc= gettime(sec4)
+    MPITimeJacCalc= gettime(sec4)
 
     !   Get initial value of system cpu timer.
     if (istimingon .eq. 1) tsjstor = gettime(sec4)
@@ -754,21 +761,23 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     enddo
 
     !   build jacobian ##############################################################
-    TimeBuild=gettime(sec4)
+    MPITimeBuild=gettime(sec4)
 
     call MPIJacBuilder(neq, t, yl,yldot00, ml, mu,wk,MPIiJacCol,MPIrJacElem,MPIiJacRow,nnz)
 
-    TimeBuild=gettime(sec4)-TimeBuild
-    if (MPIVerbose.gt.0) write(iout,*)MPIStamp,' Rank:',MPIRank ,'Time to build jac:',TimeBuild
+    MPITimeBuild=gettime(sec4)-MPITimeBuild
+    if (istimingon .eq. 1) MPITotTimebuild = MPITimeBuild+MPITotTimebuild
+    if (MPIVerbose.gt.0) write(iout,*)MPIStamp,' Rank:',MPIRank ,'Time to build jac:',MPITimeBuild
 
-    call MPICollectBroadCastTime(real(TimeBuild,kind=8))
+    call MPICollectBroadCastTime(real(MPITimeBuild,kind=8))
     !   end build jacobian ##############################################################
     !   collect jacobian ##############################################################
 
-    TimeBuild=gettime(sec4)
+    MPITimeCollect=gettime(sec4)
     call MPICollectBroadCastJacobian(MPIiJacRow,MPIiJacCol,MPIrJacElem,nnz)
-    TimeBuild=gettime(sec4)-TimeBuild
-    if (MPIVerbose.gt.0) write(iout,*)MPIStamp,' Time to collect/broadcast jac:',TimeBuild
+    MPITimeCollect=gettime(sec4)-MPITimeCollect
+    if (istimingon .eq. 1) MPITotTimeCollect = MPITimeCollect+MPITotTimeCollect
+    if (MPIVerbose.gt.0) write(iout,*)MPIStamp,' Time to collect/broadcast jac:',MPITimeCollect
     !   end collect jacobian ##############################################################
 
 
@@ -819,7 +828,9 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !      endif
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
-    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-TimeJacCalc
+    MPITimeJacCalc=gettime(sec4)-MPITimeJacCalc
+    if (istimingon .eq. 1) MPITotJacCalc = MPITimeJacCalc+MPITotJacCalc
+    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',MPITimeJacCalc
     call MPI_barrier(MPI_COMM_WORLD,ierr)
     return
 end subroutine jac_calc_mpi
@@ -1013,7 +1024,8 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Estimates of Jacobian elements are computed by finite differences.
     !   The Jacobian is stored in compressed sparse row format.
     use Output
-    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime
+    use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf,ShowTime,MPITotJacCalc,MPITotTimeCollect,&
+    OMPTotTimeCollect,MPITotTimeBuild,OMPTotTimeBuild,OMPTotJacCalc
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
@@ -1138,16 +1150,19 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeBuild=gettime(sec4)
     call OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
+    if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
     if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to build OMP jac:',OMPTimeBuild
 
     ! Collect OMP part of the Jacobian ######################################################
     OMPTimeCollect=gettime(sec4)
     call OMPCollectJacobian(neq,nnzmxperproc,MPIrJacElem,MPIiJacCol,MPIiJacRow,nnzcumout)
     OMPTimeCollect=gettime(sec4)-OMPTimeCollect
+    if (istimingon .eq. 1) OMPTotTimeCollect = OMPTimeCollect+OMPTotTimeCollect
     if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to collect OMP jac:',OMPTimeCollect
 
     ! broadcast  MPItimebuild for load balancing #############################################
     MPITimeBuild=OMPTimeCollect+OMPTimeBuild
+    if (istimingon .eq. 1) MPITotTimebuild = MPITimeBuild+MPITotTimebuild
     if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' Time to build MPI jac:',MPITimeBuild
     call MPICollectBroadCastTime(real(MPITimeBuild,kind=8))
 
@@ -1158,6 +1173,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     ! but nnz=nnzcumout+1 is passed in the collector
     call MPICollectBroadCastJacobian(MPIiJacRow,MPIiJacCol,MPIrJacElem,nnzcumout+1)
     MPITimeCollect=gettime(sec4)-MPITimeCollect
+    if (istimingon .eq. 1) MPITotTimeCollect = MPITimeBuild+MPITotTimeCollect
     if (HybridVerbose.gt.2) write(iout,*)Hybridstamp,' MPI: Time to collect/broadcast jac:',MPITimeCollect
 
 
@@ -1208,7 +1224,9 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !      endif
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
-    if (ShowTime.gt.0) write(iout,*)HybridStamp,'Time in jac_calc:',gettime(sec4)-MPITimeJacCalc
+    MPITimeJacCalc=gettime(sec4)-MPITimeJacCalc
+    if (istimingon .eq. 1) MPITotJacCalc = MPITimeJacCalc+MPITotJacCalc
+    if (ShowTime.gt.0) write(iout,*)HybridStamp,'Time in jac_calc:',MPITimeJacCalc
 
     return
 end subroutine jac_calc_hybrid
