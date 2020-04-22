@@ -599,6 +599,7 @@ cgrs  real teyc, glte   # used in commented-out code, and never computed
       integer impflag
 cnxg      data igs/1/
       Use(Output)
+      Use(Output)
       Use(Dim)      # nx,ny,nhsp,nusp,nzspt,nzsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1,iysptrx2
                                # iysptrx
@@ -3719,7 +3720,9 @@ c  Add drag with cold, stationary impurity neutrals
                   endif
 cJG: init resmo to 0
                else
+               if (FixResmo.eq.1) then
                   resmo(ix,iy,ifld) = 0.
+               endif
                endif
 cJG
 

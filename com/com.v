@@ -33,7 +33,7 @@ MPIneq  integer # number of equation (=neq)
 Nprocs          integer /64/ # Number of threads to be used to calculate the Jacobian
 MPICheckNaN       integer /0/ # Check whether jacobian terms are NaN after jacobian calculation
 ioutmpi           integer /6/ # Unit for stdout for common mpi write statements
-MPILoadBalance integer /1/ #  User defined weights for each MPI tasks (overrided by MPIAutoBalance)
+MPILoadBalance integer /0/ #  User defined weights for each MPI tasks (overrided by MPIAutoBalance)
 MPIAutoBalance integer /1/ # Automatic load balancing for MPI tasks
 MPIBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(tproc/<tproc>)**s)
 MPIStamp          character*20 # Stamp for MPI output (not an user input)
@@ -62,7 +62,7 @@ OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadpri
 OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
-OMPLoadBalance integer /1/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
+OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
 OMPStamp       character*20 # Stamp for hybrid output (not an user input)

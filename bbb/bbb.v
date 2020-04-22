@@ -241,6 +241,7 @@ isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
 is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
 z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
 isbouncon                  integer /1/ #=0/1 turn off/on call to bouncon
+FixResmo                   integer /1/ #[0/1] Turn on/off fix for initialization of resmo in pandf
 ***** Model_choice restart:
 #Flags for choosing one or another calculation of a part of the model
 iondenseqn	character*8	/"llnl"/	# ion continuity equation
@@ -3307,7 +3308,7 @@ ebindz(za:integer, zn:integer)                   real function
       	# in za   atomic charge
       	# in zn   nuclear charge
 wtottim()					 subroutine
-      	# writes out timing information										
+      	# writes out timing information
 rundt()						 subroutine
       	# time-advances solution using nksol with dtreal
 domain_dc()					 subroutine

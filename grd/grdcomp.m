@@ -860,7 +860,7 @@ c     Define interior knots --
       mode=1
       iwsla(1)=nwdim
       iwsla(2)=niwdim
-      write(*,*) 'Associating...'
+     
       if (.not.associated(xconst)) then
       xconst=>xp
       endif

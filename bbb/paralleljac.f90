@@ -201,7 +201,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer:: i,thread,ith,iv,TID, OMP_GET_THREAD_NUM
     character(len = 80) ::  filename
     ! Calculate load distribution for threads
-    if (OMPLoadBalance.ne.1) then
+    if (OMPLoadBalance.ne.1 .and. OMPAutoBalance.ne.1) then
         OMPLoadWeight(1:Nthreads)=1.0
     endif
     if (OMPAutoBalance.eq.1) then
@@ -717,7 +717,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     character(len = 80) ::  filename
     !integer::iJacCol(1:nnzmxperproc)
     !real ::rJacElem(1:nnzmxperproc)
-    if (MPILoadBalance.ne.1) then
+    if (MPILoadBalance.ne.1 .and. MPIAutoBalance.ne.1) then
         MPILoadWeight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
@@ -1065,7 +1065,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer(kind=4)     :: ierr
     character(len = 80) ::  filename
 
-    if (MPILoadBalance.ne.1) then
+    if (MPILoadBalance.ne.1 .and. MPIAutoBalance.ne.1) then
         MPILoadWeight(0:Nprocs-1)=1.0
     endif
     if (MPIAutoBalance.eq.1) then
@@ -1081,7 +1081,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         endif
     endif
 
-    if (OMPLoadBalance.ne.1) then
+    if (OMPLoadBalance.ne.1 .and. OMPAutoBalance.ne.1) then
         OMPLoadWeight(1:Nthreads)=1.0
     endif
     if (OMPAutoBalance.eq.1) then

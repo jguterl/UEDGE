@@ -1296,7 +1296,7 @@ c------------
          ii = lowd -i+1
          do 10 j=1,n
          if (ii.gt.dimabd(1)) call xerrab('Abd array too small. Increase numvarbwpad')
-         if (j.gt.dimabd(2)) call xerrab('Abd array too small. Increase numvarbwpad')
+         if (j.gt.dimabd(2)) call xerrab('Abd array too small dim 2. Increase numvarbwpad')
 	    abd(ii,j) = 0.0d0
  10      continue
  15   continue
@@ -1305,12 +1305,24 @@ c---------------------------------------------------------------------
       do 30 i=1,n
          do 20 k=ia(i),ia(i+1)-1
             j = ja(k)
-                        if (i-j+mdiag.gt.dimabd(1)) call xerrab('Abd array too small. Increase numvarbwpad')
-         if (j.gt.dimabd(2)) call xerrab('Abd array too small. Increase numvarbwpad')
+         if (i-j+mdiag.gt.dimabd(1)) call xerrab('Abd array too small. Increase numvarbwpad')
+         if (j.gt.dimabd(2)) call xerrab('Abd array too small dim 2. Increase numvarbwpad')
             abd(i-j+mdiag,j) = a(k)
 
  20      continue
  30   continue
+
+c                   ml = (band width below the diagonal)
+c                   mu = (band width above the diagonal)
+c                   m = ml + mu + 1
+c                   do 20 j = 1, n
+c                      i1 = max0(1, j-mu)
+c                      i2 = min0(n, j+ml)
+c                      do 10 i = i1, i2
+c                         k = i - j + m
+c                         abd(k,j) = a(iluti,j)
+c                10    continue
+c                20 continue
       return
 c------------- end of csrbnd -------------------------------------------
 c-----------------------------------------------------------------------
