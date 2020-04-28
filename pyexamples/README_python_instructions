@@ -1,0 +1,43 @@
+Various procedures for python UEDGE:
+#################################
+
+To run a particular UEDGE input file, say rd_xyz, perform these steps:
+1) Start a “interactive” python session
+ipython
+
+2) Within this session, read the input file
+from rd_xyz import *
+
+3) Some example input files already have the bbb.exmain()
+command the executes UEDGE; if not, now type
+bbb.exmain()
+
+This attempts to solve the UEDGE equations for a timestep 
+bbb.dtreal.
+
+4) If (3) is successful, but bbb.dtreal is << 1, you can run to
+a steady state by issuing the following 2 commands:
+from rdinitdt import *     #user can edit control parameters here
+from rdcontdt import *
+
+The second script writes out an HDF5 file with the solution
+at each timestep called save.hdf5 that can be used to restart
+
+##############################################
+To restore an hdf5 save file within an ipython session:
+============================================
+ipython
+import uedge
+from uedge.hdf5 import *
+hdf5_restore(“hdf5_filename”
+
+##############################################
+To save a uedge solution in hdf5 format:
+============================================
+within a pyuedge session:
+from uedge.hdf5 import *  #if not done previously
+hdf5_save(“mycase.hdf5”)
+
+##############################################
+See the filesample_uedgeplots_commands to learn how
+to plot

@@ -192,6 +192,7 @@ class UEDGESimulation(object):
         #             dt[i]=abs(bbb.yl[i]/(bbb.yldot[i]*bbb.sfscal[0:bbb.neq]))
         # return dt.min()
         return -1
+
     def RunTime(self,dt=None,tstop=10,Imax=500,Jmax=5,ftol_dt=1e-10,itermx=7,rlx=0.9,incpset=7,method_dt=0,mult_dt_fwd=3.4,mult_dt_bwd=3):
         # this allow run restart 
         bbb.rlx=rlx

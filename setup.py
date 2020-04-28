@@ -11,6 +11,11 @@ from Forthon.compilers import FCompiler
 import getopt
 
 version='7.0.8.4.15rc1'
+GitHash=''
+GitRepo=''
+GitBranch=''
+GitTag=''
+UEDGEFolder=os.getcwd()
 
 try:
     os.environ['PATH']+= os.pathsep + site.USER_BASE + '/bin'
@@ -23,6 +28,8 @@ try:
     import numpy
 except:
     raise SystemExit("Distutils problem")
+
+
 
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','ompjac','mpijac','paralleljac','profiler'])
@@ -40,7 +47,7 @@ omp=0
 ##### OMP flag:
 ompargs=[]
 omppackages=['bbb','com','api']
-omplisthtreadprivatevars='../../ListVariableThreadPrivate_final.txt'
+omplisthtreadprivatevars='../../src/ListVariableThreadPrivate_final.txt'
 
 for o in optlist:
     if o[0] == '-g': #This is confusing: the standard c compiler flags -g  only enables to print symbol but not the debug option for gcc/gfortran (enabled by the -Og flag). But Forthon adds -O0 when -g is called.  
@@ -134,31 +141,38 @@ class uedgeBuild(build):
     def run(self):
         # with python2 everything is put into a single uedgeC.so file
         if sys.hexversion < 0x03000000:
+            raise ValueError('Python 2 deprecated in this fork')
             if petsc == 0:
                 call(['make', '-f', 'Makefile.Forthon'])
             else:
                 call(['make', '-f', 'Makefile.PETSc'])
             build.run(self)
         else:
+            os.chdir('src')
             if petsc == 0:
                 call(['make', DEBUGVAR,FCOMPVAR,OMPVAR,'-f', 'Makefile.Forthon3'])
             else:
                 call(['make', '-f', 'Makefile.PETSc3'])
+            os.chdir('..')
             build.run(self)
+           
 
 
 class uedgeClean(build):
     def run(self):
         if sys.hexversion < 0x03000000:
+            raise ValueError('Python 2 deprecated in this fork')
             if petsc == 0:
                 call(['make', '-f', 'Makefile.Forthon', 'clean'])
             else:
                 call(['make', '-f', 'Makefile.PETSc', 'clean'])
         else:
+            
+           
             if petsc == 0:
-                call(['make', '-f', 'Makefile.Forthon3', 'clean'])
+                call(['make', '-f', 'src/Makefile.Forthon3', 'clean'])
             else:
-                call(['make', '-f', 'Makefile.PETSc3', 'clean'])
+                call(['make', '-f', 'src/Makefile.PETSc3', 'clean'])
 
 
 uedgepkgs = ['aph', 'api', 'bbb', 'com', 'flx', 'grd', 'svr', 'wdf']
@@ -262,11 +276,11 @@ setup(name="uedge",
       packages=['uedge','uedge.contrib'],
       package_dir={'uedge': 'pyscripts'},
       # include_package_data=True,
-      scripts=['pyscripts/pdb2hdf5', 'pyscripts/bas2py', 'pyscripts/hdf52pdb'],
+      #scripts=['pyscripts/pdb2hdf5', 'pyscripts/bas2py', 'pyscripts/hdf52pdb'],
       ext_modules=[Extension('uedge.uedgeC',
                              ['uedgeC_Forthon.c',
                               os.path.join(builddir,'Forthon.c'),
-                              'com/handlers.c', 'com/vector.c','bbb/exmain.c'],
+                              'src/com/handlers.c', 'src/com/vector.c','src/bbb/exmain.c'],
                              include_dirs=[builddir, numpy.get_include()],
                              library_dirs=library_dirs,
                              libraries=libraries,
