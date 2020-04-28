@@ -12,20 +12,28 @@ from Forthon.compilers import FCompiler
 import getopt
 
 version='7.0.8.4.15rc1'
+
 GitHash=''
 GitRemoteRepo=''
 GitBranch=''
-GitTrackingBranch=''
 GitTag=''
 UEDGEfolder=os.getcwd()
+GitRepo=''
 try:
     Repo=git.Repo()
+    GitTag=Repo.tags[-1].name
     GitHash=Repo.head.object.hexsha
     GitBranch=Repo.active_branch.name
-    try:
-        GitRemoteRepo=Repo.active_branch.tracking_branch().repo
-        GitTrackingBranch=Repo.active_branch.tracking_branch().name
-    except: pass
+    #GitRepo=Repo.active_branch.repo.name
+except: 
+    pass
+
+if GitTag=='':
+    raise ValueError('Cannot catch version of UEDGE in Git tags...')
+else:
+    version=GitTag
+    
+    
 
 try:
     os.environ['PATH']+= os.pathsep + site.USER_BASE + '/bin'
@@ -260,6 +268,12 @@ if parallel:
 
 with open('pyscripts/__version__.py','w') as ff:
     ff.write("__version__ = '%s'\n"%version)
+    ff.write("GitTag='{}'\n".format(GitTag))
+    ff.write("GitBranch='{}'\n".format(GitBranch))
+    ff.write("GitHash='{}'\n".format(GitHash))
+    #ff.write("GitRepo={}".format(GitRepo))
+    
+   
 
 define_macros=[("WITH_NUMERIC", "0"),
                ("FORTHON_PKGNAME", '\"uedgeC\"'),
