@@ -7,15 +7,25 @@ import os
 import os.path
 import string
 import site
+import git
 from Forthon.compilers import FCompiler
 import getopt
 
 version='7.0.8.4.15rc1'
 GitHash=''
-GitRepo=''
+GitRemoteRepo=''
 GitBranch=''
+GitTrackingBranch=''
 GitTag=''
-UEDGEFolder=os.getcwd()
+UEDGEfolder=os.getcwd()
+try:
+    Repo=git.Repo()
+    GitHash=Repo.head.object.hexsha
+    GitBranch=Repo.active_branch.name
+    try:
+        GitRemoteRepo=Repo.active_branch.tracking_branch().repo
+        GitTrackingBranch=Repo.active_branch.tracking_branch().name
+    except: pass
 
 try:
     os.environ['PATH']+= os.pathsep + site.USER_BASE + '/bin'
