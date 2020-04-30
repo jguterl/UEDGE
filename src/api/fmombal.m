@@ -67,7 +67,7 @@ c-----------------------------------------------------------------------
 	integer natomic(misotope)
         integer ndima
 	save uresp, usave, caplams
-c$omp threadprivate(uresp, usave, caplams)
+cJGc$omp threadprivate(uresp, usave, caplams)
 !
 !	****	DESCRIPTION OF INPUT VARIABLES	****
 !
@@ -364,7 +364,7 @@ c-----------------------------------------------------------------------
 	integer nrow(KXA*(MXMISO1)), z1
 	integer i, j
 	save nrow, bmat, sbar0, ubar0
-c$OMP threadprivate(bmat,sbar0,ubar0,nrow)
+cJG c$OMP threadprivate(bmat,sbar0,ubar0,nrow)
 	macc = miso+1	!Space for acci = acceleration force
 	mflow = 1	!Flow
 	z1 = 1
@@ -1063,7 +1063,7 @@ c-----------------------------------------------------------------------
 	integer nrowz(KXA*MXNZCH,MXMISO), lsz(NSIZE,MXMISO),
      >	msz(NSIZE,MXMISO)
 	save zmat, source, scaz, lsz, msz, nrowz
-c$omp threadprivate(zmat, source, scaz, lsz, msz, nrowz)
+cJG c$omp threadprivate(zmat, source, scaz, lsz, msz, nrowz)
 c
 c	FOR LDIR > 1, DO COMPLETE NEW MATRIX INVERSION
 c	FOR LDIR <=1, DO INCREMENTAL MATRIX INVERSION, USING

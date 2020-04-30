@@ -63,7 +63,7 @@ clean:
 	find . -depth -name build -exec rm -rf {} \;
 	find . -depth -name __pycache__ -exec rm -rf {} \;
 	find . -name \*.F -exec rm {} \;
-	touch uedgeC_Forthon.c
+	touch src/uedgeC_Forthon.c
 
 #----------------------------------------------------------------------------
 #--- Build command for opendx wrapper.

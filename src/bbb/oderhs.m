@@ -661,12 +661,18 @@ ccc            if (isngonxy(ix,iy,1) .eq. 1) nbidot = cngtgx(1)*yldot(idxg(ix,iy
   255       continue
             do igsp = 1, ngsp
                nbg2dot(igsp) = 0.
-
-cJG              if(isngonxy(ix,iy,ifld) .eq. 1) then #JG: ifld out of bound !!!!!!
-               if(isngonxy(ix,iy,igsp) .eq. 1) then
+cJG fix ifld out of bound.
+             if (fixnbg2dotinit.gt.0) then
+                 if(isngonxy(ix,iy,igsp) .eq. 1) then
+                     iv = idxg(ix,iy,igsp)
+                     nbg2dot(igsp) = yldot(iv)*n0g(igsp)
+                   endif
+            else
+                if(isngonxy(ix,iy,ifld) .eq. 1) then
                  iv = idxg(ix,iy,igsp)
                  nbg2dot(igsp) = yldot(iv)*n0g(igsp)
                endif
+            endif
             enddo
 c...    Omit cases where iseqalg=1 indicating algebraic b.c. and ix=nx for up.
 c...    Could cause trouble for nisp.ne.nusp, but majority species should
@@ -788,7 +794,12 @@ c...  Initialize values and arrays
         mvolcurt = mvolcurt + mvolcur(ifld)
       enddo
       do igsp = 1, ngsp
+      if (fixinitvolsor.gt.0) then
         call s2fill (nx+2, ny+2, 0., volpsorg(0,0,igsp), 1, nx+2)
+      else
+        call s2fill (nx+2, ny+2, 0., volpsor(0,0,igsp), 1, nx+2)
+        call s2fill (nx+2, ny+2, 0., volmsor(0,0,igsp), 1, nx+2)
+      endif
         ivolcurgt = ivolcurgt + ivolcurg(igsp)
       enddo
 cccMER NOTE: generalize the following for multiple x-points
@@ -1232,26 +1243,26 @@ ccc         call convsr_vo (xc, yc, yl)  # was one call to convsr
 ccc         call convsr_aux (xc, yc, yl)
          call pandf1 (xc, yc, iv, neq, t, yl, wk)
          if( isjacreset.ge.1) then
-         yldot_pert(1:neq)=wk(1:neq)
+             yldot_pert(1:neq)=wk(1:neq)
 ccc 18   continue
 c...  If this is the last variable before jumping to new cell, reset pandf
 cJG this call to pandf1 can be safely ignored with ijacreset=0 (and save some time...)
-         if (mod(iv,numvar).eq.0) then
-            call pandf1 (xc, yc, iv, neq, t, yl, wk)
-         endif
+             if (mod(iv,numvar).eq.0) then
+                call pandf1 (xc, yc, iv, neq, t, yl, wk)
+             endif
 
-         do ii=1,neq
-         if (yldot_pert(ii).ne.wk(ii)) then
-      write(iout,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call to pandf1 at ii=',
+             do ii=1,neq
+             if (yldot_pert(ii).ne.wk(ii)) then
+      write(iout,'(a,i5,e20.12,e20.12)')' *** wk modified on second call to pandf1 at ii=',
      . ii,yldot_pert(ii),wk(ii)
-         call xerrab('*** Stop ***')
-         endif
-         if (isnan(yldot_pert(ii))) then
-         write(iout,*) 'ii=',ii
-         call xerrab('*** Nan in wk array in jac_calc ***')
-         endif
+             call xerrab('*** Stop ***')
+             endif
+             if (isnan(yldot_pert(ii))) then
+             write(iout,*) 'ii=',ii
+             call xerrab('*** Nan in wk array in jac_calc ***')
+             endif
 
-         enddo
+             enddo
          endif
 
 c ... End loop over dependent variables and finish Jacobian storage.
@@ -2422,13 +2433,23 @@ c ... Calculate right-hand sides at unperturbed values of variables.
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-
+cJG possible recursive compilation issue with sf
+      if(fixsfset.gt.0) then
+      if (ParallelJac.eq.1) then
+      call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, sf,
+     .               nnzmx, jac, jacj, jaci)
+      else
+      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
+     .               nnzmx, jac, jacj, jaci)
+      endif
+      else
       if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
       else
       call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
+      endif
       endif
 
 

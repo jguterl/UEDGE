@@ -125,17 +125,22 @@ class UedgeDoc(object):
                        self.PrintVarInfo(Dic[k],OnlyVar)
                     
     #---------------------------------------------------------------------------    
-    def Search(self,Str,exact=False,OnlyVar=False):
+    def Search(self,Str,exact=False,OnlyVar=False,Silent=False):
+        Out=[]
         for pkg in self.ListPkg:
             Dic=self.DocPkg[pkg]
             for k in Dic.keys():
                 if exact:
                     if Str==k:
-                        
-                        self.PrintVarInfo(Dic[k],OnlyVar)
+                        if not Silent:
+                            self.PrintVarInfo(Dic[k],OnlyVar)
+                        Out.append(Dic[k])
                 else:
-                    if Str in k: 
-                        self.PrintVarInfo(Dic[k],OnlyVar) 
+                    if Str in k:
+                        if not Silent:
+                            self.PrintVarInfo(Dic[k],OnlyVar)
+                        Out.append(Dic[k])
+        return Out
     #---------------------------------------------------------------------------                    
     def GetVarInfo(self,Str,exact=True):
         L=[]
@@ -218,6 +223,9 @@ def ListVar(Str,InStr='',OnlyVar=True):
 #---------------------------------------------------------------------------
 def Search(Str,exact=False,OnlyVar=False):
     Doc.Search(Str,exact,OnlyVar)
+#--------------------------------------------------------------------------    
+def SearchSilent(Str,exact=False,OnlyVar=False):
+    return Doc.Search(Str,exact,OnlyVar,Silent=True)
 #--------------------------------------------------------------------------
         
 def SearchDoc(Str,OnlyVar=False):

@@ -241,7 +241,11 @@ isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
 is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
 z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
 isbouncon                  integer /1/ #=0/1 turn off/on call to bouncon
-FixResmo                   integer /1/ #[0/1] Turn on/off fix for initialization of resmo in pandf
+FixResmo                   integer /0/ #[0/1] Turn on/off fix for initialization of resmo in pandf (meaningless until further notice)
+fixpwrebkg                 integer /1/ #[0/1] Turn on/off fix for electron power background re/initialization in pandf
+fixresng                  integer /1/ #[0/1] Turn on/off fix for neutral density re/initialization in neudif
+fixnbg2dotinit            integer /1/ #[0/1] Turn on/off fix for nbg2dot re/initialization in rscalf
+
 ***** Model_choice restart:
 #Flags for choosing one or another calculation of a part of the model
 iondenseqn	character*8	/"llnl"/	# ion continuity equation
@@ -1701,7 +1705,7 @@ z0ng(1:ngsp)	       _real [m] /0./  #axial or x loc. of gas particle profile
 r0ng(1:ngsp)           _real [m] /0./  #rad. or y loc. of gas particle profile
 zwng(1:ngsp)           _real [m] /3./  #axial or y Gaussian 1/2 width gas prtcl
 rwng(1:ngsp)           _real [m] /.05/ #rad. or y Gaussian 1/2 width gas prtcl
-
+fixinitvolsor            integer /1/ #[0/1] Turn on/off fix for volsor initialization in volsor
 ***** Bfield:
 #Variables for the B-field and grad_B drift geo/B-field factors
 b0                     real /1./ +restart
@@ -2724,6 +2728,8 @@ jaci(neqp1)	_integer	# Nonzero structure of Jacobian matrix jac.
 				# in row i of jac.
 jacj(nnzmx)	_integer	# Column indices of nonzero entries in jac.
 isjacstnlon     integer    /0/  # Compute 9-pt stencil in ivl2gstnl - serial
+fixsfset        integer    /1/  # [0/1] Fix use of sf as worker array when calling jac_calc in sfsetnk. Use a new worker array instead.
+
 ***** Jacobian_csc:
 #Jacobian matrix in compressed sparse column format
 rcsc(nnzmx)	_real		# Nonzero entries of the Jacobian matrix.
@@ -3042,8 +3048,8 @@ isrnorm           integer /1/  #=1 causes row normaliza. of Jac. (see normtype)
 jscalcol          integer /0/  #=1 causes column scaling for daspk
 
 ***** Variable_perturbation restart:
-delperturb             real	/1.e-8/		# fractional change for finite diffs
-###delpy           real	/-1.e-8/	# Forthon del; used to set del if > 0. JG: removed it because "del" is confusing anyway when parsing package attribute
+delperturb      real	/1.e-8/		# fractional change for finite diffs
+###delpy        real	/-1.e-8/	# Forthon del; used to set del if > 0. JG: removed it because "del" is confusing anyway when parsing package attribute
 dylconst        real    /1./            # factor in floor term in dyl
 isjacreset      integer  /1/            # if=1, pandf1 reset for last variable
 

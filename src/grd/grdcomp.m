@@ -860,7 +860,7 @@ c     Define interior knots --
       mode=1
       iwsla(1)=nwdim
       iwsla(2)=niwdim
-     
+      if (fixgridpointer.gt.0) then
       if (.not.associated(xconst)) then
       xconst=>xp
       endif
@@ -869,6 +869,7 @@ c     Define interior knots --
       endif
       if (.not.associated(nderiv)) then
       nderiv=>nderivp
+      endif
       endif
 
       call fch(ndata,xdatag,ydatag,sddata,nord,nbkpt,bkpt,

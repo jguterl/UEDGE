@@ -24,25 +24,25 @@ def GetListPackage()->list:
 
 def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False):
         if Verbose:
-            print('### Looking for input file {} in {}'.format(ObjectName,Folder))
+            print('# Looking for input file {} in {}'.format(ObjectName,Folder))
         if Folder=='InputDir':
             try:
                 ObjectDir=Settings.InputDir
             except: 
-                print('Settings object for UEDGE not find... Looking for InputDir in current directory')
-                ObjectDir='InputDir'
-                
+                print('# Settings object for UEDGE not find... Looking for InputDir in current directory')
+                ObjectDir='InputDir'        
         elif Folder=='RunDir':
             try:
                 ObjectDir=Settings.RunDir
             except: 
-                print('Settings object for UEDGE not find... Looking for RunDir in current directory')
+                print('# Settings object for UEDGE not find... Looking for RunDir in current directory')
                 ObjectDir='RunDir'
         elif Folder is None:
             ObjectDir=None
-        else:
+        else:    
             ObjectDir=Folder
             
+        
         if ObjectDir is None:    
             ObjectPath=os.path.abspath(ObjectName)
         else:
@@ -57,4 +57,44 @@ def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False)
         else:
             if Verbose:
                 print('### Found {}'.format(ObjectPath))
-            return ObjectPath    
+            return ObjectPath 
+        
+# def GetCaseFolder(CaseName:str):
+#     if CaseName=='Default':
+#         CaseName=UEDGESimulation.GetTag()
+    
+#         elif         
+# def
+#  PathFile(FileName:str,SaveFolder:str='SaveDir',CaseName='Default',Enforce=True,Verbose:bool=False):
+    
+#         CaseFolder=GetCaseFolder(CaseFolder)
+            
+#          if os.path.dirname(FileName)!=''
+#         if Verbose:
+#             print('### Looking for input file {} in {}'.format(FileName,Folder))
+#         if Folder=='SaveDir':
+#             try:
+#                 FileDir=Settings.InputDir
+#             except: 
+#                 print('Settings object for UEDGE not find... Looking for SaveDir in current directory')
+#                 FileDir='SaveDir'
+#         elif Folder is None:
+#             ObjectDir=None
+#         else:
+#             ObjectDir=Folder
+            
+#         if ObjectDir is None:    
+#             FilePath=os.path.abspath(FileName)
+#         else:
+#             FilePath=os.path.join(os.path.abspath(ObjectDir),FileName)
+            
+#         if not os.path.exists(FilePath):
+#             if Enforce:
+#                 raise IOError('Cannot find {}:'.format(FiletPath))
+#             else:
+#                 print('### Cannot find {}'.format(ObjectPath))
+#             return None
+#         else:
+#             if Verbose:
+#                 print('### Found {}'.format(ObjectPath))
+#             return ObjectPath

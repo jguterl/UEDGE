@@ -252,6 +252,7 @@ epslon_lim	real  /1.e-3/
 	# ratio of limiter guard-cell x-width to adjacent cell
 dalpha       real /5./
         # fuzziness or overlap (in degrees) of angle limits associ. with alpha1
+fixgridpointer integer /1/ # [0/1] Fix for pointer passed to subroutine fch (otherwise raise an error with -fcheck=all gfortran option)
 
 ***** Transit:
 # common block from original grid code

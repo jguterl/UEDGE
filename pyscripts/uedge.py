@@ -22,6 +22,7 @@ if sys.hexversion >= 0x03000000:
     sys.setdlopenflags(os.RTLD_LAZY | os.RTLD_GLOBAL)
 
 from . import uedgeC
+
 from .uedgeC import *
 
 from Forthon import *
@@ -52,7 +53,7 @@ else:
 import time
 import os.path
 import __main__
-warp_version = "$Id: uedge.py,v 7.4 2019/11/12 21:10:56 meyer8 Exp $"
+#warp_version = "$Id: uedge.py,v 7.4 2019/11/12 21:10:56 meyer8 Exp $"
 # import all of the neccesary packages
 
 

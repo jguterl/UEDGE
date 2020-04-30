@@ -121,7 +121,7 @@ fargsdebug=' -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overfl
 if not SafeFortranOpt:
     fargsopt=['-Ofast'] #Be careful with this fast: -Ofast enables -ffast-math, -fallow-store-data-races and  -fstack-arrays. fallow-store-data-races may severly impend pyUEDGE performances on some plateforms.  
 else:
-    fargsopt=['-O3 -ffast-math -fstack-arrays']
+    fargsopt=['-O3 -fstack-arrays']
 ## Flags for c compiler  
 cargs=[]
 ## Flags for Forthon wrapper
@@ -267,7 +267,7 @@ if parallel:
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:
-    ff.write("__version__ = '%s'\n"%version)
+    ff.write("__version__='{}'\n".format(version))
     ff.write("GitTag='{}'\n".format(GitTag))
     ff.write("GitBranch='{}'\n".format(GitBranch))
     ff.write("GitHash='{}'\n".format(GitHash))
@@ -302,7 +302,7 @@ setup(name="uedge",
       # include_package_data=True,
       #scripts=['pyscripts/pdb2hdf5', 'pyscripts/bas2py', 'pyscripts/hdf52pdb'],
       ext_modules=[Extension('uedge.uedgeC',
-                             ['uedgeC_Forthon.c',
+                             ['src/uedgeC_Forthon.c',
                               os.path.join(builddir,'Forthon.c'),
                               'src/com/handlers.c', 'src/com/vector.c','src/bbb/exmain.c'],
                              include_dirs=[builddir, numpy.get_include()],

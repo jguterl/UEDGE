@@ -1,3 +1,4 @@
+c-----------------------------------------------------------------------
       subroutine turbdif (ix, iy, ixmp3, iyp1, ifld)
 c ... For a grid cell outside the separatrix, calculate anomalous
 c     diffusivity due to turbulence and return it via common array
@@ -111,8 +112,7 @@ c
       real tnuiz,ngnot,lmfp,ty0,ty1,nlmt,nu1,nu2,ffyi,ffyo
       integer iy1, methgx, methgy, iy2, jx
       logical isxyfl
-      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
-      real t,t0,t1,t2,a
+
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -120,6 +120,8 @@ c
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+      Use(Aux)      # ix,iy,igsp,iv,iv1,iv2,iv3,
+                    # ix1,ix2,ix3,ix4,ix5,ix6,t,t0,t1,t2,a
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -519,15 +521,6 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-       if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
-      endif
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -597,10 +590,8 @@ c
       real flalfgx_adj, flalfgy_adj, flalfgxy_adj
       integer iy1, methgx, methgy, iy2, jx, jfld, ifld
       integer iym1,iyp1,iyp2,ixm1b,ixp1b,ixp2b
-      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       logical isxyfl
       real(Size4) sec4, gettime
-      real t,t0,t1,t2,a
 
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
@@ -609,6 +600,8 @@ c
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+      Use(Aux)      # ix,iy,igsp,iv,iv1,iv2,iv3,
+                    # ix1,ix2,ix3,ix4,ix5,ix6,t,t0,t1,t2,a
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -640,7 +633,7 @@ c ------------------
       methgx = mod(methg, 10)
       methgy = methg/10
 
-c      write(iout (*,*) "neudifpg"
+c      write (*,*) "neudifpg"
       do 895 igsp = 1, ngsp
 
 c *********************************************
@@ -1107,7 +1100,7 @@ c ... is it correct to use ng instead of ni??? i.e. will ng enter jacobian?
             if (igsp.eq.1 .and. ishymol.eq.1)
      .            resng(ix,iy,igsp) = resng(ix,iy,igsp) + psordis(ix,iy)
             resng(ix,iy,igsp) = resng(ix,iy,igsp) - cfneutdiv*
-     .          (cfneutdiv_fng*(fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
+     .          cfneutdiv_fng*((fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
      .          fluxfacy*(fngy(ix,iy,igsp) - fngy(ix,iy-1,igsp)) )
 
 c ... IJ 2016/10/19 add MC neut flux if flags set
@@ -1124,15 +1117,6 @@ c ... IJ 2016/10/19 add MC neut flux if flags set
 
  891      continue
  892    continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-      if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
-      endif
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -1192,8 +1176,7 @@ c --------------------------------------------------------------------------
       real tnuiz,ngnot,lmfp,ty0,ty1,nlmt,ffyo,ffyi
       integer iy1, methgx, methgy, iy2, jx
       logical isxyfl
-      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
-      real t,t0,t1,t2,a
+
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -1201,6 +1184,8 @@ c --------------------------------------------------------------------------
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+      Use(Aux)      # ix,iy,igsp,iv,iv1,iv2,iv3,
+                    # ix1,ix2,ix3,ix4,ix5,ix6,t,t0,t1,t2,a
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -1534,17 +1519,7 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-       if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
       endif
-      endif
-
 
  895  continue   # end of igsp loop from the beginning of subroutine
 
@@ -1598,8 +1573,7 @@ c ..  the gas fluxes and then used to form fnix if isupgon(igsp)=1
       real vtn, vtnp, qr, qtgf, nconv, grdnv, difgx2
       real tnuiz,ngnot,lmfp,ty0,ty1
       integer iy1, methgx, methgy, iy2, jx
-      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
-      real t,t0,t1,t2,a
+
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx
       Use(Share)    # nxpt,geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -1607,6 +1581,8 @@ c ..  the gas fluxes and then used to form fnix if isupgon(igsp)=1
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy
+      Use(Aux)      # ix,iy,igsp,iv,iv1,iv2,iv3,
+                    # ix1,ix2,ix3,ix4,ix5,ix6,t,t0,t1,t2,a
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
