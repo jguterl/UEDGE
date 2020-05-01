@@ -69,7 +69,7 @@ subroutine InitOMP()
     Use Lsode, only:neq
 
     implicit none
-    integer:: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM
+    integer:: OMP_GET_NUM_THREADS,OMP_GET_THREAD_NUM,OMP_GET_MAX_THREADS
     character*8 :: MPIRankTag
 
     ! prepare MPI/Hybrid stamps for output
@@ -79,11 +79,14 @@ subroutine InitOMP()
     else
         write(OMPstamp,'(a)') '*OMPJac* '
     endif
+    if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Max number of threads available:',OMP_GET_MAX_THREADS()
+    call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
 
     !$omp parallel
     if (OMP_GET_THREAD_NUM().eq.0) then
-        if (Nthreads.gt.OMP_GET_NUM_THREADS()) then
+        if (Nthreads.gt.OMP_GET_MAX_THREADS()) then
             if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Warning: # threads requested > # threads available'
+
             Nthreads=OMP_GET_NUM_THREADS()
             write(iout,*) OMPStamp,' Nthreads:', Nthreads
         endif
@@ -402,9 +405,9 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
 
-        if (exmain_aborted.gt.0) exit
+        if (exmain_aborted.lt.1) then
         !$omp  critical
-        !$omp cancel do if(exmain_aborted.gt.0)
+        !!!!$omp cancel do if(exmain_aborted.gt.0)
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
@@ -412,8 +415,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
-        if (exmain_aborted.gt.0) exit
-        end
+        endif
     enddo loopthread
     !$omp  END PARALLEL DO
 

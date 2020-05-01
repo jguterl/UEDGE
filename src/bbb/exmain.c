@@ -34,7 +34,7 @@ void int_handler() {
    printf("or a single line to be evaluated by Python.\n");
    while(1){
 #ifdef HAS_READLINE
-       ret = readline("Debug>>> ");
+       ret = readline("InDebug>>> ");
        if(ret == (char *)NULL)return;
        add_history(ret);
        strncpy(mymyline,ret,sizeof(mymyline)-1);
@@ -47,8 +47,11 @@ void int_handler() {
        if(strncmp(mymyline,"cont",4) == 0){
            return;
        } else if (strncmp(mymyline,"abort",5) == 0) {
-          PyRun_SimpleString("bbb.exmain_aborted = True");
-          siglongjmp(ev,1);
+
+	 #pragma omp master
+	 {PyRun_SimpleString("bbb.exmain_aborted = True");
+	    siglongjmp(ev,1);}
+
        } else if (strncmp(mymyline,"exit",4) == 0) {
           PyRun_SimpleString("bbb.exmain_aborted = True");
           siglongjmp(ev,1);
@@ -81,17 +84,19 @@ void exmain_() {
 #ifdef FORTHON
    sigset_t block_mask;
    int ival;
-
+#pragma omp master
+   {
    ival = sigsetjmp(ev,1);
    if(ival != 0){
        sigaction(SIGINT,&oact,NULL);
        return;
    }
-
+}
 
 /* setup to catch SIGINT and save the previous handler to be restored
    on return */
-
+   #pragma omp master
+   {
    sigfillset(&block_mask);
    act.sa_handler = int_handler;
    act.sa_mask = block_mask;
@@ -100,7 +105,7 @@ void exmain_() {
 
    PyRun_SimpleString("from uedge import bbb");
    PyRun_SimpleString("bbb.exmain_aborted = False");
-
+   }
 
 
 #endif
@@ -114,7 +119,8 @@ void exmain_() {
    exmain_f_();
 #endif
 #ifdef FORTHON
-   sigaction(SIGINT,&oact,NULL);
+   #pragma omp master
+   {sigaction(SIGINT,&oact,NULL);}
 #endif
 }
 
