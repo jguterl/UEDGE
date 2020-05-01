@@ -48,9 +48,9 @@ void int_handler() {
            return;
        } else if (strncmp(mymyline,"abort",5) == 0) {
 
-	 #pragma omp master
-	 {PyRun_SimpleString("bbb.exmain_aborted = True");
-	    siglongjmp(ev,1);}
+	 //#pragma omp master
+	 PyRun_SimpleString("bbb.exmain_aborted = True");
+	 //siglongjmp(ev,1);
 
        } else if (strncmp(mymyline,"exit",4) == 0) {
           PyRun_SimpleString("bbb.exmain_aborted = True");
@@ -95,7 +95,7 @@ void exmain_() {
 
 /* setup to catch SIGINT and save the previous handler to be restored
    on return */
-   #pragma omp master
+   //#pragma omp master
    {
    sigfillset(&block_mask);
    act.sa_handler = int_handler;
@@ -119,7 +119,7 @@ void exmain_() {
    exmain_f_();
 #endif
 #ifdef FORTHON
-   #pragma omp master
+   //#pragma omp master
    {sigaction(SIGINT,&oact,NULL);}
 #endif
 }
