@@ -224,7 +224,7 @@ def ListVar(Str,InStr='',OnlyVar=True):
 def Search(Str,exact=False,OnlyVar=False):
     Doc.Search(Str,exact,OnlyVar)
 #--------------------------------------------------------------------------    
-def SearchSilent(Str,exact=False,OnlyVar=False):
+def SearchSilent(Str,exact=True,OnlyVar=False):
     return Doc.Search(Str,exact,OnlyVar,Silent=True)
 #--------------------------------------------------------------------------
         

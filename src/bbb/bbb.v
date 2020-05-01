@@ -10,6 +10,12 @@ nispmxngspmx = nispmx*ngspmx # tot numb ion*gas species
 nstramx = 2 # maximum number of strata for MC neutrals code
 }
 
+***** Ident_vars:
+uedge_ver  character*80 /'$Name:  $'/
+uedge_date character*80 /'Version date in README_Uedge_vers in dir uedge'/
+pyrestart_file    character*80 /""/ #Python file that can also be used to restart
+CaseName character*80 /'default'/
+
 ***** Math_problem_size:
 neqmx		integer		# number of math. eqns to be solved/integrated
 numvar		integer		# number of physical variables per cell
@@ -2851,7 +2857,7 @@ znuclin(1:nispmx) integer /nispmx*1./ #total nuclear charge of ion (i.d. isotope
 isallloc		integer   /0/        #=1 for local process. allocation with mpi
 newaph			integer  /1/ #=1 calls aphread for hyd. atomic data;=0 not
 newapi		integer /1/	     #=1, call readmc for new imp. data;=0, no
-pyrestart_file    character*80 /""/ #Python file that can also be used to restart
+
 read_diffs		integer /0/	     #=0,a flag to signal whether to read diffusivities
 dif_io		integer /0/	     #=0,a flag to signal whether to read/write dif_use
 tra_io		integer /0/	     #=0,a flag to signal whether to read/write(iout tra_use
@@ -3805,9 +3811,6 @@ sdod(imx+1,imy+1,lnst+1) _real
 yielh(imx+1)	       _real
 yielz(imx+1,lnst+1)    _real
 
-***** Ident_vars:
-uedge_ver  character*80 /'$Name:  $'/
-uedge_date character*80 /'Version date in README_Uedge_vers in dir uedge'/
 
 ***** Last_group_ex_sav_var:
 # Last group in bbb where new variables from read save files get stored
