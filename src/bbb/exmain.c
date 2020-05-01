@@ -32,7 +32,9 @@ void int_handler() {
    sigset_t block_mask;
    printf("\nType \"cont\" to continue exmain(), \"abort\" to return to Python prompt.\n");
    printf("or a single line to be evaluated by Python.\n");
-   while(1){
+   int condition;
+   condition=1;
+   while(condition>0){
 #ifdef HAS_READLINE
        ret = readline("InDebug>>> ");
        if(ret == (char *)NULL)return;
@@ -50,6 +52,7 @@ void int_handler() {
 
 	 //#pragma omp master
 	 PyRun_SimpleString("bbb.exmain_aborted = True");
+	 condition=0;
 	 //siglongjmp(ev,1);
 
        } else if (strncmp(mymyline,"exit",4) == 0) {
