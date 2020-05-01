@@ -327,6 +327,7 @@ end subroutine jac_calc_omp
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac
+    use Cdv, only: exmain_aborted
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -390,16 +391,19 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !$omp& private(TimeThread)
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
+
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
-
+        !$omp cancel do if(exmain_aborted.gt.0)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,' Thread id:',tid,' <-> ith:',ithcopy
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
 
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
+        !$omp cancel do if(exmain_aborted.gt.0)
+
         !$omp  critical
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
@@ -408,6 +412,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
+        !$omp cancel do if(exmain_aborted.gt.0)
     enddo loopthread
     !$omp  END PARALLEL DO
 
@@ -444,6 +449,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
     use OmpOptions,only:iidebugprint,ivdebugprint
     use Jacobian_csc,only:yldot_pert
+    use Cdv, only: exmain_aborted
 
     implicit none
     integer,intent(in):: ith,nnzmxperthread,nthreads,ivmin,ivmax,neq
@@ -477,6 +483,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
 
     nnz=1
     loopiv: do iv=ivmin,ivmax
+        if (exmain_aborted.gt.0) exit
         ii1 = max(iv-mu, 1)
         ii2 = min(iv+ml, neq)
         ! ... Reset range if this is a potential perturbation with isnewpot=1
@@ -528,6 +535,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
                                        ! the index is set to start at 0
 
         loopii: do ii = ii1, ii2
+            if (exmain_aborted.gt.0) exit
             jacelem = (wk(ii) - yldot00(ii)) / dyl
             !jacelem = (wk/(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
 
