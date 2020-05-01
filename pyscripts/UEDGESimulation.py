@@ -476,7 +476,7 @@ Todo:
     mult_dt_bwd=3        
     Imax=500
     Jmax=5
-    DefaultFormat='numpy'
+    Format='numpy'
     
     
     
@@ -525,11 +525,16 @@ Sim=UEDGESim()
 def ReadInput(FileName,Folder=None,Verbose=False):
      Sim.ReadInput(FileName,Folder,Verbose=Verbose)   
      
-def Restore(FileName,CaseName=Sim.CaseName,Folder='SaveDir',LoadList=[],ExcludeList=[],Format=Sim.DefautlFormat,CheckCompat=True,Verbose=False):
+def Restore(FileName,CaseName=Sim.CaseName,Folder='SaveDir',LoadList=[],ExcludeList=[],Format=Sim.Format,CheckCompat=True,Verbose=False):
     Sim.Load(FileName,CaseName,Folder,LoadList,ExcludeList,Format,CheckCompat,Verbose)
+    
+def Save(FileName,CaseName=Sim.CaseName,Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=Sim.Format,ForceOverWrite=False,Verbose=False):
+    Sim.Save(FileName,CaseName,Folder,Mode,ExtraVars,GlobalVars,Tag,Format,ForceOverWrite,Verbose)
     
 def SetCaseName(CaseName:str):
      Sim.SetCaseName(CaseName)
+     
+
 
 def GetCaseName():
     print("# CaseName:{}".format(Sim.GetCaseName))
