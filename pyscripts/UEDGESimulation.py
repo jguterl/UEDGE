@@ -26,7 +26,8 @@ class UEDGESimBase():
         print('Loaded Packages:',self.ListPkg)
         for pkg in self.ListPkg:
             exec('self.' + pkg + '=' + pkg,globals(),locals())
-        self.IO=UEDGEIO.UEDGEIO()    
+        self.IO=UEDGEIO.UEDGEIO()
+        self.ExcludeList=['ExcludeList','ListPkg','IO']+self.ListPkg
         #self.SetVersion()
 
     def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True):
@@ -163,8 +164,9 @@ class UEDGESimBase():
             print(' - {}={}'.format(A,V))
             
     def SetUEDGEParams(self,Verbose=False):
+        
         for A,V in self.GetInstanceAttr().items():
-            if V is not None:
+            if V is not None and V in not ExcludeList:
                 Result=SearchSilent(A)
                 if len(Result)>0:
                     Pkg=Result[0]['Package']
@@ -182,7 +184,7 @@ class UEDGESimBase():
         Dic=self.__class__.GetClassAttr()
         for k,v in kwargs.items():
             if k in Dic:
-                self.__class__[k]=v
+                self.__class__.__dict__.[k]=v
                 
         #Override object attribute 
         Dic=self.GetInstanceAttr()
@@ -197,7 +199,7 @@ class UEDGESimBase():
         if j is None:
             self.PrintInfo('Main loop i={i}/{imax}       dtreal={dt:.4E}'.format(i=i,imax=self.Imax, dt=bbb.dtreal),color=Back.BLUE)
         else:
-            self.PrintInfo('Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.BLUE)
+            self.PrintInfo('Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.YELLOW)
         
     
     def Run(self,Verbose=True):        
@@ -209,8 +211,8 @@ class UEDGESimBase():
                 break
             self.PrintInfo('----Starting Main Loop ----')
             for imain in range(self.Imax):
-                bbb.icntnunk = 0
                 
+                bbb.icntnunk = 0
                 bbb.ylodt = bbb.yl #this is use in set_dt which provides option to select optimal timestep
                 bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
                 fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq]*bbb.sfscal[0:bbb.neq])**2))
@@ -236,6 +238,7 @@ class UEDGESimBase():
                             break
                     bbb.icntnunk = 1
                     bbb.isdtsfscal = 0
+# Second loop -----------------------------------------------------------------------------------                    
                     for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
                         if bbb.exmain_aborted==1:
                             break
@@ -250,19 +253,21 @@ class UEDGESimBase():
                             fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
                             bbb.dt_tot += bbb.dtreal
                             self.dt_tot=bbb.dt_tot
-                            break
+                            
                         if bbb.dt_tot>=bbb.t_stop:
                             bbb.exmain_aborted=1
                             self.PrintInfo('SUCCESS: dt_tot >= t_stop')
                             if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
                             break
-                if Verbose: print('1:exmain_aborted:',bbb.exmain_aborted)        
+# Second loop -----------------------------------------------------------------------------------                              
                 if bbb.exmain_aborted==1:
-                    if Verbose: print('Exiting after second loop')
                     break
-                if Verbose: print('2:exmain_aborted:',bbb.exmain_aborted)          
-                if (bbb.iterm != 1):    #print bad eqn, cut dtreal by 3, set irev flag
-                    #print('\n\n\n exmain_aborted:',bbb.exmain_aborted,'\n\n\n')
+# Handle success/error -----------------------------------------------------------------------------------        
+                if (bbb.iterm == 1):
+                    bbb.dtreal *= self.mult_dt_fwd
+                    self.dtreal=bbb.dtreal
+                
+                else:    #print bad eqn, cut dtreal by 3
                     self.Itrouble()
                     
                     if (bbb.dtreal < bbb.dt_kill):
@@ -272,15 +277,9 @@ class UEDGESimBase():
                     self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
                     bbb.dtreal /= self.mult_dt_bwd
                     self.dtreal=bbb.dtreal
-                    
-                    
-                if (bbb.iterm == 1):
-                    bbb.dtreal *= self.mult_dt_fwd
-                    self.dtreal=bbb.dtreal
-                if Verbose: print('3:exmain_aborted:',bbb.exmain_aborted)      
+                              
                 bbb.iterm = 1
-                if Verbose: print('4:exmain_aborted:',bbb.exmain_aborted)  
-                
+             
     def Initialize(self,ftol=1e20,restart=0,dtreal=1e10):
         bbb.dtreal=dtreal
         bbb.ftol=ftol
