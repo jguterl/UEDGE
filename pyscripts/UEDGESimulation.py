@@ -27,7 +27,7 @@ class UEDGESimBase():
         for pkg in self.ListPkg:
             exec('self.' + pkg + '=' + pkg,globals(),locals())
         self.IO=UEDGEIO.UEDGEIO()    
-        self.SetVersion()
+        #self.SetVersion()
 
     def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True):
         '''
@@ -98,7 +98,7 @@ class UEDGESimBase():
         else:
             print("No data saved in file:{}".format(FilePath))
             
-    def Load(self,FileName,CaseName=self.CaseName,Folder='SaveDir',LoadList=[],ExcludeList=[],Format='numpy',CheckCompat=True,Verbose=False):
+    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadList=[],ExcludeList=[],Format='numpy',CheckCompat=True,Verbose=False):
         '''
         Wrapper method to load UEDGE simulation data
         See Load method of UEDGEIO class
@@ -414,14 +414,14 @@ class UEDGESimBase():
         
     def SetCaseName(self,CaseName):
         try:
-            exec('bbb.CaseName={}',CaseName)
+            bbb.CaseName=CaseName
             self.CaseName=CaseName
         except:
             print('Cannot set CaseName')
             
     def GetCaseName(self):
         try:
-            return bbb.CaseName
+            return bbb.CaseName[0].decode().rstrip()
         except:
             return None
         
@@ -477,6 +477,7 @@ Todo:
     Imax=500
     Jmax=5
     Format='numpy'
+    Mode='regular'
     
     
     
@@ -537,8 +538,11 @@ def SetCaseName(CaseName:str):
 
 
 def GetCaseName():
-    print("# CaseName:{}".format(Sim.GetCaseName))
-
+    try:
+        print("# CaseName:{}".format(Sim.GetCaseName()[0]))
+    except:
+        print('Cannot get CaseName')    
+        pass
          
 #---------------------------------------------------------------------------------------------------------------        
 class UEDGEDivertorPlates():

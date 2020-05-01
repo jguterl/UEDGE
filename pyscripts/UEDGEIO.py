@@ -92,9 +92,10 @@ class Numpy(UEDGEIOBase):
     def Load(self,FileName,LoadList=[],ExcludeList=[],Enforce=True,Verbose=False,CheckSize=True):
         if not FileName.endswith('.npy'):
                 FileName=FileName+'.npy'
+        print('Loading fata from {} ...'.format(FileName))
         Header,HeaderTag,TagData,Data=self.LoadData(FileName,Verbose)
-        if Verbose: print('Reading data in...')
         self.ReadData(Header,Data,LoadList,ExcludeList,Enforce=True,Verbose=Verbose,CheckSize=CheckSize)
+        
         
     def LoadData(self,FileName,Verbose=False,Enforce=True):
         
@@ -105,10 +106,9 @@ class Numpy(UEDGEIOBase):
         if Verbose: print('Data loaded from {}'.format(FileName))
         
     def ReadData(self,VarList,Data,LoadList=[],ExcludeList=[],CheckSize=True,Verbose=False,Enforce=True):
-        if Verbose: print('0: Reading data in')
         for pkg in self.ListPkg:
             exec('from uedge import '+pkg)
-        if Verbose: print('1: Reading data in')
+
         if len(LoadList)==0:
             LoadAll=True
         else:
@@ -138,10 +138,11 @@ class Numpy(UEDGEIOBase):
                 except Exception as e:
                     if Verbose: print('-> Failed')
                     if Enforce:
-                        print(repr(e))    
-                        raise ValueError('Cannot execute {}={}'.format(V,D))
+                        if Verbose: print(repr(e))    
+                        raise ValueError('Cannot set {}'.format(V))
                     else:
                         print('Skipping loading of data for {} '.format(V))
+                        
                     
 class UEDGEIO(UEDGEIOBase):
     """
