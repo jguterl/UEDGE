@@ -745,6 +745,7 @@ c
       integer DebugTime
       real(kind=4):: sec4, gettime,time0
       Use(Verbose)
+      Use(Cdv)
 cpetsc      external gettime
 cpetsc      real gettime,sec4
 c+pnb
@@ -1104,6 +1105,10 @@ c
  300    continue
       f1nrm = f1nrmp
       if (iprint .ge. 1) write(iunit,400) iter,fnrm,nfe
+      if (exmain_aborted.gt.0) then
+				 write(*,*) 'Exmain Aborted'
+				 stop
+				 endif
  400  format(' iter= ',i4,' fnrm= ',g26.16,' nfe= ',i6)
       if (iterm .eq. 0) go to 100
 c-----------------------------------------------------------------------
