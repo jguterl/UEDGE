@@ -166,7 +166,7 @@ class UEDGESimBase():
     def SetUEDGEParams(self,Verbose=False):
         
         for A,V in self.GetInstanceAttr().items():
-            if V is not None and V in not ExcludeList:
+            if V is not None and V  not in self.ExcludeList:
                 Result=SearchSilent(A)
                 if len(Result)>0:
                     Pkg=Result[0]['Package']
@@ -184,7 +184,7 @@ class UEDGESimBase():
         Dic=self.__class__.GetClassAttr()
         for k,v in kwargs.items():
             if k in Dic:
-                self.__class__.__dict__.[k]=v
+                self.__class__.__dict__[k]=v
                 
         #Override object attribute 
         Dic=self.GetInstanceAttr()

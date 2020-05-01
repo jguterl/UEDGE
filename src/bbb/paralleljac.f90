@@ -319,7 +319,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
     if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
-    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',gettime(sec4)-OMPTimeJacCalc
+    if (ShowTime.gt.0) write(iout,'(a,f8.2)') 'Time in jac_calc:',OMPTimeJacCalc
 
     return
 end subroutine jac_calc_omp
@@ -838,7 +838,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
     MPITimeJacCalc=gettime(sec4)-MPITimeJacCalc
     if (istimingon .eq. 1) MPITotJacCalc = MPITimeJacCalc+MPITotJacCalc
-    if (ShowTime.gt.0) write(iout,*)'**** Time in jac_calc:',MPITimeJacCalc
+    if (ShowTime.gt.0) write(iout,'(a,f8.2)') 'Time in jac_calc:',MPITimeJacCalc
     call MPI_barrier(MPI_COMM_WORLD,ierr)
     return
 end subroutine jac_calc_mpi

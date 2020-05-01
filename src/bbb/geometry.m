@@ -2240,13 +2240,13 @@ c ...       Search for intersection btwn (ixu1,iyu1) & (ixu2,iyu2)
             else        # failed to find proper pt.
               do jx = 1, nxpt
                 if (ix>ixlb(jx) .and. ix<ixrb(jx)) then
-                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
+cJG                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
                 if (ix==ixlb(jx) .and. ishx.eq.1) then
-                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
+cJG                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
                 if (ix==ixrb(jx) .and. ishx.eq.0) then
-                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
+cJG                  write(iout,*) ' fy search failure at ix,iy = ',ix,iy
                 endif
               enddo
             endif
