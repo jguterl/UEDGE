@@ -202,7 +202,7 @@ class UEDGESimBase():
             self.PrintInfo('Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.YELLOW)
         
     
-    def Run(self,Verbose=True):        
+    def Run(self,Verbose=False):        
         bbb.exmain_aborted=0 
         if Verbose: print('00:exmain_aborted:',bbb.exmain_aborted)
         while bbb.exmain_aborted==0:
@@ -254,13 +254,14 @@ class UEDGESimBase():
                             fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
                             bbb.dt_tot += bbb.dtreal
                             self.dt_tot=bbb.dt_tot
-                            
+                        else:
+                            break
                         if bbb.dt_tot>=bbb.t_stop:
                             bbb.exmain_aborted=1
                             self.PrintInfo('SUCCESS: dt_tot >= t_stop')
                             if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
                             break
-# Second loop -----------------------------------------------------------------------------------                              
+# End Second loop -----------------------------------------------------------------------------------                              
                 if bbb.exmain_aborted==1:
                     break
 # Handle success/error -----------------------------------------------------------------------------------        
