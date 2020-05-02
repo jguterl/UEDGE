@@ -394,7 +394,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !$omp& private(TimeThread)
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
-        !$omp cancellation do
+        !!$omp cancellation do
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
@@ -405,21 +405,22 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
         if (exmain_aborted.gt.0) then
-        !$omp cancel do
+        !!$omp cancel do
         endif
-        !$omp cancellation do
+        !!!$omp cancellation do
         !$omp  critical
         if (exmain_aborted.lt.1) then
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
         nnzcopy(ithcopy)=nnzlocal
-        else
-
         endif
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
+        if (exmain_aborted.gt.0) then
+        if (OMPVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
+        endif
     enddo loopthread
     !$omp  END PARALLEL DO
 
