@@ -33,7 +33,7 @@ void int_handler() {
    printf("\nType \"cont\" to continue exmain(), \"abort\" to return to Python prompt.\n");
    printf("or a single line to be evaluated by Python.\n");
    #pragma omp master
-   {
+{
    int condition;
    condition=1;
    while(condition>0){
@@ -71,7 +71,7 @@ void int_handler() {
           sigaction(SIGINT,&act,NULL);
        }
    }
-}
+
 }
 #endif
 
@@ -124,7 +124,7 @@ void exmain_() {
    exmain_f_();
 #endif
 #ifdef FORTHON
-   //#pragma omp master
+#pragma omp master
    {sigaction(SIGINT,&oact,NULL);}
 #endif
 }
