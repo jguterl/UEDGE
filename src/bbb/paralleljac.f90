@@ -394,7 +394,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !$omp& private(TimeThread)
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
-
+        !$omp cancellation do
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
@@ -407,6 +407,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         if (exmain_aborted.gt.0) then
         !$omp cancel do
         endif
+        !$omp cancellation do
         !$omp  critical
         if (exmain_aborted.lt.1) then
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
