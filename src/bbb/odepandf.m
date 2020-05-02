@@ -5173,6 +5173,7 @@ cc      Use(Selec)   # i2,i5,j2,j5
       Use(Indices_domain_dcl) # ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
       Use(Compla)  # zi
       Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx
+      Use(Cdv)
 
 *  -- arguments
       integer,intent(in):: xc, yc, ieq, neq     # ieq is the equation index for Jac. calc
@@ -5212,7 +5213,10 @@ c...  If isflxvar=0, we use ni,v,Te,Ti,ng as variables, and the ODEs need
 c...  to be modified as original equations are for d(nv)/dt, etc
 c...  If isflxvar=2, variables are ni,v,nTe,nTi,ng. Boundary equations and
 c...  potential equations are not reordered.
-
+       if (exmain_aborted.gt.0) then
+         write(*,*) 'Exmain Aborted'
+         stop
+       endif
       if(isflxvar.ne.1 .and. isrscalf.eq.1) call rscalf(yl,yldot)
 c
 c ... Now add psuedo or real timestep for nksol method, but not both
