@@ -222,6 +222,7 @@ class UEDGESimBase():
                     bbb.newgeo=0
                 self.PrintTimeStepModif(imain) 
                 #self.PrintInfo('Suggested timestep:{}'.format(self.GetMinTimeStep()))
+                self.Save(FileName='last',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True,Verbose=False)
                 self.PrintCurrentIteration(imain)
                 bbb.exmain() # take a single step at the present bbb.dtreal
                 if bbb.exmain_aborted==1:
@@ -412,6 +413,7 @@ class UEDGESimBase():
         print(" ")   
         
     def SetCaseName(self,CaseName):
+        from uedge import bbb
         try:
             bbb.CaseName=CaseName
             self.CaseName=CaseName
