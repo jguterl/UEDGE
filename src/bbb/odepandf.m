@@ -5214,8 +5214,7 @@ c...  to be modified as original equations are for d(nv)/dt, etc
 c...  If isflxvar=2, variables are ni,v,nTe,nTi,ng. Boundary equations and
 c...  potential equations are not reordered.
        if (exmain_aborted.gt.0) then
-         write(*,*) 'Exmain Aborted'
-         stop
+         call xerrab('Exmain Aborted')
        endif
       if(isflxvar.ne.1 .and. isrscalf.eq.1) call rscalf(yl,yldot)
 c
