@@ -71,7 +71,7 @@ void int_handler() {
           sigaction(SIGINT,&act,NULL);
        }
    }
-
+}
 }
 #endif
 

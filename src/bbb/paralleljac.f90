@@ -404,8 +404,9 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
-
-
+        if (exmain_aborted.gt.0) then
+        !$omp cancel do
+        endif
         !$omp  critical
         if (exmain_aborted.lt.1) then
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
@@ -413,12 +414,11 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
         nnzcopy(ithcopy)=nnzlocal
         else
-        !$omp cancel do
+
         endif
         !$omp  end critical
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
-        endif
     enddo loopthread
     !$omp  END PARALLEL DO
 
