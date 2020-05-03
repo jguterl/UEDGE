@@ -71,6 +71,7 @@ class UEDGESimBase():
                 exec(L)
             count=count+1
         self.CurrentInputFile=FilePath 
+        self.Initialize()
         
     def Save(self,FileName,CaseName=None,Folder='SaveDir',Mode='regular',ExtraVars=[],GlobalVars=[],Tag={},Format='numpy',ForceOverWrite=False,Verbose=False):
         '''
@@ -116,7 +117,7 @@ class UEDGESimBase():
         None.
 
         '''
-        #bbb.allocate() #< no allocation leads to segmentation fault
+        from uedge import bbb
         if Format=='npy' or Format=='numpy':
             if not FileName.endswith('.npy'):
                 FileName=FileName+'.npy'
@@ -127,6 +128,7 @@ class UEDGESimBase():
         # Looking for file 
         if os.path.isfile(FilePath):
             self.IO.Load(FilePath,Format,LoadList,ExcludeList,CheckCompat=CheckCompat,Verbose=Verbose)
+            bbb.restart=1
         else:
             print("The file {} does not exist".format(FilePath))
         
