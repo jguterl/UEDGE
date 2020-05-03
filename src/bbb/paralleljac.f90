@@ -34,7 +34,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
     real,intent(in)   :: t              ! physical time
-    real,intent(in)   :: yl(*)          ! dependent variables
+    real,intent(inout)   :: yl(*)          ! dependent variables
     real,intent(in)   :: yldot00(neq+2) ! right-hand sides evaluated at yl
     integer,intent(in):: ml, mu         ! lower and upper bandwidths
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
@@ -175,7 +175,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPLoadWeight,OMPTimeLocalJac
     use UEpar, only: svrpkg
     use Math_problem_size,only:neqmx
-
+    use Cdv, only: exmain_aborted
     implicit none
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
@@ -256,7 +256,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeBuild=gettime(sec4)
     nnz(1:Nthreads)=-1
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-
+    if (exmain_aborted.lt.1) then
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
     if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
     if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to build jac:',OMPTimeBuild
@@ -323,7 +323,9 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
     if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
     if (ShowTime.gt.0) write(iout,'(a,f8.2)') 'Time in jac_calc:',OMPTimeJacCalc
-
+    else
+    call xerrab('Exmain aborted (jac_calc_omp)')
+    endif
     return
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
@@ -358,19 +360,23 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     DOUBLE PRECISION :: TimeThread
 
     if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying data....'
-
+    if (exmain_aborted.lt.1) then
     if (OMPCopyArray.gt.0) then
         if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying array....'
         call OmpCopyPointerbbb
         call OmpCopyPointercom
         call OmpCopyPointerapi
     endif
+    endif
+    if (exmain_aborted.lt.1) then
     if (OMPCopyScalar.gt.0) then
         if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying scalar....'
         call OmpCopyScalarbbb
         call OmpCopyScalarcom
         call OmpCopyScalarapi
     endif
+    endif
+    if (exmain_aborted.lt.1) then
     !   We cannot use variables in the parallel construct declarations below when these variables are not in the scope of the subroutine
     Nthreadscopy=Nthreads
     nnzmxperthreadcopy=nnzmxperthread
@@ -381,12 +387,13 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     iJacRowCopy(1:neq)=0
     ylcopy(1:neq+2)=yl(1:neq+2) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
     wkcopy(1:neq)=wk(1:neq) ! Could be set equal to zero as well. The worker wk is not an output...
-
+    endif
     if (OMPDebug.gt.0) then
         write(iout,*) OMPStamp,' Starting parallel loop'
     endif
     tid=-1
     nnzlocal=-10000
+    if (exmain_aborted.lt.1) then
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
     !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
@@ -395,6 +402,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
         !!$omp cancellation do
+        if (exmain_aborted.lt.1) then
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
@@ -404,31 +412,31 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
-        if (exmain_aborted.gt.0) then
-        !!$omp cancel do
         endif
         !!!$omp cancellation do
-        !$omp  critical
         if (exmain_aborted.lt.1) then
+        !$omp  critical
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
         nnzcopy(ithcopy)=nnzlocal
-        endif
+
         !$omp  end critical
+        endif
+        if (exmain_aborted.lt.1) then
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
-        if (exmain_aborted.gt.0) then
         if (OMPVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
         endif
     enddo loopthread
     !$omp  END PARALLEL DO
-
-
+    endif
+    if (exmain_aborted.lt.1) then
     nnz(1:Nthreads)=nnzcopy(1:Nthreads) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
 
     if (OMPDebug.gt.0) then
         write(iout,*) OMPStamp,' End of parallel loop....'
+    endif
     endif
 
 end subroutine OMPJacBuilder
@@ -708,7 +716,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
     real,intent(in)   :: t              ! physical time
-    real,intent(in)   :: yl(*)          ! dependent variables
+    real,intent(inout)   :: yl(*)          ! dependent variables
     real,intent(in)   :: yldot00(neq+2) ! right-hand sides evaluated at yl
     integer,intent(in):: ml, mu         ! lower and upper bandwidths
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
@@ -1015,7 +1023,7 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer,intent(in):: neq      ! total number of equations (all grid points)
     integer,intent(in):: ml, mu   ! lower and upper bandwidths
     real,intent(in):: t           ! physical time
-    real,intent(in) ::yl(*)       ! dependent variables
+    real,intent(inout) ::yl(*)       ! dependent variables
     real,intent(in) ::yldot00(neq+2) ! right-hand sides evaluated at yl
     real,intent(inout) :: wk(neq)
     integer,intent(out)::iJacCol(nnzmxperproc)
