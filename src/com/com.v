@@ -65,7 +65,7 @@ OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobi
 OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
-OMPStamp       character*20 # Stamp for hybrid output (not an user input)
+OMPStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
 
 ***** OmpJacobian:
 OMPivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread

@@ -77,7 +77,7 @@ subroutine InitOMP()
         write(MPIRankTag,'(I4)') MPIrank
         write(OMPstamp,'(a,a,a)') '[',trim(adjustl(trim(MPIRankTag))),'] OMPJac* '
     else
-        write(OMPstamp,'(a)') '*OMPJac* '
+        !write(OMPstamp,'(a)') '*OMPJac* '
     endif
     if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Max number of threads available:',OMP_GET_MAX_THREADS()
     call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
