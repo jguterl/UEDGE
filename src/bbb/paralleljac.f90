@@ -158,7 +158,7 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     nnzcumout=nnzcum(Nthreads)
     if (OMPTimingJacRow.gt.0) then
     open (newunit = iunit, file = 'omptiming.dat')
-    do ith=1,neq
+    do iv=1,neq
     write(iunit,*) iv,OMPTimeJacRow(iv)
     enddo
     close(iunit)
