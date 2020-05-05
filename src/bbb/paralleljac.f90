@@ -116,8 +116,8 @@ end subroutine InitOMP
 !-------------------------------------------------------------------------------------------------
 subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     use Output
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum
-    use OmpOptions,only:Nthreads,OMPDebug,OMPVerbose,OMPStamp
+    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPTimeJacRow
+    use OmpOptions,only:Nthreads,OMPDebug,OMPVerbose,OMPStamp,OMPTimingJacRow
     integer,intent(in):: neq
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
     real,intent(out)   :: rcsc(nnzmx)     ! nonzero Jacobian elements
@@ -125,6 +125,7 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     integer,intent(out):: jcsc(neq+1)   ! pointers to beginning of each row in jac,ja
     integer,intent(out):: nnzcumout
     integer ith
+    integer:: iunit,iv
     nnzcum(1:Nthreads)=-1
     nnzcum(1)=nnz(1)-1
 
@@ -155,6 +156,13 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
         icsc(nnzcum(ith-1)+1:nnzcum(ith))=iJacCol(1:nnz(ith)-1,ith)
     enddo
     nnzcumout=nnzcum(Nthreads)
+    if (OMPTimingJacRow.gt.0) then
+    open (newunit = iunit, file = 'omptiming.dat')
+    do ith=1,neq
+    write(iunit,*)iv,OMPTimeJacRow(iv)
+    enddo
+    close(iunit)
+    endif
 end subroutine OMPCOllectJacobian
 !-------------------------------------------------------------------------------------------------
 subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
@@ -331,7 +339,7 @@ end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
-    use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac
+    use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac,OMPTimeJacRow
     use Cdv, only: exmain_aborted
     use OmpCopybbb
     use OmpCopycom
@@ -355,7 +363,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer ::iJacColCopy(nnzmxperthread),iJacRowCopy(neq)
     integer ::ivmincopy(Nthreads),ivmaxcopy(Nthreads),nnzcopy(Nthreads)
     integer ::Nthreadscopy,nnzmxperthreadcopy
-    real :: rJacElemCopy(nnzmxperthread)
+    real :: rJacElemCopy(nnzmxperthread),TimeJacRowcopy(neq)
     integer:: ith,tid,nnzlocal,ithcopy
     DOUBLE PRECISION :: TimeThread
 
@@ -384,6 +392,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     ivmaxcopy(1:Nthreads)=OMPivmax(1:Nthreads)
     iJacColCopy(1:nnzmxperthread)=0
     rJacElemCopy(1:nnzmxperthread)=0.0
+    TimeJacRowcopy(1:neq)=0
     iJacRowCopy(1:neq)=0
     ylcopy(1:neq+2)=yl(1:neq+2) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
     wkcopy(1:neq)=wk(1:neq) ! Could be set equal to zero as well. The worker wk is not an output...
@@ -397,7 +406,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
     !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
-    !$omp& firstprivate(nnzmxperthreadcopy,nthreadscopy,iJacRowCopy,iJacColCopy,rJacElemCopy)&
+    !$omp& firstprivate(nnzmxperthreadcopy,nthreadscopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
     !$omp& private(TimeThread)
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
@@ -410,7 +419,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
 
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
-            iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy)
+            iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy,TimeJacRowcopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
         endif
         !!!$omp cancellation do
@@ -419,6 +428,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
+        OMPTimeJacRow(ivmincopy(ithcopy):ivmaxcopy(ithcopy))=TimeJacRowcopy(ivmincopy(ithcopy):ivmaxcopy(ithcopy))
         nnzcopy(ithcopy)=nnzlocal
 
         !$omp  end critical
@@ -442,7 +452,8 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
 end subroutine OMPJacBuilder
 #endif
 !-------------------------------------------------------------------------------------------------
-subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ith,nnz,nnzmxperthread,nthreads)
+    subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ith,nnz,nnzmxperthread,nthreads&
+,TimeJacRow)
 
     ! ... Calculate Jacobian matrix (derivatives with respect to each
     ! ... Calculate Jacobian matrix (derivatives with respect to each
@@ -463,9 +474,10 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     use Model_choice,only:iondenseqn
     use Bcond,only:isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
-    use OmpOptions,only:iidebugprint,ivdebugprint
+    use OmpOptions,only:iidebugprint,ivdebugprint,OMPTimingJacRow
     use Jacobian_csc,only:yldot_pert
     use Cdv, only: exmain_aborted
+    use omp_lib
 
     implicit none
     integer,intent(in):: ith,nnzmxperthread,nthreads,ivmin,ivmax,neq
@@ -476,7 +488,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     real,intent(inout):: rJacElem(nnzmxperthread)
     real,intent(in) ::yldot00(neq+2) ! right-hand sides evaluated at yl
     integer,intent(in):: ml, mu   ! lower and upper bandwidths
-
+    real,intent(out)::TimeJacRow(neq)
     ! ... Work-array argument:
     real,intent(inout) :: wk(neq)     ! work space available to this subroutine
 
@@ -486,9 +498,9 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     !     real(kind=4) ranf
 
     ! ... Local variables:
-    real ::yold, dyl, jacelem
-    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0
-    integer:: ii, iv, jv,ii1, ii2, xc, yc, ix, iy,omp_get_thread_num,tid
+    real ::yold, dyl, jacelem,Time
+    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf
+    integer:: ii, iv, jv,ii1, ii2, xc, yc, ix, iy,tid
     !       time0=gettime(sec4) #here
 
     ! ... Only perturb variables that are being solved for (for Daspk option)
@@ -499,7 +511,9 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
 
     nnz=1
     loopiv: do iv=ivmin,ivmax
+
         if (exmain_aborted.gt.0) exit
+        if (OMPTimingJacRow.gt.0) Time=omp_get_wtime()
         ii1 = max(iv-mu, 1)
         ii2 = min(iv+ml, neq)
         ! ... Reset range if this is a potential perturbation with isnewpot=1
@@ -607,7 +621,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
             endif check
 
         enddo loopii
-
+        if (exmain_aborted.gt.0) exit
         ! ... Restore dependent variable and plasma variables near its location.
         yl(iv) = yold
         !         call convsr_vo (xc, yc, yl)  ! was one call to convsr
@@ -639,6 +653,10 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
 
             enddo
         endif reset
+        if (OMPTimingJacRow.gt.0) then
+        Time=omp_get_wtime()-Time
+        TimeJacRow(iv)=Time
+        endif
     enddo loopiv
 ! ... End loop over dependent variables and finish Jacobian storage.
 end subroutine LocalJacBuilder
@@ -1029,12 +1047,13 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer,intent(out)::iJacCol(nnzmxperproc)
     integer,intent(out):: iJacRow(neq)
     real,intent(out):: rJacElem(nnzmxperproc)
+    real:: TimeJacRow
     integer :: iproc
 
     if (MPIDebug.gt.0) write(ioutmpi,*) MPIStamp,' Building jacobian on proc:',MPIrank
 
     call LocalJacBuilder(MPIivmin(MPIrank),MPIivmax(MPIrank),neq, t, yl,yldot00,ml,mu,wk,&
-        iJacCol,rJacElem,iJacRow,MPIrank,nnz,nnzmxperproc,Nprocs)
+        iJacCol,rJacElem,iJacRow,MPIrank,nnz,nnzmxperproc,Nprocs,TimeJacRow)
 
 
 end subroutine MPIJacBuilder

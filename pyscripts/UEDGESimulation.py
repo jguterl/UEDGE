@@ -227,6 +227,7 @@ class UEDGESimBase():
                 self.Save(FileName='last',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True,Verbose=False)
                 self.PrintCurrentIteration(imain)
                 bbb.exmain() # take a single step at the present bbb.dtreal
+                sys.stdout.flush()
                 if bbb.exmain_aborted==1:
                     break
                 
@@ -248,6 +249,73 @@ class UEDGESimBase():
                         bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
                         self.PrintCurrentIteration(imain,ii2)
                         bbb.exmain()
+                        sys.stdout.flush()
+                if bbb.exmain_aborted==1:
+                    break
+                
+                if (bbb.iterm == 1):
+                    bbb.ylodt = bbb.yl
+                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
+                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
+                    if bbb.dt_tot>=bbb.t_stop:
+                            bbb.exmain_aborted=1
+                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
+                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
+                            break
+                    bbb.icntnunk = 1
+                    bbb.isdtsfscal = 0
+# Second loop -----------------------------------------------------------------------------------                    
+                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
+                        if bbb.exmain_aborted==1:
+                            break
+                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+                        self.PrintCurrentIteration(imain,ii2)
+                        bbb.exmain()
+                        
+                if bbb.exmain_aborted==1:
+                    break
+                
+                if (bbb.iterm == 1):
+                    bbb.ylodt = bbb.yl
+                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
+                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
+                    if bbb.dt_tot>=bbb.t_stop:
+                            bbb.exmain_aborted=1
+                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
+                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
+                            break
+                    bbb.icntnunk = 1
+                    bbb.isdtsfscal = 0
+# Second loop -----------------------------------------------------------------------------------                    
+                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
+                        if bbb.exmain_aborted==1:
+                            break
+                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+                        self.PrintCurrentIteration(imain,ii2)
+                        bbb.exmain()
+                        sys.stdout.flush()
+                if bbb.exmain_aborted==1:
+                    break
+                
+                if (bbb.iterm == 1):
+                    bbb.ylodt = bbb.yl
+                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
+                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
+                    if bbb.dt_tot>=bbb.t_stop:
+                            bbb.exmain_aborted=1
+                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
+                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
+                            break
+                    bbb.icntnunk = 1
+                    bbb.isdtsfscal = 0
+# Second loop -----------------------------------------------------------------------------------                    
+                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
+                        if bbb.exmain_aborted==1:
+                            break
+                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+                        self.PrintCurrentIteration(imain,ii2)
+                        bbb.exmain()
+                        sys.stdout.flush()
                         if bbb.exmain_aborted==1:
                             break
                         if bbb.iterm == 1:
@@ -295,7 +363,7 @@ class UEDGESimBase():
            self.PrintInfo("Taking initial step with Jacobian:",Back.CYAN)
            bbb.icntnunk = 0
            bbb.exmain()
-           
+           sys.stdout.flush()
         if (bbb.iterm != 1):
             self.PrintInfo("Error: converge an initial time-step first",Back.RED)
             bbb.exmain_aborted=1

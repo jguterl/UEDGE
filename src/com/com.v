@@ -66,6 +66,7 @@ OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (ove
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
 OMPStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
+OMPTimingJacRow    integer /0/ # Profile execution time of calculatation of each row of the jacobian
 
 ***** OmpJacobian:
 OMPivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
@@ -73,6 +74,7 @@ OMPivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ith
 OMPLoadWeight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
 OMPTimeLocalJac(1:Nthreads)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
 iJacRow(OMPneq,Nthreads) _integer  #
+OMPTimeJacRow(OMPneq) _real  #
 iJacCol(nnzmxperthread,Nthreads) _integer #
 rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer
