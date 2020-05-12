@@ -98,8 +98,7 @@ cJG     external sdot
 c...  now we reset the boundary conditions around the edge
 c...  Initialization for constant
       expkmx = exp(-kappamx)
-      iv1=-1
-      iv2=-1
+
 c ====================================================================
 c ======================== The iy=0 boundary =========================
 c ====================================================================
@@ -1564,7 +1563,6 @@ c********************************************************************
          do 174 ifld = 1 , nisp
             if(isnionxy(0,iy,ifld) .eq. 1) then
                iv1 = idxn(0,iy,ifld)
-               if (iy==6) write(*,*) '----',n0(ifld),ni(1,iy,ifld),ni(0,iy,ifld)
                yldot(iv1) = nurlxn *
      .                (nib(ifld)*nibprof(iy)-ni(0,iy,ifld))/n0(ifld)
                if(isfixlb(1).eq.2) yldot(iv1) = nurlxn * (1/n0(ifld)) *

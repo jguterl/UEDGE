@@ -995,14 +995,14 @@ c...  boundary cells of a mesh region.  Used in subroutine bouncon.
 ************************************************************************
 c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
-        call cpu_time(t_start)
+        if (OMPRhseval.gt.0) call cpu_time(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
          call convsr_aux (xc, yc)
-        call cpu_time(t_stop)
+        if (OMPRhseval.gt.0) call cpu_time(t_stop)
         if (OMPRhseval.gt.0) TimeConvert=t_stop-t_start+TimeConvert
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
-      call cpu_time(t_start)
+      if (OMPRhseval.gt.0) call cpu_time(t_start)
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
@@ -1470,10 +1470,10 @@ c             non-physical interface between upper target plates for dnull
         else    # test on zi > 1.e-10 to skip whole loop
         endif
   100 continue  # Giant loop over ifld (species)
-       call cpu_time(t_stop)
+       if (OMPRhseval.gt.0) call cpu_time(t_stop)
        if (OMPRhseval.gt.0) TimeBlock1=t_stop-t_start+TimeBlock1
 c--------------------------------------------------------------------------------------
-       call cpu_time(t_start)
+       if (OMPRhseval.gt.0) call cpu_time(t_start)
 
 c ... Save values returned by Hirshman mombal for Jacobian calc. to
 c ... minimize calls - restore the "m" or ix-1 values at the end of pandf
@@ -1721,7 +1721,7 @@ c ..       switch to right plate(s)
           enddo
         enddo
       endif
-      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) if (OMPRhseval.gt.0) call cpu_time(t_stop)
       if (OMPRhseval.gt.0) TimeBlock2=t_stop-t_start+TimeBlock2
 ***********************************************************************
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
@@ -1732,7 +1732,7 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
 ***********************************************************************
-      call cpu_time(t_start)
+      if (OMPRhseval.gt.0) call cpu_time(t_start)
 
       do 25 iy = j1, j6
 	 do 24 ix = i1, i6
@@ -2089,11 +2089,11 @@ c*****************************************************************
            endif       #if-loop on ipsorave
          endif         #omit whole loop if zi(ifld) = 0. (neutrals)
         enddo          #end loop over hydrogen species (ifld)
-        call cpu_time(t_stop)
+        if (OMPRhseval.gt.0) call cpu_time(t_stop)
       if (OMPRhseval.gt.0) TimeBlock3=t_stop-t_start+TimeBlock3
 
 **c ... Can now calc current from nucx since it is updated
-      call cpu_time(t_start)
+      if (OMPRhseval.gt.0) call cpu_time(t_start)
       if (cfqyn .gt. 0.) call calc_curr_cx
 
 c ... Ionization and recombination of impurities.
@@ -2426,13 +2426,13 @@ c *** Now do the gas
       endif
 
 
-      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) call cpu_time(t_stop)
       if (OMPRhseval.gt.0) TimeBlock4=t_stop-t_start+TimeBlock4
 *****************************************************************
 c In the case of neutral parallel mom, call neudif to get
 c flux fngy, vy and uu, now that we have evaluated nuix etc.
 *****************************************************************
-      call cpu_time(t_start)
+      if (OMPRhseval.gt.0) call cpu_time(t_start)
 
 ccc      if (isupgon .eq. 1 .and. zi(ifld) .eq. 0.0) call neudif
       if (ineudif .eq. 1) then
@@ -2448,7 +2448,7 @@ c ..Timing
       else
          call neudifo
       endif
-      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) call cpu_time(t_stop)
       if (OMPRhseval.gt.0) TimeBlock5=t_stop-t_start+TimeBlock5
 *****************************************************************
 *  Other volume sources calculated in old SRCMOD
