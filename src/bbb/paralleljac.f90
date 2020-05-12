@@ -5,7 +5,7 @@
 !-------------------------------------------------------------------------------------------------
 subroutine InitParallel
     Use Output
-    Use ParallelJacOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac
+    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac,OMPParallelPandf
     Use HybridOptions,only:HybridOMPMPI
     implicit none
     if (OMPParallelJac==1 .and. MPIParallelJac==0) then
@@ -24,12 +24,15 @@ subroutine InitParallel
         write(iout,'(a)') '*MPIJac* Jacobian calculation: MPI not enabled'
         ParallelJac=0
     endif
+    if (OMPParallelPandf==1.and.OMPParallelJac==0) then
+    call InitOMP
+    endif
 end subroutine InitParallel
 !-------------------------------------------------------------------------------------------------
 subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     Use Output
-    Use ParallelJacOptions,only:OMPParallelJac,MPIParallelJac
+    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac
     implicit none
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
@@ -112,6 +115,7 @@ subroutine InitOMP()
     endif
     ompneq=neq
     call gchange('OmpJacobian',0)
+    call gchange('OMPPandf',0)
 end subroutine InitOMP
 !-------------------------------------------------------------------------------------------------
 subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
@@ -183,7 +187,6 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPLoadWeight,OMPTimeLocalJac
     use UEpar, only: svrpkg
     use Math_problem_size,only:neqmx
-    use Cdv, only: exmain_aborted
     implicit none
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
@@ -264,7 +267,6 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeBuild=gettime(sec4)
     nnz(1:Nthreads)=-1
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    if (exmain_aborted.lt.1) then
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
     if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
     if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to build jac:',OMPTimeBuild
@@ -331,16 +333,12 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
     if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
     if (ShowTime.gt.0) write(iout,'(a,f8.2)') 'Time in jac_calc:',OMPTimeJacCalc
-    else
-    call xerrab('Exmain aborted (jac_calc_omp)')
-    endif
     return
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac,OMPTimeJacRow
-    use Cdv, only: exmain_aborted
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -368,23 +366,22 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     DOUBLE PRECISION :: TimeThread
 
     if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying data....'
-    if (exmain_aborted.lt.1) then
+
     if (OMPCopyArray.gt.0) then
         if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying array....'
         call OmpCopyPointerbbb
         call OmpCopyPointercom
         call OmpCopyPointerapi
     endif
-    endif
-    if (exmain_aborted.lt.1) then
+
     if (OMPCopyScalar.gt.0) then
         if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying scalar....'
         call OmpCopyScalarbbb
         call OmpCopyScalarcom
         call OmpCopyScalarapi
     endif
-    endif
-    if (exmain_aborted.lt.1) then
+
+
     !   We cannot use variables in the parallel construct declarations below when these variables are not in the scope of the subroutine
     Nthreadscopy=Nthreads
     nnzmxperthreadcopy=nnzmxperthread
@@ -396,13 +393,13 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     iJacRowCopy(1:neq)=0
     ylcopy(1:neq+2)=yl(1:neq+2) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
     wkcopy(1:neq)=wk(1:neq) ! Could be set equal to zero as well. The worker wk is not an output...
-    endif
+
     if (OMPDebug.gt.0) then
         write(iout,*) OMPStamp,' Starting parallel loop'
     endif
     tid=-1
     nnzlocal=-10000
-    if (exmain_aborted.lt.1) then
+
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
     !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
@@ -410,8 +407,6 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !$omp& private(TimeThread)
 
     loopthread: do ith=1,Nthreads !ith from 1 to Nthread, tid from 0 to Nthread-1
-        !!$omp cancellation do
-        if (exmain_aborted.lt.1) then
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
@@ -421,33 +416,28 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy,TimeJacRowcopy)
         if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
-        endif
-        !!!$omp cancellation do
-        if (exmain_aborted.lt.1) then
+
         !$omp  critical
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
         rJacElem(1:nnzlocal,ithcopy)=rJacElemCopy(1:nnzlocal)
         iJacRow(1:neq,ithcopy)=iJacRowCopy(1:neq)
         OMPTimeJacRow(ivmincopy(ithcopy):ivmaxcopy(ithcopy))=TimeJacRowcopy(ivmincopy(ithcopy):ivmaxcopy(ithcopy))
         nnzcopy(ithcopy)=nnzlocal
-
         !$omp  end critical
-        endif
-        if (exmain_aborted.lt.1) then
+
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
         if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
         if (OMPVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
-        endif
     enddo loopthread
     !$omp  END PARALLEL DO
-    endif
-    if (exmain_aborted.lt.1) then
+
+
     nnz(1:Nthreads)=nnzcopy(1:Nthreads) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
 
     if (OMPDebug.gt.0) then
         write(iout,*) OMPStamp,' End of parallel loop....'
     endif
-    endif
+
 
 end subroutine OMPJacBuilder
 #endif
@@ -476,7 +466,6 @@ end subroutine OMPJacBuilder
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
     use OmpOptions,only:iidebugprint,ivdebugprint,OMPTimingJacRow
     use Jacobian_csc,only:yldot_pert
-    use Cdv, only: exmain_aborted
     use omp_lib
 
     implicit none
@@ -512,7 +501,6 @@ end subroutine OMPJacBuilder
     nnz=1
     loopiv: do iv=ivmin,ivmax
 
-        if (exmain_aborted.gt.0) exit
         if (OMPTimingJacRow.gt.0) Time=omp_get_wtime()
         ii1 = max(iv-mu, 1)
         ii2 = min(iv+ml, neq)
@@ -565,7 +553,6 @@ end subroutine OMPJacBuilder
                                        ! the index is set to start at 0
 
         loopii: do ii = ii1, ii2
-            if (exmain_aborted.gt.0) exit
             jacelem = (wk(ii) - yldot00(ii)) / dyl
             !jacelem = (wk/(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
 
@@ -621,7 +608,6 @@ end subroutine OMPJacBuilder
             endif check
 
         enddo loopii
-        if (exmain_aborted.gt.0) exit
         ! ... Restore dependent variable and plasma variables near its location.
         yl(iv) = yold
         !         call convsr_vo (xc, yc, yl)  ! was one call to convsr
@@ -1047,7 +1033,7 @@ subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer,intent(out)::iJacCol(nnzmxperproc)
     integer,intent(out):: iJacRow(neq)
     real,intent(out):: rJacElem(nnzmxperproc)
-    real:: TimeJacRow
+    real:: TimeJacRow(neq)
     integer :: iproc
 
     if (MPIDebug.gt.0) write(ioutmpi,*) MPIStamp,' Building jacobian on proc:',MPIrank
@@ -2058,4 +2044,195 @@ subroutine DebugHelper(FileName)
     call WriteArrayReal(znot,size(znot),iunit)
     close(iunit)
 end subroutine DebugHelper
+
+subroutine OMPPandfCalc(neq,yl,yldot)
+    use OmpOptions, only:Nthreads
+    use OMPPandf,only:OMPPandfivmin,OMPPandfivmax,RhsEval,OMPRhsEval
+    use Indexes,only:igyl
+    use Selec,only:xlinc,xrinc,yinc,isjaccorall
+    integer iv,ith,xc,yc,xrincbkp,yincbkp,xlincbkp
+    integer,intent(in)::neq
+    real,intent(in)::yl(*)
+    real,intent(out)::yldot(*)
+    real:: yldotcopy(1:neq+2),ylcopy(1:neq+2),wk(1:neq+2)
+    real::LoadWeight(1:Nthreads)
+
+    yldotcopy(1:neq+2)=0
+    ylcopy(1:neq+1)=yl(1:neq+1)
+
+    if (OMPPandfivmin(1)==0) then
+    LoadWeight(1:Nthreads)=1
+    call OMPSplitIndex(1,neq,Nthreads,OMPPandfivmin,OMPPandfivmax,LoadWeight)
+    endif
+! Set xinc,yinc to zero
+    OMPRhsEval=1
+    !isjaccorall=0
+    xlincbkp=xlinc
+    xrincbkp=xrinc
+    yincbkp=yinc
+    xlinc=0
+    xrinc=0
+    yinc=0
+    ylcopy(1+neq)=1
+    !call convert
+    !!$omp parallel do default(shared) firstprivate(yldotcopy) firstprivate(xc,yc,iv)
+    loopthread:do ith=1,Nthreads
+    loopiv: do iv=OMPPandfivmin(ith),OMPPandfivmax(ith)
+        ! ... Set spatial-location indices for this dependent variable.
+        xc = igyl(iv,1)
+        yc = igyl(iv,2)
+        call pandf (xc, yc, neq, 0, yl, yldotcopy)
+
+     enddo loopiv
+     !!$omp critical
+     yldot(OMPPandfivmin(ith):OMPPandfivmax(ith))=yldotcopy(OMPPandfivmin(ith):OMPPandfivmax(ith))
+     !!$omp end critical
+     enddo loopthread
+     !!$omp end parallel do
+
+    xlinc=xlincbkp
+    xrinc=xrincbkp
+    yinc=yincbkp
+    OMPRhsEval=0
+    !isjaccorall=1
+     !!call AddTimeDerivative(neq,yl,yldot)
+
+
+end subroutine OMPPandfCalc
+
+    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
+    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
+    integer,intent(in)::neq,xc,yc
+    real,intent(in)::yl(*)
+    real,intent(out)::yldot(*)
+    real,intent(in)::time
+    real::yldotcopy(1:neq)
+    real::TimeStart,TimeEnd
+    integer ::iv
+    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
+      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
+      call OMPPandfCalc(neq,yl,yldot)
+      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
+      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
+
+      if (OMPCheckParallelPandf.gt.0) then
+      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
+          yldotcopy(1:neq)=yldot(1:neq)
+          call cpu_time(TimeStart)
+          call pandf (xc, yc, neq, time, yl, yldot)
+          call cpu_time(TimeEnd)
+          TimePandf=TimeEnd-TimeStart+TimePandf
+            do iv=1,neq
+                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
+                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
+                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
+                    else
+                    write(*,*) '>>>>',iv,0
+                    endif
+                    !call xerrab('diff in rhsnk')
+                endif
+            enddo
+      endif
+end subroutine ParallelPandf
+
+subroutine AddTimeDerivative(neq,yl,yldot)
+use Compla,only: zi
+use UEpar,only:isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy,ineudif,fdtnixy,&
+               fdtupxy,fdttexy,fdttixy,fdtngxy,fdttgxy,fdtphixy,istgonxy
+use Dim, only:  nusp,nisp,ngsp,nx,ny
+use Time_dep_nwt,only:dtreal,ylodt,dtuse,dtphi
+use Indexes,only: idxn,idxg,idxu,idxti,idxte,idxphi,idxtg
+use Ynorm,only:n0,n0g
+!use Share    # geometry,nxc,isnonog,cutlo
+use Indices_domain_dcl,only: ixmnbcl,ixmxbcl,iymnbcl,iymxbcl
+real,intent(inout)::yldot(*)
+real,intent(in)::yl(*)
+integer,intent(in):: neq
+!use Xpoint_indices      # ixpt1,ixpt2,iysptrx
+integer j2l,j5l,i2l,i5l,ifld,igsp,iv,ix,iy,iv1
+if (isbcwdt .eq. 0) then  ! omit b.c. eqns
+!!!MER   NOTE: what about internal guard cells (for dnbot,dnull,limiter) ???
+            j2l = 1
+            j5l = ny
+            i2l = 1
+            i5l = nx
+         else                      ! include b.c. eqns
+            j2l = (1-iymnbcl)
+            j5l = ny+1-(1-iymxbcl)
+            i2l = (1-ixmnbcl)
+            i5l = nx+1-(1-ixmxbcl)
+         endif
+         do iy = j2l, j5l    !if j2l=j2, etc., omit the boundary equations
+            do ix = i2l, i5l
+              do ifld = 1, nisp
+                if(isnionxy(ix,iy,ifld) .eq. 1) then
+                  iv = idxn(ix,iy,ifld)
+                  yldot(iv) = (1.-fdtnixy(ix,iy,ifld))*yldot(iv)
+                  if(zi(ifld).eq.0. .and. ineudif.eq.3) then
+                    yldot(iv) = yldot(iv) - (1/n0(ifld))* (exp(yl(iv))-exp(ylodt(iv)))/dtuse(iv)
+                  else
+                    yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                  endif
+                endif
+              enddo
+               if(ix.ne.nx+2*isbcwdt) then
+                              ! nx test - for algebr. eq. unless isbcwdt=1
+                  do ifld = 1, nusp
+                    if(isuponxy(ix,iy,ifld).eq.1) then
+                      iv = idxu(ix,iy,ifld)
+                      yldot(iv) = (1.-fdtupxy(ix,iy,ifld))*yldot(iv)
+                      yldot(iv) = yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                    endif
+                  enddo
+               endif
+               if (isteonxy(ix,iy) == 1) then
+                 iv =  idxte(ix,iy)
+                 yldot(iv) = (1.-fdttexy(ix,iy))*yldot(iv)
+                 yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtuse(iv)
+               endif
+               if (istionxy(ix,iy) == 1) then
+                 iv1 = idxti(ix,iy)
+                 yldot(iv1) = (1.-fdttixy(ix,iy))*yldot(iv1)
+                 yldot(iv1)=yldot(iv1) - (yl(iv1)-ylodt(iv1))/dtuse(iv1)
+               endif
+               do igsp = 1, ngsp
+                  if(isngonxy(ix,iy,igsp).eq.1) then
+                     iv = idxg(ix,iy,igsp)
+                     yldot(iv) = (1.-fdtngxy(ix,iy,igsp))*yldot(iv)
+                     if(ineudif.eq.3) then
+                       yldot(iv) = yldot(iv) - (1/n0g(igsp))*(exp(yl(iv))-exp(ylodt(iv)))/dtuse(iv)
+                     else
+                       yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                     endif
+                  endif
+               enddo
+               do igsp = 1, ngsp
+                  if(istgonxy(ix,iy,igsp).eq.1) then
+                     iv = idxtg(ix,iy,igsp)
+                     yldot(iv) = (1.-fdttgxy(ix,iy,igsp))*yldot(iv)
+                     yldot(iv) =yldot(iv)-(yl(iv)-ylodt(iv))/dtuse(iv)
+                  endif
+               enddo
+               if (isphionxy(ix,iy).eq.1 .and. isbcwdt.eq.1) then
+                  iv = idxphi(ix,iy)
+                  yldot(iv) = (1.-fdtphixy(ix,iy))*yldot(iv)
+                  yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtuse(iv)
+               endif
+
+            enddo
+         enddo
+
+!...  Now do an additional relaxation of the potential equations with
+!...  timestep dtphi
+        if (dtphi < 1e10) then
+          do iy = 0, ny+1
+            do ix = 0, nx+1
+              if (isphionxy(ix,iy) == 1) then
+                iv = idxphi(ix,iy)
+                yldot(iv) = yldot(iv) - (yl(iv)-ylodt(iv))/dtphi
+              endif
+            enddo
+          enddo
+        endif
+end subroutine
 

@@ -63,6 +63,8 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
 
       Use(MCN_dim)
       Use(MCN_sources) # edisspl, edisspr, cmntgpl, cmntgpl
+      use OMPPandf,only:RhsEval
+      Use(Locflux)
 
 c...  local scalars
       real totfeix, totfeex, kfeix, vyn, cosphi,
@@ -96,6 +98,8 @@ cJG     external sdot
 c...  now we reset the boundary conditions around the edge
 c...  Initialization for constant
       expkmx = exp(-kappamx)
+      iv1=-1
+      iv2=-1
 c ====================================================================
 c ======================== The iy=0 boundary =========================
 c ====================================================================
@@ -119,7 +123,6 @@ c  Note: j3 is local range index for iy passed from pandf in oderhs.m
          do 272 ix = i4+1-ixmnbcl, i8-1+ixmxbcl # ix-loop over ion dens
            if (isnionxy(ix,0,ifld)==1) then
              iv1 = idxn(ix,0,ifld)
-
 c ...  First check if this is a neutral species (zi=0) & set BC for it
 c ---  Different boundary conditions if neutral momentum equation use;
 c ---  typically hydrogen only, so DIVIMP chem sputt not used here.
@@ -257,7 +260,7 @@ c...   Caution: the wall source models assume gas species 1 only is inertial
                   yldot(iv1) = nurlxn * ( (1-ifluxni)*
      .                      (niy1(ix,0,ifld) - niy0(ix,0,ifld))
      .                 - ifluxni*( fniy(ix,0,ifld)/(sy(ix,0)*vpnorm)
-     .                 - 0.001*ni(ix,1,ifld)*vy(ix,0,ifld)/vpnorm
+     .                 - 0.00001*ni(ix,1,ifld)*vy(ix,0,ifld)/vpnorm
      .                 ))/n0(ifld)
 c...  the last term going as 0.001 is to prevent very small densities
                elseif (isnwconi(ifld) .eq. 1) then
@@ -1561,6 +1564,7 @@ c********************************************************************
          do 174 ifld = 1 , nisp
             if(isnionxy(0,iy,ifld) .eq. 1) then
                iv1 = idxn(0,iy,ifld)
+               if (iy==6) write(*,*) '----',n0(ifld),ni(1,iy,ifld),ni(0,iy,ifld)
                yldot(iv1) = nurlxn *
      .                (nib(ifld)*nibprof(iy)-ni(0,iy,ifld))/n0(ifld)
                if(isfixlb(1).eq.2) yldot(iv1) = nurlxn * (1/n0(ifld)) *

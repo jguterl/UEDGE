@@ -90,7 +90,7 @@ c ... Common blocks:
       Use(Comtra)       # fricflf,sigvi_floor
       Use(Share)        # cutlo
       Use(Verbose)
-      Use(ParallelJacOptions)
+      Use(ParallelOptions)
 c ... External functions:
       real rra, rsa
 
@@ -1053,7 +1053,6 @@ c ... Calculate right-hand sides for interior and boundary points.
 ccc 10   call convsr_vo (-1,-1, yl)  # test new convsr placement
 ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
  10   call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
-
  20   continue
       return
       end
@@ -2005,7 +2004,7 @@ c ... Common blocks:
                           # isuponxy,isteonxy,istionxy,isngonxy,isphionxy
       Use(Jac_work_arrays) # iwwp,wwp,liwp,lwp  # diagnostic arrays in this sub
       Use(Verbose)
-      Use(ParallelJacOptions),only:ParallelJac
+      Use(ParallelOptions),only:ParallelJac,DebugJac
 
 c ... Local variables:
       real tp
@@ -2038,10 +2037,20 @@ c ... Calculate Jacobian matrix.
       if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
+      if (DebugJac.gt.0) then
+      write(*,*) 'Writing jacobian into serialjac.dat and paralleljac.dat'
+
+      call jac_write('paralleljac.dat',neq, jac, jacj, jaci)
+      call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
+     .               nnzmx, jac, jacj, jaci)
+      call jac_write('serialjac.dat',neq, jac, jacj, jaci)
+      endif
       else
       call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
       endif
+
+
 
       yl(neq+1) = -1.             # Turn-off Jacobian flag for pandf
       call rhsnk (neq, yl, f0)    # Reset f0 with nufak off
@@ -2418,7 +2427,7 @@ c ... Common blocks:
       Use(Time_dep_nwt)        # ydt_max0,nufak0
       Use(Share)               # cutlo
       Use(Verbose)
-      Use(ParallelJacOptions)
+      Use(ParallelOptions)
 
 c ... Local variables:
       real tp
@@ -2436,18 +2445,25 @@ c ... Calculate Jacobian matrix.
 cJG possible recursive compilation issue with sf
       if(fixsfset.gt.0) then
       if (ParallelJac.eq.1) then
-      call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, sf,
-     .               nnzmx, jac, jacj, jaci)
-      else
-      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
-     .               nnzmx, jac, jacj, jaci)
-      endif
-      else
-      if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
       else
       call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
+     .               nnzmx, jac, jacj, jaci)
+      endif
+      if (DebugJac.gt.0) then
+      write(*,*) 'Writing jacobian into serialjac.dat and paralleljac.dat'
+      call jac_write('paralleljac.dat',neq, jac, jacj, jaci)
+      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
+     .               nnzmx, jac, jacj, jaci)
+      call jac_write('serialjac.dat',neq, jac, jacj, jaci)
+      endif
+      else
+      if (ParallelJac.eq.1) then
+      call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, sf,
+     .               nnzmx, jac, jacj, jaci)
+      else
+      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
      .               nnzmx, jac, jacj, jaci)
       endif
       endif

@@ -5,7 +5,9 @@ Created on Sun May  3 00:58:24 2020
 
 @author: jguterl
 """
-
+import numpy as np
+from matplotlib import pyplot as plt
+import matplotlib
 class UEDGEMesh():
     def __init__(self):
         pass

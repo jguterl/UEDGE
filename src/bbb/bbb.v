@@ -247,7 +247,7 @@ isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
 is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
 z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
 isbouncon                  integer /1/ #=0/1 turn off/on call to bouncon
-FixResmo                   integer /0/ #[0/1] Turn on/off fix for initialization of resmo in pandf (meaningless until further notice)
+FixResmo                   integer /1/ #[0/1] Turn on/off fix for initialization of resmo in pandf (meaningless until further notice)
 fixpwrebkg                 integer /1/ #[0/1] Turn on/off fix for electron power background re/initialization in pandf
 fixresng                  integer /1/ #[0/1] Turn on/off fix for neutral density re/initialization in neudif
 fixnbg2dotinit            integer /1/ #[0/1] Turn on/off fix for nbg2dot re/initialization in rscalf

@@ -9,10 +9,12 @@ iout  integer /6/     # switch used by OMFIT
 ***** OMFIT:
 iomfit  integer /1/     # switch used by OMFIT
 
-***** ParallelJacOptions:
+***** ParallelOptions:
 OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ParallelJac     integer /0/        # [0]: serial jacobian calc [1] omp parallel jacobian calc
+OMPParallelPandf integer /0/
+DebugJac          integer /0/
 
 ***** HybridOptions:
 HybridOMPMPI    integer /0/        # Flag for HybridOMPMPI. Automatically turn on with OMPParallelJac and PMIParallelJac
@@ -79,6 +81,24 @@ iJacCol(nnzmxperthread,Nthreads) _integer #
 rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer
 nnzcum(Nthreads) _integer
+
+
+**** OMPPandf:
+OMPParallelPandf1 integer /0/
+OMPCheckParallelPandf integer /0/
+TimePandf real /0.0/
+OMPTimePandf real /0.0/
+OMPpandfivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPpandfivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPPandfVerbose           integer /0/
+RhsEval integer /0/
+TimeConvert real /0/
+TimeBlock1 real /0/
+TimeBlock2 real /0/
+TimeBlock3 real /0/
+TimeBlock4 real /0/
+TimeBlock5 real /0/
+OMPRhseval integer /0/
 
 ***** Verbose:
 VerboseCall        integer /0/     # Print name of subroutine when this one is called. Can be used to explore call trees

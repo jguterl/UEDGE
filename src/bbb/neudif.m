@@ -631,6 +631,8 @@ c
       Use(MCN_dim)      # ngsp, ...
       Use(MCN_sources)  # cfneut_sng, cfneutdiv_fng, ... mcfngx, mcfngy, ...
       Use(Interp)		# ngs, tgs
+      use OMPPandf,only:RhsEval
+      use Lsode,only:neq
 
 *  -- procedures --
       real ave
@@ -640,7 +642,7 @@ c ------------------
       methgx = mod(methg, 10)
       methgy = methg/10
 
-c      write(iout (*,*) "neudifpg"
+c      write(*,*) "neudifpg"
       do 895 igsp = 1, ngsp
 
 c *********************************************
@@ -864,6 +866,9 @@ c ..Timing
 
       call fd2tra (nx,ny,floxg,floyg,conxg,conyg,
      .             pg(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
+
+
+
 c ..Timing
       if(istimingon==1) ttngfd2=ttngfd2+(gettime(sec4)-tsngfd2)
 
@@ -1175,6 +1180,7 @@ c
 c --------------------------------------------------------------------------
 c END subroutine neudifpg
 c --------------------------------------------------------------------------
+
 
 
 c --------------------------------------------------------------------------

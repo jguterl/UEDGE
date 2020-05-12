@@ -116,7 +116,7 @@ print('>>>> Compiler name:{} ; Compiler executable:{}'.format(fcompiler.fcompnam
 ## Default Fortran compiler flags
 fargs=['-g -fmax-errors=15 -DHAS_READLINE -DFORTHON -cpp -Wconversion -fimplicit-none' ]
 ## Debug flag for Fortran compiler
-fargsdebug=' -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=zero,overflow,underflow -finit-real=snan -Og'
+fargsdebug=[' -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=invalid,overflow,underflow -finit-real=snan -Og']
 ## Optmization/debugging flag for Fortran compiler
 if not SafeFortranOpt:
     fargsopt=['-Ofast'] #Be careful with this fast: -Ofast enables -ffast-math, -fallow-store-data-races and  -fstack-arrays. fallow-store-data-races may severly impend pyUEDGE performances on some plateforms.  

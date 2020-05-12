@@ -667,7 +667,10 @@ cnxg      data igs/1/
       Use(Npes_mpi)              # mype
       Use(RZ_grid_info)  		 # bpol
       Use(Interp)				 # ngs, tgs
+      use OMPPandf ,only:RhsEval,TimeConvert,OMPRhseval,TimeBlock1
+      use OMPPandf,only:TimeBlock2,TimeBlock3,TimeBlock4,TimeBlock5
 
+      real :: t_start,t_stop
 *  -- procedures for atomic and molecular rates --
       integer zmax,znuc
       real dene,denz(0:1),radz(0:1)
@@ -695,8 +698,6 @@ c  Check array sizes
       if (ngsp > nigmx .or. nisp > nigmx) then
          call xerrab("***PANDF in oderhs.m: increase nigmx, recompile")
       endif
-      tid=OMP_GET_NUM_THREADS()
-
 ************************************************************************
 *  -- initialization --
 ************************************************************************
@@ -839,7 +840,7 @@ c ... Get initial value of system cpu timer.
          tsjf = gettime(sec4)
       endif
 
-      if ( (xc .lt. 0) .or.
+      if ( (xc .lt. 0.or.rhseval.gt.0) .or.
      .     ((0<=yc).and.(yc-yinc<=0)).and.isjaccorall==1 ) then
                                               # use full ix range near yc=0
                                               # with integrated core flux BC
@@ -925,7 +926,6 @@ c...  of the turbulence.
       else
          xcturb = xcturb .and. yc .ge. iysptrx+1
       endif
-
       if (xccuts .or. xcturb) then
          i1 = 0
          i2 = 1
@@ -967,7 +967,7 @@ c...  Reset ioniz. and rad. indices to a point if this is a Jacobian calc.
          endif
 
 c...  Set flag that indicates wide open Jac'n "box" for subroutine bouncon.
-      if (xc .lt. 0) then
+      if (xc .lt. 0.or. RhsEval.gt.0) then
          openbox = .true.
       elseif (xccuts .or. xcturb) then
          openbox = .true.
@@ -990,17 +990,19 @@ c...  boundary cells of a mesh region.  Used in subroutine bouncon.
          xcnearrb = xcnearrb .or.
      .      ( (xc-xlinc.le.ixrb(jx)+1) .and. (xc+xrinc.ge.ixrb(jx)) )
       enddo
-      if (xc .lt. 0) xcnearrb = .true.
+      if (xc .lt. 0.or.RhsEval.gt.0) xcnearrb = .true.
 
 ************************************************************************
 c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
-
+        call cpu_time(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
          call convsr_aux (xc, yc)
-
+        call cpu_time(t_stop)
+        if (OMPRhseval.gt.0) TimeConvert=t_stop-t_start+TimeConvert
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
+      call cpu_time(t_start)
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
@@ -1468,7 +1470,11 @@ c             non-physical interface between upper target plates for dnull
         else    # test on zi > 1.e-10 to skip whole loop
         endif
   100 continue  # Giant loop over ifld (species)
+       call cpu_time(t_stop)
+       if (OMPRhseval.gt.0) TimeBlock1=t_stop-t_start+TimeBlock1
 c--------------------------------------------------------------------------------------
+       call cpu_time(t_start)
+
 c ... Save values returned by Hirshman mombal for Jacobian calc. to
 c ... minimize calls - restore the "m" or ix-1 values at the end of pandf
 c ... The Jacobian ix loop can then be reduced to only include ix-1 and ix
@@ -1574,7 +1580,7 @@ c     saved here so they can be restored below.
 
 
       do iy = iys1, iyf6
-         if (xc .gt. 0) then
+         if (xc .gt.0.and. RhsEval.lt.1) then
             ix = xc
             ix1 = ixm1(ix,iy)
             if (isimpon .eq. 5) then   # Hirshmans reduced-ion approx.
@@ -1715,7 +1721,8 @@ c ..       switch to right plate(s)
           enddo
         enddo
       endif
-
+      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) TimeBlock2=t_stop-t_start+TimeBlock2
 ***********************************************************************
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
 *     or if isphiofft = 1.
@@ -1725,6 +1732,8 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
 ***********************************************************************
+      call cpu_time(t_start)
+
       do 25 iy = j1, j6
 	 do 24 ix = i1, i6
 	    vex(ix,iy) = 0.
@@ -2080,8 +2089,11 @@ c*****************************************************************
            endif       #if-loop on ipsorave
          endif         #omit whole loop if zi(ifld) = 0. (neutrals)
         enddo          #end loop over hydrogen species (ifld)
-**
+        call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) TimeBlock3=t_stop-t_start+TimeBlock3
+
 **c ... Can now calc current from nucx since it is updated
+      call cpu_time(t_start)
       if (cfqyn .gt. 0.) call calc_curr_cx
 
 c ... Ionization and recombination of impurities.
@@ -2414,11 +2426,13 @@ c *** Now do the gas
       endif
 
 
-
+      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) TimeBlock4=t_stop-t_start+TimeBlock4
 *****************************************************************
 c In the case of neutral parallel mom, call neudif to get
 c flux fngy, vy and uu, now that we have evaluated nuix etc.
 *****************************************************************
+      call cpu_time(t_start)
 
 ccc      if (isupgon .eq. 1 .and. zi(ifld) .eq. 0.0) call neudif
       if (ineudif .eq. 1) then
@@ -2434,7 +2448,8 @@ c ..Timing
       else
          call neudifo
       endif
-
+      call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) TimeBlock5=t_stop-t_start+TimeBlock5
 *****************************************************************
 *  Other volume sources calculated in old SRCMOD
 *****************************************************************
@@ -5174,10 +5189,11 @@ cc      Use(Selec)   # i2,i5,j2,j5
       Use(Compla)  # zi
       Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx
       Use(Cdv)
+      Use(ParallelOptions) , only:OMPParallelPandf
 
 *  -- arguments
       integer,intent(in):: xc, yc, ieq, neq     # ieq is the equation index for Jac. calc
-      real,intent(in):: time, yl(neqmx)
+      real,intent(in):: time, yl(*)
       real yldot(neq)
 
 *  -- local variables
@@ -5207,15 +5223,17 @@ c
 c  PANDF calculates the equations in the interior of the grid, plus calls
 c  bouncon for B.C. and poten for potential
 c
-      call pandf (xc, yc, neq, time, yl, yldot)
+      if (OMPParallelPandf.gt.0.and.xc.lt.0.and.yc.lt.0.and.yl(neq+1).lt.0) then
+      call ParallelPandf(xc, yc, neq, time, yl, yldot)
+      else
+      call pandf(xc, yc, neq, time, yl, yldot)
+      endif
 c
 c...  If isflxvar=0, we use ni,v,Te,Ti,ng as variables, and the ODEs need
 c...  to be modified as original equations are for d(nv)/dt, etc
 c...  If isflxvar=2, variables are ni,v,nTe,nTi,ng. Boundary equations and
 c...  potential equations are not reordered.
-       if (exmain_aborted.gt.0) then
-         call xerrab('Exmain Aborted')
-       endif
+
       if(isflxvar.ne.1 .and. isrscalf.eq.1) call rscalf(yl,yldot)
 c
 c ... Now add psuedo or real timestep for nksol method, but not both

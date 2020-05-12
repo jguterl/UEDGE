@@ -30,7 +30,7 @@ static sigjmp_buf ev;
 void int_handler() {
    char mymyline[200],*ret;
    sigset_t block_mask;
-   printf("\nType \"cont\" to continue exmain(), \"abort\" to return to Python prompt.\n");
+   printf("Type \"cont\" to continue exmain(), \"abort\" or \"exit\" to return to Python prompt.\n");
    printf("or a single line to be evaluated by Python.\n");
    #pragma omp master
 {
@@ -53,7 +53,8 @@ void int_handler() {
            return;
        } else if (strncmp(mymyline,"abort",5) == 0) {
 
-	 {PyRun_SimpleString("bbb.exmain_aborted = True");}
+	 { PyRun_SimpleString("print(\"Aborting... Please wait...\")");
+	   PyRun_SimpleString("bbb.exmain_aborted = True");}
 	 return;
 	 //siglongjmp(ev,1);
 

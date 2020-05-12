@@ -30,7 +30,7 @@ class UEDGESimBase():
         self.ExcludeList=['ExcludeList','ListPkg','IO']+self.ListPkg
         #self.SetVersion()
 
-    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True):
+    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=True):
         '''
         Parse and execute each line of FileName.
         FileName must a path toward a python script file (.py)
@@ -71,7 +71,8 @@ class UEDGESimBase():
                 exec(L)
             count=count+1
         self.CurrentInputFile=FilePath 
-        self.Initialize()
+        if Initialize:
+            self.Initialize()
         
     def Save(self,FileName,CaseName=None,Folder='SaveDir',Mode='regular',ExtraVars=[],GlobalVars=[],Tag={},Format='numpy',ForceOverWrite=False,Verbose=False):
         '''
@@ -595,8 +596,8 @@ Todo:
         
 
 Sim=UEDGESim()
-def ReadInput(FileName,Folder=None,Verbose=False):
-     Sim.ReadInput(FileName,Folder,Verbose=Verbose)   
+def ReadInput(FileName,Folder=None,Verbose=False,Initialize=True):
+     Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize)   
      
 def Restore(FileName,CaseName=Sim.CaseName,Folder='SaveDir',LoadList=[],ExcludeList=[],Format=Sim.Format,CheckCompat=True,Verbose=False):
     Sim.Load(FileName,CaseName,Folder,LoadList,ExcludeList,Format,CheckCompat,Verbose)
