@@ -1869,15 +1869,7 @@ c ... Enable Jac stencil comp if not parallel
       if (isjacstnlon == 1) then
         call domain_dc   # comp Jacobian stencil ivl2gstnl
       endif
-      write(iout,*) '******** Summary **********'
-      write(iout,*) 'nisp',nisp
-      write(iout,*) 'nhsp',nhsp
-      write(iout,*) 'ngsp',ngsp
-      write(iout,*) 'nzspt',nzspt
-      write(iout,*)  'nusp',nusp
-      write(iout,*) 'iigsp',iigsp
 
-      write(iout,*) '***************************'
       return
       end
 c***** end of subroutine ueinit ****************************************

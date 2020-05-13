@@ -261,7 +261,8 @@ class UEDGESimBase():
                     if bbb.dt_tot>=bbb.t_stop:
                             bbb.exmain_aborted=1
                             self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
+                            self.Save(FileName='final',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True,Verbose=False)
+                    
                             break
                     bbb.icntnunk = 1
                     bbb.isdtsfscal = 0

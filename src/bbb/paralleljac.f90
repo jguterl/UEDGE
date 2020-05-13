@@ -234,9 +234,9 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (OMPVerbose.gt.0) then
         write(iout,*)' *OMPJac* neq=',neq,neqmx
-        write(iout,*)' *OMPJac* Ivmin(ithread),Ivmax(ithread), OMPLoadWeight(ithread) ***'
+        write(iout,*)' *OMPJac* Ivmin(ith),Ivmax(ith), OMPLoadWeight(ith),OMPTimeLocalJac(ith) ***'
         do ith=1,Nthreads
-            write(iout,'(a,I3,a,I7,I7,f5.1)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith)
+            write(iout,'(a,I3,a,I7,I7,f5.1,f5.2)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith),OMPTimeLocalJac(ith)
         enddo
     endif
 
