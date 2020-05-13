@@ -462,7 +462,7 @@ c  ---------------------------------------------------------------------
 *  -- local scalars --
       integer nj, ij, ix, iy, jx
       real str, ctr, rm0, zm0, dxc, dz, dacore
-      character*80 fname
+      character*200 fname
       character*60 runid
 
 *=======================================================================
@@ -646,7 +646,7 @@ c-----------------------------------------------------------------------
       real dxc, dyc, dz, str, ctr, rm0, zm0, cossr, cossp, s_bphi, rmmax,
      .     lcon_wk1, lcon_wk2
       real bsqrvoltot,voltot,bsqrave,b_yface,b_xface
-      character*80 fname
+      character*200 fname
       character*60 runid
 
 *=======================================================================
