@@ -1721,7 +1721,7 @@ c ..       switch to right plate(s)
           enddo
         enddo
       endif
-      if (OMPRhseval.gt.0) if (OMPRhseval.gt.0) call cpu_time(t_stop)
+      if (OMPRhseval.gt.0) call cpu_time(t_stop)
       if (OMPRhseval.gt.0) TimeBlock2=t_stop-t_start+TimeBlock2
 ***********************************************************************
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
