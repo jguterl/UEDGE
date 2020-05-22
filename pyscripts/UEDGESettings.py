@@ -11,6 +11,7 @@ import easygui
 import platform,inspect
 import configparser
 import getpass
+#from .UEDGEToolBox import LsFolder
 
 import numpy as np
 class UEDGESettings():
@@ -62,14 +63,7 @@ class UEDGESettings():
         except: 
             print('Cannot parse the config file:',self.ConfigFileName)
             return None
-    def CreateStamp(self): 
-            from uedge import bbb
-            Stamp={}
-            Stamp['time'] = time.time()
-            Stamp['ctime'] = time.ctime()
-            Stamp['User']=self.UserName
-            Stamp['Version'] = bbb.uedge_ver
-            Stamp['PlatForm'] = self.Platform 
+
         
 def CreateUEDGESettingsFile():
         config = configparser.ConfigParser()
@@ -163,6 +157,26 @@ def CdSaveDir():
 def CdInputDir():
     os.chdir(Settings.InputDir)
     print('Current working directory:',os.getcwd())
+    
+def LsFolder(Folder,Ext="*.py"):
+    import glob
+    ListFile = [f for f in glob.glob(os.path.join(Folder,Ext))]
+    print('Looking for "{}" into {}'.format(Ext,Folder))
+    for F in ListFile:
+        print(' - {}'.format(os.path.basename(F)))  
+        
+def LsInputDir(Folder=None,Ext='*.py'):
+    if Folder is None:
+        LsFolder(Settings.InputDir,Ext)
+    else:
+        LsFolder(os.path.join(Settings.InputDir,Folder),Ext)
+        
+def LsSaveDir(Folder=None,Ext='*'):
+    if Folder is None:
+        LsFolder(Settings.SaveDir,Ext)
+    else:
+        LsFolder(os.path.join(Settings.SaveDir,Folder),Ext)
+    
 def Config():
     Settings.Config() 
     

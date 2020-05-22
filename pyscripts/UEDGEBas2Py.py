@@ -11,7 +11,9 @@ class UEDGEBas2Py(object):
     def __init__(self,BasFileName=None,PyFileName=None,Verbose=False,Doc=Doc):
         self.BasFileName=BasFileName
         self.Verbose=Verbose
-        self.ActionKeyWord=['read','integer','real','character','real8']
+        self.ActionKeyWord=['read','remark']
+        self.TypeBas=['integer','real','character','real8','integer8']
+        
         self.Doc=Doc
         self.MathSymbols='+-/*'
         if self.BasFileName is not None:
@@ -30,8 +32,11 @@ class UEDGEBas2Py(object):
             with open(self.PyFileName,'w') as self.fw:
                 #Lines = f.readlines() 
                 self.Line=next(self.f,None)
+                self.LineNumber=0
                 while self.Line:
-                    Out=self.LineParser(self.Line) 
+                    
+                    Out=self.LineParser(self.Line)
+                    self.LineNumber+=1
                     if Out is not None:
                         for L in Out:
                             self.fw.write(L+'\n')
@@ -39,8 +44,9 @@ class UEDGEBas2Py(object):
                     
     def LineParser(self,Line):
             Out=[]
+            
             if self.Verbose:
-                print('Parsing: {}'.format(Line.rstrip()))
+                print('Parsing #{}: {}'.format(self.LineNumber,Line))
             # First we ignore all comments in line
             Comment=''
             Line=Line.strip()
@@ -78,9 +84,26 @@ class UEDGEBas2Py(object):
                     else:
                         Out.append('##'+Line+Comment)
                     return Out
-                    
-                if L in 'real' or L in 'integer':
                     Out.append(Line.split()[1].strip()+Comment)
+                    return Out
+                
+                #deal with remark:
+                if L in 'remark' or L in '<<':
+                    Arg=Line.split()[1].strip()
+                    if len(Arg)>0:
+                       Out.append('print('+Arg+')')
+                    else:
+                        Out.append('##'+Line+Comment)
+                    return Out
+                
+                    Out.append(Line.split()[1].strip()+Comment)
+                    return Out
+                
+                if L in self.TypeBas:
+                    if '=' in Line.split()[1].strip():
+                        Out.append(Line.split()[1].strip()+Comment)
+                    else:
+                        Out.append('#'+Line.split()[1].strip()+Comment)
                     return Out
                 
                 if L in 'call':
@@ -192,6 +215,7 @@ class UEDGEBas2Py(object):
         idc=self.findall(Dim,',')
         Ind=[-1]
         if (len(idl)!=len(idr)):
+        
             raise ValueError('Cannot parse expression with incomplete bracket:',Dim)
         Ind.extend([i for i in idc if all([False for (il,ir) in zip(idl,idr) if i>=il and i<=ir])])
         DimArgs = [Dim[i+1:j] for i,j in zip(Ind, Ind[1:]+[None])]

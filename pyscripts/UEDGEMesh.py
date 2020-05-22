@@ -8,42 +8,54 @@ Created on Sun May  3 00:58:24 2020
 import numpy as np
 from matplotlib import pyplot as plt
 import matplotlib
+from uedge.UEDGEToolBox import Source
 class UEDGEMesh():
-    def __init__(self):
-        pass
+    def __init__(self,FileName=None,Verbose=False):
+        if FileName is not None:
+            self.Mesh=self.ImportMesh(FileName)
+        self.Verbose=Verbose
+    def GetMesh(self):
+        if callable(getattr(self, "GetGrid", None)):
+            self.Mesh=self.GetGrid()
+        return self.Mesh
     
-    def PlotSeparatrix(self,ax=None,color='r',linewidth=1,**kwargs):
+    def SetGrid(self,Grid):
+        self.Mesh=Grid
+    
+    def ShowCell(self,ixiy,ax=None,Annotate=True):
+        if 'Mesh' not in self.__dict__:
+            self.Mesh=self.GetMesh()
+        if self.Verbose: print("Shape rm:{}".format(self.Mesh['rm'].shape))
+        self.__class__.PlotCell(ixiy,rm=self.Mesh['rm'],zm=self.Mesh['zm'],ax=ax,Verbose=self.Verbose,Annotate=Annotate)
+             
+    
+    @staticmethod        
+    def PlotCell(ixiy,rm=None,zm=None,ax=None,Verbose=False,color='r',Annotate=True):
         from uedge import com
-        sepx=np.concatenate((com.rm[:,com.iysptrx,3],np.array([com.rm[-1,com.iysptrx,4]])))
-        sepy=np.concatenate((com.zm[:,com.iysptrx,3],np.array([com.zm[-1,com.iysptrx,4]])))
-        
         if ax is None:
             ax=plt.gca()
-        ax.plot(sepx,sepy,color=color,linewidth=linewidth,**kwargs)
-
-
-    def ShowCell(self,ixiy,rm=None,zm=None,ax=None):
-        if ax is None:
-            ax=plt.gca()
-        
         if type(ixiy)!=list:
             ixiy=[ixiy]
+         
         if rm is None:
             rm=com.rm
         if zm is None:
             zm=com.zm
+        if Verbose: print(rm.shape)       
         for (ix,iy) in ixiy:
             r=rm[ix,iy,0]
             z=zm[ix,iy,0]
             r0 = [rm[ix, iy, 1], rm[ix, iy, 2],rm[ix, iy, 4], rm[ix, iy, 3], rm[ix, iy, 1]]
             z0 = [zm[ix, iy, 1], zm[ix, iy, 2], zm[ix, iy, 4], zm[ix, iy, 3], zm[ix, iy, 1]]
-            ax.plot(r0, z0, 'r-', label='Grid', linewidth=2)
-            
-            annot = ax.annotate("ix={},iy={}".format(ix,iy), xy=(r,z), xytext=(-20,20),textcoords="offset points",
+            ax.plot(r0, z0, '-',color=color, label='Grid', linewidth=2)
+            if Annotate:
+                annot = ax.annotate("ix={},iy={}".format(ix,iy), xy=(r,z), xytext=(-20,20),textcoords="offset points",
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
-
-    def PlotMesh(self,r,z,ax=None,Fill=False,Verbose=False,facecolor=None,edgecolor='black',Title=''):
+    
+    
+    @staticmethod
+    def PlotMesh(r,z,ax=None,Verbose=False,edgecolor='black',Title=''):
         """Plot UEDGE grid."""
         if ax is None:
             ax=plt.gca()
@@ -74,18 +86,11 @@ class UEDGEMesh():
             for j in range(Ny):
                     Data=np.concatenate((r[i][j][idx],z[i][j][idx])).reshape(2,5).T
                     p=matplotlib.patches.Polygon(Data,closed=True,fill=False,edgecolor=edgecolor,label='ix={},iy={}'.format(i,j),picker=5)
-                    if not Fill:
-                        c=ax.add_patch(p) #draw the contours
-                    else:
-                            patches.append(p)
-                            
+                    c=ax.add_patch(p) #draw the contours
+                    Obj[p]=c
                     Dic[p]='ix={},iy={}'.format(i,j)
                     Pos[p]=(r[i][j][0],z[i][j][0])
-                    Obj[p]=c
-    
-        if Fill:
-            Collec=matplotlib.collections.PatchCollection(patches,match_original=True,facecolors=None,edgecolors=edgecolor)
-            c=ax.add_collection(Collec)
+                    
             
         plt.ylim(z.min(),z.max())
         plt.xlim(r.min(),r.max())
@@ -93,11 +98,16 @@ class UEDGEMesh():
                             bbox=dict(boxstyle="round", fc="w"),
                             arrowprops=dict(arrowstyle="->"))
         annot.set_visible(False)
-        
-        #Create event handler
-        
-            
+    
         ax.figure.canvas.mpl_connect('pick_event', onpick)
+        
+    
+        
+    
+    def ShowMesh(self,ax=None,Verbose=False,edgecolor='black',Title=''):
+        self.Mesh=self.GetGrid()
+        self.__class__.PlotMesh(self.Mesh['rm'],self.Mesh['zm'],ax,Verbose,edgecolor,Title)     
+         
 
 
     def ImportMesh(self,fname:str = 'gridue')->dict:
@@ -146,3 +156,12 @@ class UEDGEMesh():
             return gridue_params
         except Exception as e:
             print(repr(e))
+            
+
+
+def PlotSeparatrix(ax=None,color='r',linewidth=1,**kwargs):
+    from uedge import com
+    M.PlotFluxSurface(com.rm,com.zm,com.iysptrx,ax,color,linewidth,**kwargs)
+    
+    
+            

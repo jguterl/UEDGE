@@ -5,45 +5,81 @@ Created on Thu Feb  6 15:52:13 2020
 
 @author: jguterl
 """
-import uedge
+
 import types
 #import matplotlib.pyplot as plt
 import numpy as np
 import os, sys, math, string, re
 from pathlib import Path
-from . import UEDGEToolBox
-from .UEDGEToolBox import *
-from .UEDGEDoc import *
-from . import UEDGEIO
-from uedge import *
-from colorama import Fore, Back, Style
+from uedge import UEDGEToolBox
+from uedge.UEDGEToolBox import *
+from uedge.UEDGEDoc import *
 
-class UEDGESimBase():    
-    def __init__(self,  *args, **kwargs):
+from uedge.UEDGEIO import UEDGEIO
+from uedge import UEDGEPlot 
+from uedge import UEDGEMesh
+from uedge.UEDGEPlot import *
+from uedge.UEDGEMesh import *
+from colorama import Fore, Back, Style
+from datetime import date,datetime
+
+class UEDGESimBase(UEDGEMesh):    
+    def __init__(self,  Verbose=False,*args, **kwargs):
         # Import Uedge packages as attribute of the class instance 
         # WARNING: this is not a deep copy!!!
         self.ListPkg=UEDGEToolBox.GetListPackage()
+        self.Verbose=Verbose
         print('Loaded Packages:',self.ListPkg)
-        for pkg in self.ListPkg:
-            exec('self.' + pkg + '=' + pkg,globals(),locals())
-        self.IO=UEDGEIO.UEDGEIO()
+        # for pkg in self.ListPkg:
+        #     exec('self.' + pkg + '=' + pkg,globals(),locals())
+        self.IO=UEDGEIO(self.Verbose)
         self.ExcludeList=['ExcludeList','ListPkg','IO']+self.ListPkg
         #self.SetVersion()
+        
+    def Updateftol(self):
+        bbb.ylodt = bbb.yl
+        bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
+        fnrm_old=sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))   
+        return max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+    
+    def GetData(self,Field):
+        for pkg in self.ListPkg:
+            exec('from uedge import '+pkg)
+        Out=locals()
+        comm='{}={}.{}'.format(Field.lower(),'bbb',Field.lower())
+        if self.Verbose: print('Retrieving data:',comm)
+        try: 
+            exec(comm,globals(),Out)
+        except:
+            print('Cannot set {}={}.{} '.format(Field,'bbb',Field))
+        if Out.get(Field) is None:
+            print('Cound not get data for {}'.format(Field))
 
-    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=True):
+        return Out.get(Field.lower())
+    
+    def GetGrid(self):
+        Grid={'rm':com.rm,'zm':com.zm,'iysptrx':com.iysptrx}
+        return Grid
+        
+    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=False):
         '''
+        ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=True)
+        
         Parse and execute each line of FileName.
         FileName must a path toward a python script file (.py)
         The existence of FileName is first checked with its absolute path.
-        If no path is specified, the path is the current working directory. 
+        If Folder is None, the path is the current working directory. 
         If the file is not found, then the file is search for in the 'InputDir' defined in Settings.
         
         Parameters
         ----------
         FileName : str
             Path to input file 
+        Folder: str,optional [None]
+            
         Verbose : bool, optional
             Verbose mode when parsing the input file. The default is True.
+            
 
         Returns
         -------
@@ -73,8 +109,7 @@ class UEDGESimBase():
         self.CurrentInputFile=FilePath 
         if Initialize:
             self.Initialize()
-        
-    def Save(self,FileName,CaseName=None,Folder='SaveDir',Mode='regular',ExtraVars=[],GlobalVars=[],Tag={},Format='numpy',ForceOverWrite=False,Verbose=False):
+    def Save(self,FileName,CaseName='auto',Folder='SaveDir',Mode='regular',ExtraVars=[],GlobalVars=[],Tag={},Format=None,ForceOverWrite=False,Verbose=False):
         '''
         Wrapper method to save UEDGE simulation data
         See Save method of UEDGEIO class
@@ -91,44 +126,95 @@ class UEDGESimBase():
         None.
 
         '''
-       
-        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=Verbose,CaseFolder=CaseName,CheckExistence=False)
+        if CaseName=='auto':
+            CaseName=self.CaseName
+        
+            
+        if Format is None:
+            Format=self.Format
+            
+        Verbose=Verbose or self.Verbose
+        
+        self.Tag=GenerateTag(self)
+        self.Tag.update(Tag)
+        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=Verbose,CaseName=CaseName,CheckExistence=False,CreateFolder=True)
         if Verbose:
             print("Saving data in file:{}".format(FilePath))
         # Looking for file 
-        if UEDGEToolBox.CheckFileExist(FilePath) or ForceOverWrite:
-            self.IO.Save(FilePath,Mode,ExtraVars,GlobalVars,Tag,Format,Verbose)
+        if ForceOverWrite or UEDGEToolBox.CheckFileExist(FilePath):
+            self.IO.Verbose=Verbose
+            self.IO.Save(FilePath,Mode,ExtraVars,GlobalVars,self.Tag,Format)
         else:
-            print("No data saved in file:{}".format(FilePath))
+            print("No data saved in file:{}".format(FilePath))        
+    
+    def SaveLog(self,FileName,Str,Tag={},Folder='SaveDir'):    
+        self.Tag=GenerateTag(self)
+        self.Tag.update(Tag)
+        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=self.Verbose,CaseName=self.CaseName,CheckExistence=False,CreateFolder=True)
+        self.IO.SaveLog(FilePath,Str,self.Tag)
             
-    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadList=[],ExcludeList=[],Format='numpy',CheckCompat=True,Verbose=False):
-        '''
+    def LoadInterp(self,FileName,OldGrid='loaded',NewGrid=None,CaseName=None,Folder='SaveDir',LoadPackage='plasma',InterpolateData='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Verbose=False):
+        
+        if Format is None:
+            Format=self.Format
+        Verbose=Verbose or self.Verbose 
+        
+        if NewGrid is None:
+            NewGrid=self.GetGrid()
+        elif type(NewGrid)==str:
+                NewGrid=UEDGEMesh().ImportMesh(NewGrid)
+        elif type(NewGrid)!=dict:
+            print("NewGrid must a Grid or a path toward a grid file")
+             
+        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=Verbose,CaseName=CaseName)
+        if Verbose:
+            print("Load data in file:{}".format(FilePath))
+        # Looking for file 
+        if os.path.isfile(FilePath):
+            self.IO.Verbose=Verbose
+            self.IO.LoadInterpolate(FilePath,OldGrid,NewGrid,Format,LoadList,ExcludeList,CheckDim,LoadPackage,InterpolateData)
+            bbb.restart=1
+        else:
+            print("The file {} does not exist".format(FilePath))
+            
+            
+        
+                
+    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Verbose=False):
+        
+        """
         Wrapper method to load UEDGE simulation data
         See Load method of UEDGEIO class
+        Args:
+            FileName (TYPE): DESCRIPTION.
+            CaseName (TYPE, optional): DESCRIPTION. Defaults to None.
+            Folder (TYPE, optional): DESCRIPTION. Defaults to 'SaveDir'.
+            LoadList (TYPE, optional): DESCRIPTION. Defaults to [].
+            ExcludeList (TYPE, optional): DESCRIPTION. Defaults to [].
+            Format (TYPE, optional): DESCRIPTION. Defaults to 'numpy'.
+            CheckCompat (TYPE, optional): DESCRIPTION. Defaults to True.
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+
+        Returns:
+            None.
+
+        """
+        if Format is None:
+            Format=self.Format
+        Verbose=Verbose or self.Verbose 
         
-        Parameters
-        ----------
-        FileName : str
-            Path to input file 
-        Verbose : bool, optional
-            Verbose mode when parsing the input file. The default is True.
-
-        Returns
-        -------
-        None.
-
-        '''
         from uedge import bbb
         if Format=='npy' or Format=='numpy':
             if not FileName.endswith('.npy'):
                 FileName=FileName+'.npy'
         
-        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=Verbose,CaseFolder=CaseName)
+        FilePath=UEDGEToolBox.Source(FileName,Folder=Folder,Enforce=False,Verbose=Verbose,CaseName=CaseName)
         if Verbose:
             print("Load data in file:{}".format(FilePath))
         # Looking for file 
         if os.path.isfile(FilePath):
-            self.IO.Load(FilePath,Format,LoadList,ExcludeList,CheckCompat=CheckCompat,Verbose=Verbose)
+            self.IO.Verbose=Verbose
+            self.IO.Load(FilePath,Format,LoadList,ExcludeList,CheckDim,LoadPackage)
             bbb.restart=1
         else:
             print("The file {} does not exist".format(FilePath))
@@ -136,6 +222,18 @@ class UEDGESimBase():
             
     @classmethod    
     def GetClassAttr(cls,Verbose=False):
+        """
+        
+
+        Args:
+            cls (TYPE): DESCRIPTION.
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+
+        Returns:
+            Attr (TYPE): DESCRIPTION.
+
+        """
+        
         Attr = dict((k,v) for k,v in cls.__dict__.items() if '__' not in k and not isinstance(v,types.FunctionType) and not isinstance(v,classmethod))
         if Verbose: print(Attr)
         return Attr
@@ -166,15 +264,45 @@ class UEDGESimBase():
         for A,V in self.__class__.GetClassAttr().items(): 
             print(' - {}={}'.format(A,V))
             
-    def SetUEDGEParams(self,Verbose=False):
+    def SetParams(self,**kwargs):
+        """
         
-        for A,V in self.GetInstanceAttr().items():
-            if V is not None and V  not in self.ExcludeList:
+
+        Args:
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+
+        Returns:
+            None.
+
+        """
+        self.OverrideObjectParams(**kwargs)
+        self.OverrideClassParams(**kwargs)
+        Params=dict((k,v) for (k,v) in self.GetInstanceAttr().items() if k not in self.ExcludeList)
+        Params.update(**kwargs)
+        if self.Verbose:
+            print('Setting up following params in UEDGE:',list(Params.keys()))
+        
+        self.SetPackageParams(Params) 
+                    
+    def SetPackageParams(self,Dic:dict):
+        """
+        
+
+        Args:
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+
+        Returns:
+            None.
+
+        """
+        
+        for A,V in Dic.items():
+            if V is not None:
                 Result=SearchSilent(A)
                 if len(Result)>0:
                     Pkg=Result[0]['Package']
                     comm='{}.{}={}'.format(Pkg,A,V)
-                    if Verbose: print(comm)
+                    if self.Verbose: print(comm)
                     try: 
                         exec(comm,globals(),globals())
                     except:
@@ -182,177 +310,140 @@ class UEDGESimBase():
                 else:
                     print('No package found for {}'.format(A))
     
-    def OverrideParams(self,**kwargs):
-        #Override class attribute 
-        Dic=self.__class__.GetClassAttr()
-        for k,v in kwargs.items():
-            if k in Dic:
-                self.__class__.__dict__[k]=v
+    def OverrideObjectParams(self,**kwargs):
+        """
+        
+
+        Args:
+            **kwargs (TYPE): DESCRIPTION.
+
+        Returns:
+            None.
+
+        """
+        
                 
         #Override object attribute 
         Dic=self.GetInstanceAttr()
         for k,v in kwargs.items():
             if k in Dic:
                 self.__dict__[k]=v
-    
+                
+    def OverrideClassParams(self,**kwargs):
+        #Override class attribute 
+        Dic=self.__class__.GetClassAttr()
+        for k,v in kwargs.items():
+            if k in Dic:
+                self.__class__.__dict__[k]=v
+                
     def PrintTimeStepModif(self,i):
         self.PrintInfo('New time-step = {:.4E}'.format(bbb.dtreal),color=Back.MAGENTA)
     
     def PrintCurrentIteration(self,i,j=None):
         if j is None:
-            self.PrintInfo('Main loop i={i}/{imax}       dtreal={dt:.4E}'.format(i=i,imax=self.Imax, dt=bbb.dtreal),color=Back.BLUE)
+            self.PrintInfo('{cn}: Main loop i={i}/{imax}       dtreal={dt:.4E}'.format(cn=self.CaseName,i=i,imax=self.Imax, dt=bbb.dtreal),color=Back.BLUE)
         else:
-            self.PrintInfo('Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.YELLOW)
+            self.PrintInfo('{cn}: Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(cn=self.CaseName,i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.YELLOW)
         
     
-    def Run(self,Verbose=False):        
+    def Run(self,Verbose=False): 
+        """
+        
+
+        Args:
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+
+        Returns:
+            Status='mainloop'|'tstop'|'dtkill'|'aborted'
+
+        """
+        
         bbb.exmain_aborted=0 
-        if Verbose: print('00:exmain_aborted:',bbb.exmain_aborted)
+       
         while bbb.exmain_aborted==0:
-            if Verbose: print('0:exmain_aborted:',bbb.exmain_aborted)
-            if bbb.exmain_aborted==1:
-                break
+            
+            
             self.PrintInfo('----Starting Main Loop ----')
+# Main loop----------------------------------------------- 
             for imain in range(self.Imax):
+                self.Status='mainloop'
                 
                 bbb.icntnunk = 0
-                bbb.ylodt = bbb.yl #this is use in set_dt which provides option to select optimal timestep
-                bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq]*bbb.sfscal[0:bbb.neq])**2))
-                bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+                
+                bbb.ftol = self.Updateftol()
      
                 if (bbb.initjac == 0): 
                     bbb.newgeo=0
+                    
                 self.PrintTimeStepModif(imain) 
-                #self.PrintInfo('Suggested timestep:{}'.format(self.GetMinTimeStep()))
-                self.Save(FileName='last',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True,Verbose=False)
+                self.AutoSave('last.npy') # Save data in file SaveDir/CaseName/last.npy
+                
                 self.PrintCurrentIteration(imain)
+                
                 bbb.exmain() # take a single step at the present bbb.dtreal
                 sys.stdout.flush()
+                
                 if bbb.exmain_aborted==1:
                     break
                 
                 if (bbb.iterm == 1):
-                    bbb.ylodt = bbb.yl
-                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-                    if bbb.dt_tot>=bbb.t_stop:
-                            bbb.exmain_aborted=1
-                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
-                            break
-                    bbb.icntnunk = 1
-                    bbb.isdtsfscal = 0
-# Second loop -----------------------------------------------------------------------------------                    
-                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
-                        if bbb.exmain_aborted==1:
-                            break
-                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
-                        self.PrintCurrentIteration(imain,ii2)
-                        bbb.exmain()
-                        sys.stdout.flush()
-                if bbb.exmain_aborted==1:
-                    break
-                
-                if (bbb.iterm == 1):
-                    bbb.ylodt = bbb.yl
-                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-                    if bbb.dt_tot>=bbb.t_stop:
-                            bbb.exmain_aborted=1
-                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            self.Save(FileName='final',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True,Verbose=False)
                     
-                            break
-                    bbb.icntnunk = 1
-                    bbb.isdtsfscal = 0
-# Second loop -----------------------------------------------------------------------------------                    
-                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
-                        if bbb.exmain_aborted==1:
-                            break
-                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
-                        self.PrintCurrentIteration(imain,ii2)
-                        bbb.exmain()
+                    if bbb.dt_tot>=bbb.t_stop:
+                            bbb.exmain_aborted=1
+                            self.SaveFinalState()
+                            self.Status='tstop'
+                            return self.Status 
                         
-                if bbb.exmain_aborted==1:
-                    break
-                
-                if (bbb.iterm == 1):
-                    bbb.ylodt = bbb.yl
-                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-                    if bbb.dt_tot>=bbb.t_stop:
-                            bbb.exmain_aborted=1
-                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
-                            break
+             
+# Second loop -----------------------------------------------------------------------------------
                     bbb.icntnunk = 1
                     bbb.isdtsfscal = 0
-# Second loop -----------------------------------------------------------------------------------                    
                     for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
                         if bbb.exmain_aborted==1:
                             break
-                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
+                        bbb.ftol = self.Updateftol()
                         self.PrintCurrentIteration(imain,ii2)
                         bbb.exmain()
                         sys.stdout.flush()
-                if bbb.exmain_aborted==1:
-                    break
-                
-                if (bbb.iterm == 1):
-                    bbb.ylodt = bbb.yl
-                    bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                    fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-                    if bbb.dt_tot>=bbb.t_stop:
-                            bbb.exmain_aborted=1
-                            self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
-                            break
-                    bbb.icntnunk = 1
-                    bbb.isdtsfscal = 0
-# Second loop -----------------------------------------------------------------------------------                    
-                    for ii2 in range(self.Jmax): #take ii2max steps at the present time-step
-                        if bbb.exmain_aborted==1:
-                            break
-                        bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
-                        self.PrintCurrentIteration(imain,ii2)
-                        bbb.exmain()
-                        sys.stdout.flush()
-                        if bbb.exmain_aborted==1:
-                            break
-                        if bbb.iterm == 1:
-                            bbb.ylodt = bbb.yl
-                            bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-                            fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
+                        
+                        if bbb.iterm == 1 and bbb.exmain_aborted!=1:
                             bbb.dt_tot += bbb.dtreal
                             self.dt_tot=bbb.dt_tot
                         else:
                             break
+                        
                         if bbb.dt_tot>=bbb.t_stop:
-                            bbb.exmain_aborted=1
                             self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                            if Verbose: print('11:exmain_aborted:',bbb.exmain_aborted)  
-                            break
-# End Second loop -----------------------------------------------------------------------------------                              
+                            self.SaveFinalState()
+                            self.Status='tstop'
+                            return self.Status 
+# End Second loop ----------------------------------------------------------------------------------- 
+                             
                 if bbb.exmain_aborted==1:
                     break
-# Handle success/error -----------------------------------------------------------------------------------        
+                
+# Handle success/error ------------------------------------------------------------------------------       
                 if (bbb.iterm == 1):
                     bbb.dtreal *= self.mult_dt_fwd
                     self.dtreal=bbb.dtreal
                 
                 else:    #print bad eqn, cut dtreal by 3
                     self.Itrouble()
+             
+                    self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
+                    bbb.dtreal /= self.mult_dt_bwd
+                    self.dtreal=bbb.dtreal
+                    bbb.iterm = 1
                     
                     if (bbb.dtreal < bbb.dt_kill):
                         self.PrintInfo('FAILURE: time-step < dt_kill',Back.RED)
                         bbb.exmain_aborted=1
-                        break
-                    self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
-                    bbb.dtreal /= self.mult_dt_bwd
-                    self.dtreal=bbb.dtreal
-                              
-                bbb.iterm = 1
+                        self.Status='dtkill'
+                        return self.Status 
+# End of main loop -------------------------------------------------------- --------------------------------            
+        if bbb.exmain_aborted==1: self.Status='aborted'
+        return self.Status
+                                   
              
     def Initialize(self,ftol=1e20,restart=0,dtreal=1e10):
         bbb.dtreal=dtreal
@@ -487,11 +578,12 @@ class UEDGESimBase():
         
     def SetCaseName(self,CaseName):
         from uedge import bbb
+        self.CaseName=CaseName
         try:
             bbb.CaseName=CaseName
-            self.CaseName=CaseName
+            
         except:
-            print('Cannot set CaseName')
+            print('Cannot set CaseName in bbb')
             
     def GetCaseName(self):
         try:
@@ -499,18 +591,33 @@ class UEDGESimBase():
         except:
             return None
         
+    def SetDescription(self,Str):
+        self.Description=Str
         
+    def GetDescription(self):
+        return self.Description
+        
+    def GetVersion(self):
+        return uedge.__version__  
+    def GetGitHash(self):
+        return uedge.GitHash
     def SetVersion(self):
         try:
             bbb.uedge_ver=uedge.__version__
         except:
             print('Cannot set Uedge version')
+            
+    def AutoSave(self,FileName):
+        self.Save(FileName,CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True)
         
-    
+    def SaveFinalState(self):
+        self.Save('final_state',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=False)
+        
+
 
 
 #---------------------------------------------------------------------------------------------------------------     
-class UEDGESim(UEDGESimBase):
+class UEDGESim(UEDGESimBase,UEDGEPlot):
     """ Main class to run UEDGE simulation.
 
     This class contains methods to run, save and restore UEDGE simulation.
@@ -555,8 +662,9 @@ Todo:
     
     
     
-    def __init__(self):
+    def __init__(self,Verbose=False):
         self.DefaultSettings()
+        self.Verbose=Verbose
         UEDGESimBase.__init__(self)
         
     def DefaultSettings(self):
@@ -569,45 +677,154 @@ Todo:
         self.rlx=0.9
         self.incpset=7
         self.dt_tot=None
-        self.iscontdt=1
-        self.CaseName=None
+        self.isbcwdt=1
+        self.CaseName='None'
+        self.Description='None'
         
-    
-    def Start(self,Verbose=False,**kwargs):
+        @staticmethod
+        def Resetftol():
+            bbb.ftol_min=1e-10
+            bbb.ftol_dt=1e-10
+            print("bbb.ftol_dt={};bbb.ftol_min={}".format(bbb.ftol_min,bbb.ftol_dt))
+        @staticmethod
+        def Changeftol(factor):
+            bbb.ftol_min*=factor
+            bbb.ftol_dt*=factor
+            print("bbb.ftol_dt={};bbb.ftol_min={}".format(bbb.ftol_min,bbb.ftol_dt))    
+         
+    def Start(self,**kwargs):
         self.Initialize()
-        self.Cont(Verbose=Verbose,**kwargs)
+        self.Cont(**kwargs)
     
-    def Cont(self,Verbose=False,**kwargs):
+    def Cont(self,**kwargs):
         bbb.restart=1
-        self.OverrideParams(**kwargs)
-        self.SetUEDGEParams()
-        self.Run(Verbose=Verbose)
+        self.SetParams(**kwargs)
+        return self.Run(Verbose=self.Verbose)
     
     def Restart(self,**kwargs):
-        bbb.restart=1
-        self.OverrideParams(**kwargs)
-        
         self.dtreal/=self.mult_dt_fwd
-        self.SetUEDGEParams()
+        self.SetParams(**kwargs)
+        bbb.restart=1
         bbb.iterm=1
-        self.Run()
+        return self.Run()
     
     def Help(self):
         help(self.__class__)
+             
+
+        
+    def Restore(self,FileName,Folder='InputDir'):
+        """
+        
+    
+        Args:
+            FileName (TYPE): DESCRIPTION.
+            CaseName (TYPE, optional): DESCRIPTION. Defaults to Sim.CaseName.
+            Folder (TYPE, optional): DESCRIPTION. Defaults to 'SaveDir'.
+            LoadList (TYPE, optional): DESCRIPTION. Defaults to [].
+            ExcludeList (TYPE, optional): DESCRIPTION. Defaults to [].
+            Format (TYPE, optional): DESCRIPTION. Defaults to Sim.Format.
+            CheckCompat (TYPE, optional): DESCRIPTION. Defaults to True.
+            Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+    
+        Returns:
+            None.
+    
+        """
+        
+        Sim.ReadInput(FileName,Folder=Folder,Initialize=True)
+        Sim.Load('last.npy',CaseName=Sim.CaseName,LoadPackage='all')
+        
+        
+    def RunRamp(self,Data:dict,Istart:int=0,dtreal_start:float=1e-8,tstop:float=10):
+        """
         
 
-Sim=UEDGESim()
-def ReadInput(FileName,Folder=None,Verbose=False,Initialize=True):
-     Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize)   
-     
-def Restore(FileName,CaseName=Sim.CaseName,Folder='SaveDir',LoadList=[],ExcludeList=[],Format=Sim.Format,CheckCompat=True,Verbose=False):
-    Sim.Load(FileName,CaseName,Folder,LoadList,ExcludeList,Format,CheckCompat,Verbose)
+        Args:
+            Data (dict): ebbb.g. Dic={'ncore[0]':np.linspace(1e19,1e20,10),'pcoree':np.linspace(0.5e6,5e6,10)}
+            Istart (int, optional): DESCRIPTION. Defaults to 0.
+            dtreal_start (float, optional): DESCRIPTION. Defaults to 1e-8.
+            tstop (float, optional): DESCRIPTION. Defaults to 10.
+
+        Returns:
+            None.
+
+        """
+        
+        #Check if all data arrays have the same length
+        List=[v.shape for (k,v) in Data.items()]
+        if not all(L == List[0] for L in List):
+            print('Arrays of different size... Cannot proceed...')
+            return
+        Istop=List[0][0]
+        if Istart>=Istop:
+            print('Istart={} >= Istop={}: cannot proceed...'.format(Istart,Istop))
+        irun=Istart
+        # Loop over data
+        
+        
+        while irun <Istop:
     
-def Save(FileName,CaseName=Sim.CaseName,Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=Sim.Format,ForceOverWrite=False,Verbose=False):
+            # 1) Set data in uedge packages
+            Params=dict((k,v[irun]) for (k,v) in Data.items())
+            ListParams=['{}:{}'.format(k,v) for k,v in Params.items()]
+            self.SetPackageParams(Params)
+            
+            # 2) Run until completion
+            self.PrintInfo('RAMP i={}/{} : '.format(irun,Istop)+','.join(ListParams),color=Back.MAGENTA)
+            Status=self.Cont(dt_tot=0,dtreal=dtreal_start,t_stop=tstop)
+            if Status=='tstop':
+                ListValueParams=['{:2.2e}'.format(v) for k,v in Params.items()]
+                self.Save('final_state_ramp_'+'_'.join(ListValueParams)) 
+                self.SaveLog('logramp','{}:{}::'.format(self.Tag['Date'],self.Tag['Time'])+';'.join(ListParams))              
+                irun+=1
+            else:
+                print('Exiting ramp... Need to add a routine to restart after dtkill')
+                return
+
+Sim=UEDGESim()
+def ReadInput(FileName,Folder='InputDir',Verbose=False,Initialize=False):
+    """
+    
+
+    Args:
+        FileName (TYPE): DESCRIPTION.
+        Folder (TYPE, optional): DESCRIPTION. Defaults to 'InputDir'.
+        Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
+        Initialize (TYPE, optional): DESCRIPTION. Defaults to True.
+
+    Returns:
+        None.
+
+    """
+    
+    Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize)   
+     
+
+    
+def Save(FileName,CaseName='current',Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=Sim.Format,ForceOverWrite=False,Verbose=False):
+    if CaseName=='current':
+        CaseName=Sim.CaseName
     Sim.Save(FileName,CaseName,Folder,Mode,ExtraVars,GlobalVars,Tag,Format,ForceOverWrite,Verbose)
     
+def Load(FileName,CaseName='current',Folder='SaveDir',LoadList=[],ExcludeList=[],Format='numpy',CheckCompat=True,Verbose=False):
+    if CaseName=='current':
+        CaseName=Sim.CaseName
+    Sim.Load(FileName,CaseName,Folder,LoadList,ExcludeList,Format,CheckCompat,Verbose)  
+
 def SetCaseName(CaseName:str):
-     Sim.SetCaseName(CaseName)
+    """
+    Set the name of the simulation case.
+
+    Args:
+        CaseName (str): Name of the simulation.
+
+    Returns:
+        None.
+
+    """
+    
+    Sim.SetCaseName(CaseName)
      
 
 
@@ -696,133 +913,73 @@ class UEDGEDivertorPlates():
         plt.plot(r1,z1,color='r')
         plt.plot(r2,z2,'g')
         
-# def InitRun(self):
-    #         if (bbb.iterm == 1 and bbb.ijactot>1):
-    #            self.PrintInfo("Initial successful time-step exists",Back.GREEN)
-    #            return
-    #         else:
-    #            self.PrintInfo("Need to take initial step with Jacobian; trying to do here",Back.CYAN)
-    #            bbb.icntnunk = 0
-    #            bbb.exmain()
-               
-    #         if (bbb.iterm != 1):
-    #             self.PrintInfo("Error: converge an initial time-step first",Back.RED)
-    #             bbb.exmain_aborted=1
-    #         else:
-    #            self.PrintInfo("First initial time-step has converged",Back.GREEN) 
-    #            return
-    
-    # def Restart(self,dt=None,mul_dt=3):
-    #     bbb.iterm=1
-    #     bbb.dtreal/=mult_dt
-    #     self.RunTime(dt,mul_dt)
-              
-    # def GetMinTimeStep(self):
-        #evaluate yldot
-        # bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-        # dt=np.zeros(bbb.neq) 
-        # for i in range(bbb.neq):
-        #     if bbb.iseqalg[i]==1:
-        #         print('eq al:',i)
-        #         dt[i]=1e20
-        #     else:
-        #         if bbb.yldot[i]==0.0:
-        #             dt[i]=1e20
-        #         else:    
-        #             dt[i]=abs(bbb.yl[i]/(bbb.yldot[i]*bbb.sfscal[0:bbb.neq]))
-        # return dt.min()
-    #    return -1
 
-    # def RunTime(self,dt=None,tstop=10,Imax=500,Jmax=5,ftol_dt=1e-10,itermx=7,rlx=0.9,incpset=7,method_dt=0,mult_dt_fwd=3.4,mult_dt_bwd=3):
-    #     # this allow run restart 
-    #     bbb.rlx=rlx
-    #     bbb.ftol_dt=ftol_dt
-    #     bbb.itermx=itermx
-    #     bbb.incpset=incpset
-    #     if dt is not None:
-    #         bbb.dtreal=dt
-    #     bbb.exmain_aborted=0    
-    #     while bbb.exmain_aborted==0:
-    #         self.InitRun()   
-    #         if bbb.exmain_aborted==1:
-    #             break
-    #         self.PrintInfo('----Starting Main Loop ----')
-    #         for imain in range(Imax):
-    #             bbb.icntnunk = 0
-                
-    #             bbb.ylodt = bbb.yl #this is use in set_dt which provides option to select optimal timestep
-    #             bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-    #             fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq]*bbb.sfscal[0:bbb.neq])**2))
-    #             bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
-                
-               
-                
-    #             if (bbb.initjac == 0): 
-    #                 bbb.newgeo=0
-    #             self.PrintInfo('Number time-step changes = {} New time-step = {colorT}{:.4E}{reset}'.format(imain, bbb.dtreal,reset=Style.RESET_ALL,colorT=Back.MAGENTA)) 
-    #             self.PrintInfo('Suggested timestep:{}'.format(self.GetMinTimeStep()))
-    #             bbb.exmain() # take a single step at the present bbb.dtreal
-    #             if bbb.exmain_aborted==1:
-    #                 break
-                
-    #             if (bbb.iterm == 1):
-    #                 bbb.ylodt = bbb.yl
-    #                 bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-    #                 fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-    #                 if (bbb.dt_tot>=bbb.t_stop):
-    #                     self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-                        
-    #                     break
-    #                 bbb.icntnunk = 1
-    #                 bbb.isdtsfscal = 0
-    #                 for ii2 in range( 1, bbb.ii2max+1): #take ii2max steps at the present time-step
-    #                     if bbb.exmain_aborted==1:
-    #                         break
-    #                     bbb.itermx = itermx
-    #                     bbb.ftol = max(min(bbb.ftol_dt, 0.01*fnrm_old),bbb.ftol_min)
-    #                     bbb.exmain()
-    #                     if (bbb.dt_tot>=bbb.t_stop):
-    #                         self.PrintInfo('SUCCESS: dt_tot >= t_stop')
-    #                         bbb.exmain_aborted=1
-    #                         break
-    #                     if bbb.exmain_aborted==1:
-    #                         break
-    #                     if bbb.iterm == 1:
-    #                         bbb.ylodt = bbb.yl
-    #                         bbb.pandf1 (-1, -1, 0, bbb.neq, 1., bbb.yl, bbb.yldot)
-    #                         fnrm_old = sqrt(sum((bbb.yldot[0:bbb.neq-1]*bbb.sfscal[0:bbb.neq-1])**2))
-    #                         bbb.dt_tot += bbb.dtreal
-    #                     else:
-    #                         break
-                        
-                        
-    #             if bbb.exmain_aborted==1:
-    #                         break
-                        
-    #             if (bbb.iterm != 1):    #print bad eqn, cut dtreal by 3, set irev flag
-    #                 #print('\n\n\n exmain_aborted:',bbb.exmain_aborted,'\n\n\n')
-    #                 self.Itrouble()
-                    
-    #                 if (bbb.dtreal < bbb.dt_kill):
-    #                     self.PrintInfo('FAILURE: time-step < dt_kill',Back.RED)
-    #                     break
-    #                 self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
-    #                 bbb.dtreal /= mult_dt_bwd
-                    
-                    
-    #             if (bbb.iterm == 1):
-    #                 bbb.dtreal *= mult_dt_fwd
-                    
-    #             bbb.iterm = 1    
-                   
+eV=1.602176634e-19     
+#%%
+def GenerateTag(Sim=None):
+    from uedge import __version__,GitHash
+    today = date.today()
+    now = datetime.now()
+    Tag={}
+    Tag['Date'] = today.strftime("%d%b%Y")
+    Tag['Time'] = now.strftime("%H-%M-%S")
+    Tag['User']=    Settings.UserName
+    Tag['Version'] = __version__
+    Tag['PlatForm'] = Settings.Platform
+    Tag['GitHash']=GitHash
+    Tag['InputDir']=Settings.InputDir
+    Tag['RunDir']=Settings.RunDir
+    Tag['SaveDir']=Settings.InputDir
+    Tag['PythonVersion']=Settings.Platform['python_version']
+    Tag['Machine']=Settings.Platform['machine']
+    Tag['Processor']=Settings.Platform['processor']
+    Tag['PlatForm']=Settings.Platform['platform']
+    Tag['CaseName']='None'
+    Tag['Description']='None'
+    try:
+        if Sim.CaseName is not None:
+            Tag['CaseName']=Sim.CaseName
+        if Sim.Description is not None: 
+            Tag['Description']=Sim.Description
+    except: 
+        pass
+    return Tag
 
-
-# def RunTime(*arg,**kwargs):
-#     Sim.RunTime(*arg,**kwargs)
-
-
-    
-# def ir():
-#     Sim.InitRun()
+    def RunRamp(self,Data:dict,Istart=0,dtreal_start=1e-8,tstop=10):
+        """
         
-     
+    
+        Returns:
+            None.
+    
+        """
+        #Check if all data arrays have the same length
+        List=[v.shape for (k,v) in Data.items()]
+        if not all(L == List[0] for L in List):
+            print('Arrays of different size... Cannot proceed...')
+            return
+        Istop=List[0][0]
+        if Istart>=Istop:
+            print('Istart={} >= Istop={}: cannot proceed...'.format(Istart,Istop))
+        irun=Istart
+        # Loop over data
+        
+        
+        while irun <Istop:
+    
+            # 1) Set data in uedge packages
+            Params=dict((k,v[irun]) for (k,v) in Data.items())
+            ListParams=['{}:{}'.format(k,v) for k,v in Params.items()]
+            self.SetPackageParams(Params)
+            
+            # 2) Run until completion
+            self.PrintInfo('RAMP i={}/{} : '.format(irun,Istop)+','.join(ListParams),color=Back.MAGENTA)
+            Status=self.Cont(dt_tot=0,dtreal=dtreal_start,t_stop=tstop)
+            if Status=='tstop':
+                ListValueParams=['{:2.2e}'.format(v) for k,v in Params.items()]
+                self.Save('final_state_ramp_'+'_'.join(ListValueParams)) 
+                self.SaveLog('logramp','{}:{}::'.format(self.Tag['Date'],self.Tag['Time'])+';'.join(ListParams))              
+                irun+=1
+            else:
+                print('Exiting ramp... Need to add a routine to restart after dtkill')
+                return

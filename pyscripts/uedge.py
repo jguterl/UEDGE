@@ -30,10 +30,10 @@ from Forthon import *
 if sys.hexversion >= 0x03000000:
 
     from .compy import *
-    from .svrpy import *
     from .grdpy import *
     from .flxpy import *
     from .bbbpy import *
+    from .svrpy import *
     from .wdfpy import *
     from .apipy import *
     from .aphpy import *

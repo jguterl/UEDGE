@@ -8,6 +8,7 @@ Created on Wed Feb 19 10:46:09 2020
 import uedge
 import os
 from uedge import *
+from .UEDGESettings import *
 
 def GetListPackage()->list:
     import pkgutil
@@ -45,56 +46,98 @@ def CheckFileExist(FilePath:str)->bool:
    
     return 
 
-def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False,CaseFolder=None,CheckExistence=True):
-        if Verbose:
-            print('# Looking for input file {} in {}'.format(ObjectName,Folder))
-        if Folder=='InputDir':
-            try:
-                ObjectDir=Settings.InputDir
-            except: 
-                print('# Settings object for UEDGE not find... Looking for InputDir in current directory')
-                ObjectDir='InputDir'        
-        elif Folder=='RunDir':
-            try:
-                ObjectDir=Settings.RunDir
-            except: 
-                print('# Settings object for UEDGE not find... Looking for RunDir in current directory')
-                ObjectDir='RunDir'
-        elif Folder=='SaveDir':
-            try:
-                ObjectDir=Settings.SaveDir
-            except: 
-                print('# Settings object for UEDGE not find... Looking for SaveDir in current directory')
-                ObjectDir='SaveDir'
-        elif Folder is None:
-            ObjectDir=None
-        else:    
-            ObjectDir=Folder
-            
+def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False,CaseName=None,CheckExistence=True,CreateFolder=False):
+    """
+    
+
+    Args:
+        ObjectName (str): DESCRIPTION.
+        Folder (str, optional): DESCRIPTION. Defaults to 'InputDir'.
+        Enforce (TYPE, optional): DESCRIPTION. Defaults to True.
+        Verbose (bool, optional): DESCRIPTION. Defaults to False.
+        CaseName (TYPE, optional): DESCRIPTION. Defaults to None.
+        CheckExistence (TYPE, optional): DESCRIPTION. Defaults to True.
+
+    Raises:
+        IOError: DESCRIPTION.
+
+    Returns:
+        ObjectPath (TYPE): DESCRIPTION.
+
+    """
+
+    if Verbose:
+        print('# Looking for input file {} in {}'.format(ObjectName,Folder))
+    if Folder=='InputDir':
+        try:
+            ObjectDir=Settings.InputDir
+        except: 
+            print('# Settings object for UEDGE not find... Looking for InputDir in current directory')
+            ObjectDir='InputDir'        
+    elif Folder=='RunDir':
+        try:
+            ObjectDir=Settings.RunDir
+        except: 
+            print('# Settings object for UEDGE not find... Looking for RunDir in current directory')
+            ObjectDir='RunDir'
+    elif Folder=='SaveDir':
+        try:
+            ObjectDir=Settings.SaveDir
+        except: 
+            print('# Settings object for UEDGE not find... Looking for SaveDir in current directory')
+            ObjectDir='SaveDir'
+    elif Folder is None:
+        ObjectDir=None
+    else:    
+        ObjectDir=Folder
         
-        if ObjectDir is None:    
-            ObjectPath=os.path.abspath(ObjectName)
+    
+    if ObjectDir is None:    
+        ObjectPath=os.path.abspath(ObjectName)
+    else:
+        if CaseName is  not None:
+            ObjectDir=os.path.join(ObjectDir,CaseName)
+            if not os.path.isdir(ObjectDir) and CreateFolder:
+                try:
+                    os.mkdir(ObjectDir)
+                except OSError:
+                    pass
+                    #print ("Creation of the directory {} failed".format(ObjectDir))
+        ObjectPath=os.path.join(os.path.abspath(ObjectDir),ObjectName)
+        
+    if CheckExistence and not os.path.exists(ObjectPath):
+        if Enforce:
+            raise IOError('Cannot find {}:'.format(ObjectPath))
         else:
-            if CaseFolder is  not None:
-                ObjectDir=os.path.join(ObjectDir,CaseFolder)
-                if not os.path.isdir(ObjectDir):
-                    try:
-                        os.mkdir(ObjectDir)
-                    except OSError:
-                        pass
-                        #print ("Creation of the directory {} failed".format(ObjectDir))
-            ObjectPath=os.path.join(os.path.abspath(ObjectDir),ObjectName)
-            
-        if CheckExistence and not os.path.exists(ObjectPath):
-            if Enforce:
-                raise IOError('Cannot find {}:'.format(ObjectPath))
-            else:
-                print('### Cannot find {}'.format(ObjectPath))
-            return None
-        else:
-            if Verbose:
-                print('### Found {}'.format(ObjectPath))
-            return ObjectPath 
+            print('### Cannot find {}'.format(ObjectPath))
+        return None
+    else:
+        if Verbose:
+            print('### Found {}'.format(ObjectPath))
+        return ObjectPath 
+        
+        
+def PrintSummary():
+    print('******** Summary **********')
+    print('* neq  :',bbb.neq)
+    print('* nisp :',com.nisp)
+    print('* nhsp :',com.nhsp)
+    print('* ngsp :',com.ngsp)
+    print('* nzspt:',com.nzspt)
+    print('* nusp :',com.nusp)
+    print('* iigsp:',bbb.iigsp)
+    print('***************************')
+    
+def MakeTrajectories(Npoints,Data):
+        for k,v in Data.items():
+            Min=v['Min'] 
+            Max=v['Max']
+            x=np.linspace(0,1,Npoints)
+            f=v['f']
+            Data[k]=Min+f(x)*(Max-Min)
+        return Data
+
+    
         
 # def GetCaseFolder(CaseName:str):
 #     if CaseName=='Default':

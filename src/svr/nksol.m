@@ -746,7 +746,7 @@ c
       integer DebugTime
       real(kind=4):: sec4, gettime,time0
       Use(Verbose)
-
+      Use(Cdv)
 cpetsc      external gettime
 cpetsc      real gettime,sec4
 c+pnb
@@ -1098,6 +1098,7 @@ cpetsc        nksoltime(iter+1)=gettime(sec4)
 cpetsc        nksollinits(iter+1)=nli
 cpetsc        nksolfeval(iter+1)=nfe
 cpetsc      endif
+      if (exmain_aborted==1) call xerrab('exmain aborted...')
       call nkstop(n,u,rwork(lup),savf,fnrm,su,sf,stptol,rwork(lx),
      *            ftol,iret,iter,itermx,mxtkn,ncscmx,iterm)
 c

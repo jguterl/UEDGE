@@ -33,6 +33,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     Use Output
     Use ParallelOptions,only:OMPParallelJac,MPIParallelJac
+    Use Cdv,only:exmain_aborted
     implicit none
     ! ... Input arguments:
     integer,intent(in):: neq      !      total number of equations (all grid points)
@@ -49,7 +50,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
-
+    if (exmain_aborted==1) call xerrab('exmain aborted...')
     if (OMPParallelJac==1 .and. MPIParallelJac==0) then
         call jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     elseif (OMPParallelJac==0 .and. MPIParallelJac==1) then
@@ -236,7 +237,8 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
         write(iout,*)' *OMPJac* neq=',neq,neqmx
         write(iout,*)' *OMPJac* Ivmin(ith),Ivmax(ith), OMPLoadWeight(ith),OMPTimeLocalJac(ith) ***'
         do ith=1,Nthreads
-            write(iout,'(a,I3,a,I7,I7,f5.1,f5.2)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith),OMPTimeLocalJac(ith)
+            write(iout,'(a,I3,a,I7,I7,f5.1,f5.2)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith)&
+            ,OMPTimeLocalJac(ith)
         enddo
     endif
 

@@ -18,6 +18,6 @@ from .UEDGEDoc import *
 from .UEDGEToolBox import *       
 from .UEDGEBas2Py import *
 from .UEDGEIO import *
-
+from .UEDGEMesh import *
 #__all__=["UEDGEToolBox","UEDGESettings"]
 
