@@ -1,5 +1,5 @@
 SO = so
-PUBLICHOME = 
+PUBLICHOME =
 BUILDDIR = ../build
 DIRLIST = com aph api bbb flx grd svr wdf
 MYPYTHON = python
@@ -30,8 +30,8 @@ $(BUILDDIR)/apipydep: $(BUILDDIR)/compydep api/apifcn.F api/apip93.F api/apisorc
 	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) $(DEBUG) --interfacefile api/api.v -d com -f api/apifcn.F api api/apip93.F api/apisorc.F api/fimp.F api/fmombal.F api/inelrates.F api/sputt.F
 	touch $@
 
-$(BUILDDIR)/bbbpydep: $(BUILDDIR)/compydep bbb/boundary.F bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/neudif.F bbb/odepandf.F bbb/paralleljac.f90 bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F bbb/bbb.v com/com.v 
-	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) --interfacefile bbb/bbb.v $(DEBUG) --macros com/com.v $(READLINE) -d com -f bbb/boundary.F bbb bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/neudif.F bbb/odepandf.F bbb/paralleljac.f90 bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F 
+$(BUILDDIR)/bbbpydep: $(BUILDDIR)/compydep bbb/boundary.F bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/neudif.F bbb/odepandf.F bbb/paralleljac.f90 bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F bbb/bbb.v com/com.v
+	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) --interfacefile bbb/bbb.v $(DEBUG) --macros com/com.v $(READLINE) -d com -f bbb/boundary.F bbb bbb/convert.F bbb/geometry.F bbb/griddubl.F bbb/neudif.F bbb/odepandf.F bbb/paralleljac.f90 bbb/oderhs.F bbb/odesetup.F bbb/odesolve.F bbb/potencur.F bbb/turbulence.F bbb/ext_neutrals.F
 	touch $@
 
 $(BUILDDIR)/flxpydep: $(BUILDDIR)/compydep flx/flxcomp.F flx/flxdriv.F flx/flxread.F flx/flxwrit.F flx/flx.v com/com.v
@@ -42,8 +42,8 @@ $(BUILDDIR)/grdpydep: $(BUILDDIR)/compydep grd/grdcomp.F grd/grddriv.F grd/grdin
 	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) $(DEBUG) --interfacefile grd/grd.v -d com -f grd/grdcomp.F grd grd/grddriv.F grd/grdinit.F grd/grdread.F grd/grdwrit.F
 	touch $@
 
-$(BUILDDIR)/svrpydep: svr/daspk.F svr/nksol.F svr/svrut1.F svr/svrut2.F svr/svrut3.F svr/svrut4.F svr/vodpk.F svr/uoa.F svr/daux1.f svr/$(PETSC-UEDGE) svr/svr.v
-	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP) $(DEBUG) --interfacefile svr/svr.v -f svr/daspk.F svr svr/nksol.F svr/svrut1.F svr/svrut2.F svr/svrut3.F svr/svrut4.F svr/vodpk.F svr/uoa.F svr/daux1.f $(PETSC-UEDGE)
+$(BUILDDIR)/svrpydep: $(BUILDDIR)/bbbpydep svr/daspk.F svr/nksol.F svr/svrut1.F svr/svrut2.F svr/svrut3.F svr/svrut4.F svr/vodpk.F svr/uoa.F svr/daux1.f svr/$(PETSC-UEDGE) svr/svr.v
+	$(FORTHON) -a $(INSTALLARGS)  -a $(FCOMP)  --interfacefile svr/svr.v $(DEBUG) --macros bbb/bbb.v -d bbb -f svr/daspk.F svr svr/nksol.F svr/svrut1.F svr/svrut2.F svr/svrut3.F svr/svrut4.F svr/vodpk.F svr/uoa.F svr/daux1.f $(PETSC-UEDGE)
 	touch $@
 
 $(BUILDDIR)/wdfpydep: wdf/wdf.F wdf/wdf.v

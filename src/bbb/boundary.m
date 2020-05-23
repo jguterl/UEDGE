@@ -2497,13 +2497,16 @@ cccTDR            if ((isnewpot==1) .and. ((iy==1) .or. (iy==ny))) then
         vxn = f_cgpld * 0.25 * sqrt(8*t0/(pi*mg(1)))
 
 c   Do the electron temp Eqn -----------------------------------
+
         if (isteonxy(ixt,iy) == 1) then
 	  iv1 = idxte(ixt,iy)
           if (ibctepr == 1) then
              faceel =  bcer(iy,jx)*(fqpsate/qe)*exp(-kappar(iy,jx))
              faceel2 = bcer(iy,jx)*(fqpsate/qe)*exp(-kappamx+2)
+
              totfeexr(iy,jx) = feex(ixt1,iy) + cfeexdbo*(
      .             2.5*fdiaxrb(iy,jx) + floxebgt(ixt1,iy) )*te(ixt,iy)
+
 cc           if (feex(ixt1,iy) < 0.) then #if totfeex<0;force te(ixt)=.5*te(ixt1)
 cc             totfeex = 0.1*faceel*te(ixt1,iy)
 cc           else

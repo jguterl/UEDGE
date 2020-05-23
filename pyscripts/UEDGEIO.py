@@ -123,7 +123,9 @@ class UEDGEIOBase():
         
         for pkg in self.ListPkg:
             exec('from uedge import '+pkg)
+            
         for k,v in Data.items():
+            Mismatch=False
             DicVar=SearchSilent(k)
             if self.Verbose: print('Loading variable {}'.format(k))
             if len(DicVar)<1:
@@ -142,13 +144,25 @@ class UEDGEIOBase():
                                             raise ValueError('Mismatch in dimension of {}'.format(k))
                                         else:
                                             print('Mismatch in dimension of {}'.format(k))
-                                            break
+                                            Mismatch=True
+                            else:
+                                if self.Verbose: print('Matching dimensions for {}'.format(k))
+                                            
                     Dic=locals()
                     Dic['v']=v
-                    exec('{}.{}=v'.format(Pkg,k),globals(),Dic)
+                    if Mismatch and type(v)==np.ndarray:
+                        Str='['+",".join(['0:{}'.format(v.shape[i]) for i in range(len(v.shape))])+"]"
+                        if self.Verbose: print('exec to fix mismatch:','{}.{}{}=v'.format(Pkg,k,Str))
+                        exec('{}.{}{}=v'.format(Pkg,k,Str),globals(),Dic)    
+                    else:
+                        if self.Verbose: print('exec:','{}.{}=v'.format(Pkg,k))
+                        exec('{}.{}=v'.format(Pkg,k),globals(),Dic)    
+                    #Dic['v']=v
+                        
                     if self.Verbose: print('-> Success')
                 except Exception as e:
                     if self.Verbose: print('-> Failed')
+                    if self.Verbose: print(repr(e))
                     if Enforce:
                         if self.Verbose: print(repr(e))    
                         raise ValueError('Cannot set {}'.format(k))

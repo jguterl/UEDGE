@@ -180,7 +180,7 @@ class UEDGESimBase(UEDGEMesh):
             
         
                 
-    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Verbose=False):
+    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Enforce=True,Verbose=False):
         
         """
         Wrapper method to load UEDGE simulation data
@@ -214,7 +214,7 @@ class UEDGESimBase(UEDGEMesh):
         # Looking for file 
         if os.path.isfile(FilePath):
             self.IO.Verbose=Verbose
-            self.IO.Load(FilePath,Format,LoadList,ExcludeList,CheckDim,LoadPackage)
+            self.IO.Load(FilePath,Format,LoadList,ExcludeList,CheckDim,Enforce,LoadPackage)
             bbb.restart=1
         else:
             print("The file {} does not exist".format(FilePath))
