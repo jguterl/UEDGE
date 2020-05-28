@@ -131,7 +131,7 @@ class UEDGESimBase(UEDGEMesh):
         
             
         if Format is None:
-            Format=self.Format
+            Format=self.__class__.Format
             
         Verbose=Verbose or self.Verbose
         
@@ -345,7 +345,18 @@ class UEDGESimBase(UEDGEMesh):
         else:
             self.PrintInfo('{cn}: Subloop   i={i}/{imax} j={j}/{jmax} dtreal={dt:.4E}'.format(cn=self.CaseName,i=i,imax=self.Imax,j=j,jmax=self.Jmax,dt=bbb.dtreal),color=Back.YELLOW)
         
-    
+    def TimeEvolution(self):
+        """
+        Allow the evolution of UEDGE settings in time. Set by SetTimeEvolution(). Print a log of values associated with files
+
+        Returns:
+            None.
+
+        """
+        pass
+        #for k,v in self.TimeParameters:
+                
+            #bbb.dt_tot
     def Run(self,Verbose=False): 
         """
         
@@ -376,7 +387,7 @@ class UEDGESimBase(UEDGEMesh):
                     bbb.newgeo=0
                     
                 self.PrintTimeStepModif(imain) 
-                self.AutoSave('last.npy') # Save data in file SaveDir/CaseName/last.npy
+                
                 
                 self.PrintCurrentIteration(imain)
                 
@@ -387,7 +398,8 @@ class UEDGESimBase(UEDGEMesh):
                     break
                 
                 if (bbb.iterm == 1):
-                    
+                    self.AutoSave()
+                    self.SaveLast() # Save data in file SaveDir/CaseName/last.npy
                     if bbb.dt_tot>=bbb.t_stop:
                             bbb.exmain_aborted=1
                             self.SaveFinalState()
@@ -407,8 +419,10 @@ class UEDGESimBase(UEDGEMesh):
                         sys.stdout.flush()
                         
                         if bbb.iterm == 1 and bbb.exmain_aborted!=1:
+                            self.SaveLast() # Save data in file SaveDir/CaseName/last.npy
                             bbb.dt_tot += bbb.dtreal
                             self.dt_tot=bbb.dt_tot
+                            self.TimeEvolution()
                         else:
                             break
                         
@@ -426,7 +440,7 @@ class UEDGESimBase(UEDGEMesh):
                 if (bbb.iterm == 1):
                     bbb.dtreal *= self.mult_dt_fwd
                     self.dtreal=bbb.dtreal
-                
+                    
                 else:    #print bad eqn, cut dtreal by 3
                     self.Itrouble()
              
@@ -607,11 +621,19 @@ class UEDGESimBase(UEDGEMesh):
         except:
             print('Cannot set Uedge version')
             
-    def AutoSave(self,FileName):
-        self.Save(FileName,CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True)
+    def SaveLast(self):
+        self.Save('last.npy',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=True)
         
+    def AutoSave(self):
+        self.iSave+=1
+        if self.iSave>self.ISave:
+            self.iSave=1
+            self.Save('save_{}'.format(GetTimeStamp()))
+             
+                
     def SaveFinalState(self):
-        self.Save('final_state',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=self.__class__.Format,ForceOverWrite=False)
+        self.Save('final_state_{}'.format(GetTimeStamp()),CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,Format=self.__class__.Format,ForceOverWrite=True)
+        self.Save('final_state',CaseName=self.CaseName,Folder='SaveDir',Mode=self.__class__.Mode,Format=self.__class__.Format,ForceOverWrite=True)
         
 
 
@@ -654,7 +676,9 @@ Todo:
 
 """
     mult_dt_fwd=3.4
-    mult_dt_bwd=3        
+    mult_dt_bwd=3
+    iSave=1
+    ISave=10        
     Imax=500
     Jmax=5
     Format='numpy'
@@ -783,6 +807,21 @@ Todo:
                 return
 
 Sim=UEDGESim()
+
+def TogglePlasma():
+    bbb.ni[0]=Toggle(bbb.ni[0])
+    bbb.up[0]=Toggle(bbb.up[0])
+    bbb.ti=Toggle(bbb.ti)
+    bbb.te=Toggle(bbb.te)
+    
+def Toggle(State):
+    if State ==0:
+        return 1
+    elif State == 1:
+        return 0
+    else:
+        raise ValueError('Cannot toggle request variable in state:{}'.format(State))
+        
 def ReadInput(FileName,Folder='InputDir',Verbose=False,Initialize=False):
     """
     
@@ -915,7 +954,7 @@ class UEDGEDivertorPlates():
         
 
 eV=1.602176634e-19     
-#%%
+#%% 
 def GenerateTag(Sim=None):
     from uedge import __version__,GitHash
     today = date.today()
@@ -945,6 +984,10 @@ def GenerateTag(Sim=None):
         pass
     return Tag
 
+def GetTimeStamp():
+    today = date.today()
+    now = datetime.now()
+    return "{}_{}".format(today.strftime('%d%m%y'),now.strftime("%H%M%S"))
     def RunRamp(self,Data:dict,Istart=0,dtreal_start=1e-8,tstop=10):
         """
         

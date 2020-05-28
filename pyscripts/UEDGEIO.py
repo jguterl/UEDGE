@@ -366,7 +366,7 @@ class UEDGEIO(UEDGEIOBase):
         if self.Verbose: print('LoadPackage:',LoadPackage)
         if type(LoadPackage)==str:
             if LoadPackage=='all':
-                DataPkg=dict((k,v) for (k,v) in DataSelect)
+                DataPkg=dict((k,v) for (k,v) in DataSelect.items())
                 self.LoadDataPackage(DataPkg,CheckDim,Enforce)
             elif LoadPackage.lower()=='none':
                 return DataSelect
