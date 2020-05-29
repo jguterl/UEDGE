@@ -57,11 +57,26 @@ class UEDGESimBase(UEDGEMesh):
 
         return Out.get(Field.lower())
     
+    def SetData(self):
+        for pkg in self.ListPkg:
+            exec('from uedge import '+pkg)
+        Out=locals()
+        comm='{}={}.{}'.format(Field.lower(),'bbb',Field.lower())
+        if self.Verbose: print('Setting data:',comm)
+        try: 
+            exec(comm,globals(),Out)
+        except:
+            print('Cannot set {}={}.{} '.format(Field,'bbb',Field))
+        if Out.get(Field) is None:
+            print('Cound not get data for {}'.format(Field))
+
+        self.Data=Out
+    
     def GetGrid(self):
-        Grid={'rm':com.rm,'zm':com.zm,'iysptrx':com.iysptrx}
+        Grid={'rm':com.rm,'zm':com.zm,'iysptrx':com.iysptrx,'nx':com.nx,'ny':com.ny,'psi':com.psi}
         return Grid
         
-    def ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=False):
+    def ReadInput(self,FileName:str=None,Folder:str='InputDir',Verbose:bool=True,Initialize:bool=False,Filter='*'):
         '''
         ReadInput(self,FileName:str,Folder:str=None,Verbose:bool=True,Initialize:bool=True)
         
@@ -86,6 +101,11 @@ class UEDGESimBase(UEDGEMesh):
         None.
 
         '''
+        if FileName is None:
+            FileName=LsFolder(Source(None,Folder),Filter=Filter,Ext='*.py',LoadMode=True)
+        if FileName is None:
+            print('Nothing to read... Exiting ...')
+            return    
         # Looking for file 
         for pkg in self.ListPkg:
             exec('from uedge import '+pkg)
@@ -180,7 +200,7 @@ class UEDGESimBase(UEDGEMesh):
             
         
                 
-    def Load(self,FileName,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Enforce=True,Verbose=False):
+    def Load(self,FileName=None,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Enforce=True,Verbose=False,Filter='*'):
         
         """
         Wrapper method to load UEDGE simulation data
@@ -199,6 +219,11 @@ class UEDGESimBase(UEDGEMesh):
             None.
 
         """
+        if FileName is None:
+            FileName=LsFolder(Source(None,Folder),Filter=Filter,Ext='*.npy',LoadMode=True)
+        if FileName is None:
+            print('Nothing to load... Exiting ...')
+            return
         if Format is None:
             Format=self.Format
         Verbose=Verbose or self.Verbose 
@@ -786,12 +811,15 @@ Todo:
         irun=Istart
         # Loop over data
         
-        
+        BaseCaseName=self.CaseName
         while irun <Istop:
-    
+          
             # 1) Set data in uedge packages
             Params=dict((k,v[irun]) for (k,v) in Data.items())
             ListParams=['{}:{}'.format(k,v) for k,v in Params.items()]
+            StrParams=['{}_{:2.2e}'.format(k,v) for k,v in Params.items()]
+            
+            self.CaseName=BaseCaseName+'_'.join(StrParams)
             self.SetPackageParams(Params)
             
             # 2) Run until completion
@@ -822,7 +850,7 @@ def Toggle(State):
     else:
         raise ValueError('Cannot toggle request variable in state:{}'.format(State))
         
-def ReadInput(FileName,Folder='InputDir',Verbose=False,Initialize=False):
+def ReadInput(FileName=None,Folder='InputDir',Verbose=False,Initialize=False,Filter='*'):
     """
     
 
@@ -836,8 +864,7 @@ def ReadInput(FileName,Folder='InputDir',Verbose=False,Initialize=False):
         None.
 
     """
-    
-    Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize)   
+    Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize,Filter=Filter)   
      
 
     
@@ -988,6 +1015,7 @@ def GetTimeStamp():
     today = date.today()
     now = datetime.now()
     return "{}_{}".format(today.strftime('%d%m%y'),now.strftime("%H%M%S"))
+
     def RunRamp(self,Data:dict,Istart=0,dtreal_start=1e-8,tstop=10):
         """
         

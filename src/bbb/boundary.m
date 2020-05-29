@@ -433,7 +433,6 @@ c     the adjacent cells.
                   endif
                else   # ix is not part of the core boundary:
                   if (isnwconi(iimp) .eq. 0) then
-c                  if (iv==14) write(iout,*) 'iv=14:ifld', iimp,fniy(ix,0,iimp),fnzysi(ix,ifld),vpnorm,sy(ix,0),nurlxn
                      yldot(iv) = -nurlxn *
      .                           (fniy(ix,0,iimp) - fnzysi(ix,ifld)) /
      .                           (sy(ix,0) * n0(iimp) * vpnorm)

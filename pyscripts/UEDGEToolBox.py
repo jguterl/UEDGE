@@ -46,7 +46,7 @@ def CheckFileExist(FilePath:str)->bool:
    
     return 
 
-def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False,CaseName=None,CheckExistence=True,CreateFolder=False):
+def Source(ObjectName:str=None,Folder:str='InputDir',Enforce=True,Verbose:bool=False,CaseName=None,CheckExistence=True,CreateFolder=False):
     """
     
 
@@ -91,7 +91,8 @@ def Source(ObjectName:str,Folder:str='InputDir',Enforce=True,Verbose:bool=False,
     else:    
         ObjectDir=Folder
         
-    
+    if ObjectName is None:
+        return ObjectDir
     if ObjectDir is None:    
         ObjectPath=os.path.abspath(ObjectName)
     else:

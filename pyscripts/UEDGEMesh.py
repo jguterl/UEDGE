@@ -15,7 +15,7 @@ class UEDGEMesh():
             self.Mesh=self.ImportMesh(FileName)
         self.Verbose=Verbose
     def GetMesh(self):
-        if callable(getattr(self, "GetGrid", None)):
+        if hasattr(self,"GetGrid") and callable(getattr(self, "GetGrid", None)):
             self.Mesh=self.GetGrid()
         return self.Mesh
     
@@ -105,7 +105,7 @@ class UEDGEMesh():
         
     
     def ShowMesh(self,ax=None,Verbose=False,edgecolor='black',Title=''):
-        self.Mesh=self.GetGrid()
+        self.Mesh=self.GetMesh()
         self.__class__.PlotMesh(self.Mesh['rm'],self.Mesh['zm'],ax,Verbose,edgecolor,Title)     
          
 
@@ -123,7 +123,7 @@ class UEDGEMesh():
             k=iter(Str.keys())
             Key=next(k)
             for line in f:
-                if line=='iogridue\n':
+                if 'iogridue' in line or 'ingrid' in line or 'EFIT' in line:
                     continue
                 if line=='\n':
                     try:

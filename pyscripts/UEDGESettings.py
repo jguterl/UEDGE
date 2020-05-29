@@ -158,12 +158,45 @@ def CdInputDir():
     os.chdir(Settings.InputDir)
     print('Current working directory:',os.getcwd())
     
-def LsFolder(Folder,Ext="*.py"):
+def LsFolder(Folder,Filter='*',Ext="*.py",LoadMode=False):
     import glob
-    ListFile = [f for f in glob.glob(os.path.join(Folder,Ext))]
-    print('Looking for "{}" into {}'.format(Ext,Folder))
-    for F in ListFile:
-        print(' - {}'.format(os.path.basename(F)))  
+    if '.' in Ext:
+        ListFile = [f for f in glob.glob(os.path.join(Folder,Ext))] +[f for f in glob.glob(os.path.join(Folder,Filter)) if os.path.isdir(f)]
+    else:
+        ListFile = [f for f in glob.glob(os.path.join(Folder,Ext))]
+    Listfile=list(dict.fromkeys(ListFile).keys())
+    ListFile.sort(key=str.casefold)
+    print('### Content matching "{}" in {}:'.format(Ext,Folder))
+    if ListFile is not None:
+        for i,F in enumerate(ListFile):
+            print(' [{}]: {}'.format(i,os.path.basename(F))) 
+    print('')
+    Message='Enter a number to look into a folder or file or press r (return) or q (exit)\n >>>: '
+    Input=input(Message)
+    while Input!='q' and Input!='r':
+        if Input.isnumeric() and ListFile is not None and int(Input) in range(len(ListFile)):
+            if os.path.isfile(ListFile[int(Input)]):
+                print('File:{}'.format(ListFile[int(Input)]))
+                if LoadMode:
+                    return ListFile[int(Input)]
+                Input=input(Message)
+            elif os.path.isdir(ListFile[int(Input)]):
+                Input=LsFolder(os.path.join(Folder,ListFile[int(Input)]),Filter,Ext,LoadMode)
+                if Input=='r':
+                   for i,F in enumerate(ListFile):
+                       print(' [{}]: {}'.format(i,os.path.basename(F))) 
+                   print('') 
+                   Input=input(Message) 
+                elif LoadMode  and Input!='q':
+                    return Input
+        else:
+            Input=input(Message)
+    if Input=='q' and LoadMode:
+        return None
+    else:
+        return Input
+        
+    
         
 def LsInputDir(Folder=None,Ext='*.py'):
     if Folder is None:

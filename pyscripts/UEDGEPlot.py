@@ -12,6 +12,7 @@ from matplotlib.collections import PatchCollection
 from mpl_toolkits.axes_grid1 import make_axes_locatable, axes_size
 import numpy as np
 from uedge import *
+from uedge.UEDGEMesh import UEDGEMesh
 from mpldatacursor import datacursor
 #decorator to set ax or new fig is request
 # def AutoFig(f):
@@ -24,6 +25,19 @@ from mpldatacursor import datacursor
 #         return func(*args, **kwargs)
 #     return wrapper_do_twice
 
+class UEDGEPlot1DBase():
+    def __init__(self):
+        self.eV=1.602176634e-19
+    
+    def PlotData1DBase(x,data,ax=None,DataLim=None,DataScale='linear',Verbose=False):
+        
+        if ax is None:
+            ax=plt.gca()  
+            
+        ax.plot(x,data)
+        
+    
+            
 class UEDGEPlot2DBase():
     def __init__(self):
         self.eV=1.602176634e-19
@@ -75,6 +89,7 @@ class UEDGEPlot2DBase():
         patches=[]
         if ax is None:
             ax=plt.gca()
+            
         idx=[np.array([1,2,4,3,1])]
         Dic={}
         Pos={}
@@ -130,7 +145,7 @@ class UEDGEPlot2DBase():
         ax.set_aspect('equal', 'box')
         
 
-class UEDGEPlot(UEDGEPlot2DBase):
+class UEDGEPlot(UEDGEPlot2DBase,UEDGEMesh):
     eV=1.602176634e-19
     PlasmaVars=['ni','up','te','ti','phi']
     def __init__(self,Verbose=False):

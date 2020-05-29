@@ -487,8 +487,15 @@ class UEDGEData(UEDGEPlot,UEDGEIO):
     def GetData(self,Field):
         return self.Data.get(Field.lower())
     
+    def SetData(self,Field): #to be compataible with UEDGEsimulation class
+        pass
+    
     def GetGrid(self):
         return self.Grid
+    
+    def SetGrid(self,Grid=None):
+        if Grid is not None:
+            self.Grid=Grid
     
         
     def GetCaseName(self):
