@@ -1052,6 +1052,7 @@ c ... Beginning of execution for call rhsnk (by nksol).
 c ... Calculate right-hand sides for interior and boundary points.
 ccc 10   call convsr_vo (-1,-1, yl)  # test new convsr placement
 ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
+
  10   call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
  20   continue
       return

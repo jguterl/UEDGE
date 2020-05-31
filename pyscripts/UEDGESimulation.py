@@ -27,6 +27,7 @@ class UEDGESimBase(UEDGEMesh):
     def __init__(self,  Verbose=False,*args, **kwargs):
         # Import Uedge packages as attribute of the class instance 
         # WARNING: this is not a deep copy!!!
+        self.InputLines=[]
         self.ListPkg=UEDGEToolBox.GetListPackage()
         self.Verbose=Verbose
         print('Loaded Packages:',self.ListPkg)
@@ -124,6 +125,7 @@ class UEDGESimBase(UEDGEMesh):
             if not L.strip().startswith('#'):
                 if Verbose:
                     print('{} : {}'.format(count,L))
+                self.InputLines.append(L)    
                 exec(L)
             count=count+1
         self.CurrentInputFile=FilePath 
@@ -200,7 +202,7 @@ class UEDGESimBase(UEDGEMesh):
             
         
                 
-    def Load(self,FileName=None,CaseName=None,Folder='SaveDir',LoadPackage='plasma',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Enforce=True,Verbose=False,Filter='*'):
+    def Load(self,FileName=None,CaseName=None,Folder='SaveDir',LoadPackage='all',LoadList=[],ExcludeList=[],Format=None,CheckDim=True,Enforce=True,Verbose=False,Filter='*'):
         
         """
         Wrapper method to load UEDGE simulation data
@@ -323,7 +325,7 @@ class UEDGESimBase(UEDGEMesh):
         
         for A,V in Dic.items():
             if V is not None:
-                Result=SearchSilent(A)
+                Result=SearchSilent(A.split('[')[0])
                 if len(Result)>0:
                     Pkg=Result[0]['Package']
                     comm='{}.{}={}'.format(Pkg,A,V)
@@ -717,7 +719,7 @@ Todo:
         UEDGESimBase.__init__(self)
         
     def DefaultSettings(self):
-        self.dtreal=1e-10
+        self.dtreal=1e-8
         self.t_stop=10
         self.ftol_min=1e-10
         self.ftol_dt=1e-10
@@ -762,7 +764,7 @@ Todo:
              
 
         
-    def Restore(self,FileName,Folder='InputDir'):
+    def Restore(self,FileName=None,Folder='InputDir'):
         """
         
     
@@ -817,7 +819,7 @@ Todo:
             # 1) Set data in uedge packages
             Params=dict((k,v[irun]) for (k,v) in Data.items())
             ListParams=['{}:{}'.format(k,v) for k,v in Params.items()]
-            StrParams=['{}_{:2.2e}'.format(k,v) for k,v in Params.items()]
+            StrParams=['{}_{:2.2e}'.format(k.split('[')[0],v) for k,v in Params.items()]
             
             self.CaseName=BaseCaseName+'_'.join(StrParams)
             self.SetPackageParams(Params)
@@ -837,10 +839,22 @@ Todo:
 Sim=UEDGESim()
 
 def TogglePlasma():
-    bbb.ni[0]=Toggle(bbb.ni[0])
-    bbb.up[0]=Toggle(bbb.up[0])
-    bbb.ti=Toggle(bbb.ti)
-    bbb.te=Toggle(bbb.te)
+    bbb.isnion[0]=Toggle(bbb.isnion[0])
+    bbb.isupon[0]=Toggle(bbb.isupon[0])
+    bbb.istion=Toggle(bbb.istion)
+    bbb.isteon=Toggle(bbb.isteon)
+    
+def TurnOffPlasma():
+    bbb.isnion[0]=0
+    bbb.isupon[0]=0
+    bbb.istion=0
+    bbb.isteon=0
+    
+def TurnOnPlasma():
+    bbb.isnion[0]=1
+    bbb.isupon[0]=1
+    bbb.istion=1
+    bbb.isteon=1    
     
 def Toggle(State):
     if State ==0:
@@ -850,22 +864,11 @@ def Toggle(State):
     else:
         raise ValueError('Cannot toggle request variable in state:{}'.format(State))
         
-def ReadInput(FileName=None,Folder='InputDir',Verbose=False,Initialize=False,Filter='*'):
-    """
-    
+def Read(*args,**kwargs):
+    Sim.ReadInput(*args,**kwargs)
 
-    Args:
-        FileName (TYPE): DESCRIPTION.
-        Folder (TYPE, optional): DESCRIPTION. Defaults to 'InputDir'.
-        Verbose (TYPE, optional): DESCRIPTION. Defaults to False.
-        Initialize (TYPE, optional): DESCRIPTION. Defaults to True.
-
-    Returns:
-        None.
-
-    """
-    Sim.ReadInput(FileName,Folder,Verbose=Verbose,Initialize=Initialize,Filter=Filter)   
-     
+def Read(*args,**kwargs):
+    Sim.ReadInput(*args,**kwargs)     
 
     
 def Save(FileName,CaseName='current',Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=Sim.Format,ForceOverWrite=False,Verbose=False):
@@ -873,10 +876,14 @@ def Save(FileName,CaseName='current',Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[]
         CaseName=Sim.CaseName
     Sim.Save(FileName,CaseName,Folder,Mode,ExtraVars,GlobalVars,Tag,Format,ForceOverWrite,Verbose)
     
-def Load(FileName,CaseName='current',Folder='SaveDir',LoadList=[],ExcludeList=[],Format='numpy',CheckCompat=True,Verbose=False):
-    if CaseName=='current':
-        CaseName=Sim.CaseName
-    Sim.Load(FileName,CaseName,Folder,LoadList,ExcludeList,Format,CheckCompat,Verbose)  
+def Load(*args,**kwargs):
+    Sim.Load(*args,**kwargs)  
+    
+def Save(*args,**kwargs):
+    Sim.Save(*args,**kwargs)
+    
+def Restore(*args,**kwargs):
+    Sim.Restore(*args,**kwargs)    
 
 def SetCaseName(CaseName:str):
     """

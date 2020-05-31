@@ -347,6 +347,8 @@ class UEDGEIO(UEDGEIOBase):
         self.VarList=[];
         self.Verbose=Verbose
         self.ListPkg=UEDGEToolBox.GetListPackage()
+        self.InputLines=[]
+        self.CaseName='None'
         
     def ImportData(self,Data:dict,LoadList=[],ExcludeList=[],CheckDim=True,Enforce=True,LoadPackage='plasma'):
         if self.Verbose:
@@ -426,6 +428,8 @@ class UEDGEIO(UEDGEIOBase):
                          ='full'
         """
         Data=self.GatherData(Mode,ExtraVars,GlobalVars)
+        Data['_InputLines']=self.InputLines
+        Data['_CaseName']=self.CaseName
         Worker=self.SelectWorker(Format)
         Worker.SaveData(FileName,Data,Tag)
     
