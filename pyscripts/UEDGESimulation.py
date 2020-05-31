@@ -864,17 +864,12 @@ def Toggle(State):
     else:
         raise ValueError('Cannot toggle request variable in state:{}'.format(State))
         
-def Read(*args,**kwargs):
+def ReadInput(*args,**kwargs):
     Sim.ReadInput(*args,**kwargs)
 
 def Read(*args,**kwargs):
     Sim.ReadInput(*args,**kwargs)     
 
-    
-def Save(FileName,CaseName='current',Folder='SaveDir',Mode=Sim.Mode,ExtraVars=[],GlobalVars=[],Tag={},Format=Sim.Format,ForceOverWrite=False,Verbose=False):
-    if CaseName=='current':
-        CaseName=Sim.CaseName
-    Sim.Save(FileName,CaseName,Folder,Mode,ExtraVars,GlobalVars,Tag,Format,ForceOverWrite,Verbose)
     
 def Load(*args,**kwargs):
     Sim.Load(*args,**kwargs)  
