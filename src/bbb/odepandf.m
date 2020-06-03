@@ -5218,6 +5218,7 @@ c
       endif
 
 c     check if a "ctrl-c" has been type to interrupt - from basis
+c     check if a "ctrl-c" has been type to interrupt - from basis
       call ruthere
 
 c
@@ -5228,7 +5229,7 @@ c
 c      call ParallelPandf(xc, yc, neq, time, yl, yldot)
 c      else
       TimingPandf=1
-      write(*,*) "timing pandf1 on"
+c     write(*,*) "timing pandf1 on"
       endif
       call pandf(xc, yc, neq, time, yl, yldot)
       TimingPandf=0
