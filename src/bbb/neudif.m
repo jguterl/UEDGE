@@ -601,7 +601,7 @@ c
       logical isxyfl
       real(Size4) sec4, gettime
       real t,t0,t1,t2,a
-
+      use omp_lib
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -631,8 +631,10 @@ c
       Use(MCN_dim)      # ngsp, ...
       Use(MCN_sources)  # cfneut_sng, cfneutdiv_fng, ... mcfngx, mcfngy, ...
       Use(Interp)		# ngs, tgs
-      use OMPPandf,only:RhsEval
+      use OMPPandf
+
       use Lsode,only:neq
+      use OmpThreadCopybbb
 
 *  -- procedures --
       real ave
@@ -651,9 +653,21 @@ c *********************************************
 
 c ..Timing;initialize
       if(istimingon==1) tsngxlog = gettime(sec4)
+      if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux.gt.0) then
+      OMPThreadedPandf=1
+      OMPyindex(:)=-1
+      OMPxindex(:)=-1
+      else
+      OMPThreadedPandf=0
+      endif
 
-      do 888 iy = j4, j8
-         do 887 ix = i1, i5
+c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex,OMPThreadedPandf)
+c$omp& shared(angfx,sx,gx,gxf,fy0,fyp,fym,fypx,fymx,rrv,flalfgxya)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(tg,ng,vygtan,uu,nuix,pg,up,i1, i5,j8, j4)
+c$omp& if (OMPThreadedPandf.gt.0)
+      do  iy = j4, j8
+        if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
+          do 887 ix = i1, i5
             iy1 = max(0,iy-1)
             iy2 = min(ny+1,iy+1)
             ix2 = ixp1(ix,iy)
@@ -735,8 +749,8 @@ c...  boundary face - shouldnot matter(just set BC) except for guard-cell values
                endif
             enddo
             conxg(ix,iy) = csh / (1 + qr**flgamg)**(1/flgamg)
-            if (isdifxg_aug .eq. 1) conxg(ix,iy) = csh*(1+qr) #augment diffusion
 
+            if (isdifxg_aug .eq. 1) conxg(ix,iy) = csh*(1+qr) #augment diffusion
 c...  themal force temperature gradient term is included in floxg
 	    floxg(ix,iy) = (qtgf/tgf) / (1 + qr**flgamg)**(1/flgamg)
 c...  now add the ion convective velocity for charge-exchange neutrals
@@ -749,13 +763,16 @@ c...  For one impurity, add convect vel for elastic scattering with ions
      .                cngniflox(ifld,igsp)*sx(ix,iy)*uu(ix,iy,ifld)/tgf
            enddo
          endif
-
   887    continue
          conxg(nx+1,iy) = 0
-  888 continue
-
+        enddo
+c$OMP end parallel do
 c ..Timing; add info if timing is on
-      if(istimingon==1) ttngxlog=ttngxlog+(gettime(sec4)-tsngxlog)
+        if(istimingon==1) ttngxlog=ttngxlog+(gettime(sec4)-tsngxlog)
+        call OmpThreadCopyconxg
+        call OmpThreadCopyfloxg
+
+
 
 c *******************************************************
 c.... Now the flux in the y-direction
@@ -763,8 +780,20 @@ c *******************************************************
 
 c ..Timing; initiate time for y-direction calc
       if(istimingon==1) tsngylog = gettime(sec4)
+      if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux.gt.0) then
+      OMPThreadedPandf=1
+      OMPyindex(:)=-1
+      OMPxindex(:)=-1
+      else
+      OMPThreadedPandf=0
+      endif
 
+c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex,OMPThreadedPandf)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(ngy0,ngy1,vy,nuix,pgy0,pgy1,j1,j5,i8, i4)
+c$omp& if (OMPThreadedPandf.gt.0)
       do 890 iy = j1, j5
+      if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
          do 889 ix = i4, i8
 	    t0 = max(tg(ix,iy,igsp),temin*ev)
 	    t1 = max(tg(ix,iy+1,igsp),temin*ev)
@@ -853,10 +882,15 @@ c...  For impurities, add convect vel for elastic scattering with ions
          endif
 
   889    continue
-  890 continue
 
+  890 continue
+c$OMP end parallel do
 c ..Timing; add increment if timing is on
       if(istimingon==1) ttngylog=ttngylog+(gettime(sec4)-tsngylog)
+        call OmpThreadCopyconyg
+        call OmpThreadCopyfloyg
+
+
 
 *  --------------------------------------------------------------------
 *  compute the neutral particle flow
@@ -876,8 +910,19 @@ c...  Addition for nonorthogonal mesh
       if (isnonog .eq. 1) then
 c ..Timing
       if(istimingon==1) tsngfxy = gettime(sec4)
-
+         if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxyflux.gt.0) then
+              OMPThreadedPandf=1
+              OMPyindex(:)=-1
+              OMPxindex(:)=-1
+              else
+              OMPThreadedPandf=0
+        endif
+c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex,OMPThreadedPandf)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxfn,gxf,sx)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(j1, j6,i6, i1)
+c$omp& if (OMPThreadedPandf.gt.0)
          do 8905 iy = j1, min(j6, ny)
+            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
             iy1 = max(iy-1,0)
             do 8904 ix = i1, min(i6, nx)
                ix1 = ixm1(ix,iy)
@@ -967,8 +1012,11 @@ ccc   MER NOTE:  no xy flux limit for ix=0 or ix=nx in original code
                endif
  8904       continue
  8905    continue
+c$OMP end parallel do
 c ..Timing
       if(istimingon==1) ttngfxy=ttngfxy+(gettime(sec4)-tsngfxy)
+        call OmpThreadCopyfngxy
+
 
 c...  Fix the total fluxes; note the loop indices same as fd2tra
 c...  Flux-limit the total poloidal flux here

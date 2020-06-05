@@ -971,7 +971,8 @@ c-----------------------------------------------------------------------
 c ... Calculate the right-hand sides of the UEDGE rate equations.
 
       implicit none
-
+      use omp_lib
+      Use(OMPPandf)
       Use(Math_problem_size)   # neqmx
       Use(Constraints)         # icflag,rlx,icnstr,ylprevc,ylchng
 
@@ -988,13 +989,14 @@ c ... Additional input arguments required for rhsvd:
 
 c ... Output argument used for all entry points:
       real yldot(neq)   # right-hand sides
+      real yldotsave(neq)
 
 c ... Output argument for rhsvd and rhsdpk:
       integer ifail
 
 c ... Local variables:
       integer i, ivar
-      real tloc, tau, rlxl
+      real tloc, tau, rlxl,walltime
       data tau /1.e0/, rlxl /1.e20/   # dummy argument here for cnstrt
 
 c ... Beginning of execution for call ffun (by newton or lsode).
@@ -1053,7 +1055,23 @@ c ... Calculate right-hand sides for interior and boundary points.
 ccc 10   call convsr_vo (-1,-1, yl)  # test new convsr placement
 ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
 
- 10   call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
+ 10   continue
+      walltime=omp_get_wtime()
+      call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
+      TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
+      if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
+      OMPParallelPandf=0
+
+      walltime=omp_get_wtime()
+      TimingPandf=1
+      call pandf1 (-1, -1, 0, neq, tloc, yl, yldotsave)
+      TimingPandf=0
+      TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
+      call Compare(yldot,yldotsave,neq)
+
+      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
+      OMPParallelPandf=1
+      endif
  20   continue
       return
       end

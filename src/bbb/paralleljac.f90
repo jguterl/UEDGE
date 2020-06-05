@@ -5,7 +5,7 @@
 !-------------------------------------------------------------------------------------------------
 subroutine InitParallel
     Use Output
-    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac,OMPParallelPandf
+    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac
     Use HybridOptions,only:HybridOMPMPI
     implicit none
     if (OMPParallelJac==1 .and. MPIParallelJac==0) then
@@ -24,9 +24,7 @@ subroutine InitParallel
         write(iout,'(a)') '*MPIJac* Jacobian calculation: MPI not enabled'
         ParallelJac=0
     endif
-    if (OMPParallelPandf==1.and.OMPParallelJac==0) then
-    call InitOMP
-    endif
+
 end subroutine InitParallel
 !-------------------------------------------------------------------------------------------------
 subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
@@ -64,6 +62,23 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 end subroutine jac_calc_parallel
 !-------------------------------------------------------------------------------------------------
 #ifdef _OPENMP
+subroutine InitPandfOMP()
+use OmpOptions,only: Nthreads
+use OMPPandf
+use Dim,only:ny
+OMPPandf_Nthreads=min(Nthreads,ny+2)
+OMPPandf_Nthreads=min(OMPPandf_Nthreads,OMPPandfNthreads)
+call gchange('OMPPandf',0)
+if (OMPThreadedPandfngxflux.lt.1 .and. OMPThreadedPandfngyflux.gt.0) then
+call xerrab('OMPThreadedPandfngyflux cannot be on with OMPThreadedPandfngxflux')
+endif
+
+if ((OMPThreadedPandfngxflux.lt.1 .or. OMPThreadedPandfngyflux.lt.1) .and. OMPThreadedPandfngxyflux.gt.0) then
+call xerrab('OMPThreadedPandfngxyflux cannot be on with OMPThreadedPandfngxflux and OMPThreadedPandfngyflux')
+endif
+
+end subroutine InitPandfOMP
+
 subroutine InitOMP()
     Use Output
     Use OmpOptions,only:Nthreads,nnzmxperthread,omplenpfac,ompneq,OMPVerbose,OMPStamp
@@ -116,7 +131,7 @@ subroutine InitOMP()
     endif
     ompneq=neq
     call gchange('OmpJacobian',0)
-    call gchange('OMPPandf',0)
+    call InitPandfOMP
 end subroutine InitOMP
 !-------------------------------------------------------------------------------------------------
 subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
@@ -2102,41 +2117,55 @@ subroutine OMPPandfCalc(neq,yl,yldot)
 
 end subroutine OMPPandfCalc
 
-    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
-    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
-    integer,intent(in)::neq,xc,yc
-    real,intent(in)::yl(*)
-    real,intent(out)::yldot(*)
-    real,intent(in)::time
-    real::yldotcopy(1:neq)
-    real::TimeStart,TimeEnd
-    integer ::iv
-    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
-      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
-      call OMPPandfCalc(neq,yl,yldot)
-      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
-      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
-
-      if (OMPCheckParallelPandf.gt.0) then
-      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
-          yldotcopy(1:neq)=yldot(1:neq)
-          call cpu_time(TimeStart)
-          call pandf (xc, yc, neq, time, yl, yldot)
-          call cpu_time(TimeEnd)
-          TimePandf=TimeEnd-TimeStart+TimePandf
+!    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
+!    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
+!    integer,intent(in)::neq,xc,yc
+!    real,intent(in)::yl(*)
+!    real,intent(out)::yldot(*)
+!    real,intent(in)::time
+!    real::yldotcopy(1:neq)
+!    real::TimeStart,TimeEnd
+!    integer ::iv
+!    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
+!      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
+!      call OMPPandfCalc(neq,yl,yldot)
+!      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
+!      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
+!
+!      if (OMPCheckParallelPandf.gt.0) then
+!      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
+!          yldotcopy(1:neq)=yldot(1:neq)
+!          call cpu_time(TimeStart)
+!          call pandf (xc, yc, neq, time, yl, yldot)
+!          call cpu_time(TimeEnd)
+!          TimePandf=TimeEnd-TimeStart+TimePandf
+!            do iv=1,neq
+!                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
+!                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
+!                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
+!                    else
+!                    write(*,*) '>>>>',iv,0
+!                    endif
+!                    !call xerrab('diff in rhsnk')
+!                endif
+!            enddo
+!      endif
+!end subroutine ParallelPandf
+subroutine Compare(yldot,yldotsave,neq)
+integer:: iv,neq
+real yldot(neq+2),yldotsave(neq+2)
             do iv=1,neq
-                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
-                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
-                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
+                if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
+                    if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
+                    write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
+                    call xerrab('stop')
                     else
                     write(*,*) '>>>>',iv,0
                     endif
                     !call xerrab('diff in rhsnk')
                 endif
             enddo
-      endif
-end subroutine ParallelPandf
-
+end subroutine Compare
 subroutine AddTimeDerivative(neq,yl,yldot)
 use Compla,only: zi
 use UEpar,only:isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy,ineudif,fdtnixy,&

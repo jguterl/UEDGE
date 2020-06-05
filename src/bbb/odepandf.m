@@ -2,6 +2,23 @@ c!include "bbb.h"
 c!include "../com/com.h"
 c!include "../mppl.h"
 ccccc!include "../sptodp.h"
+
+        subroutine tick(t)
+        implicit none
+            integer, intent(OUT) :: t
+
+            call system_clock(t)
+        end subroutine tick
+
+        real function tock(t)
+         implicit none
+            integer, intent(in) :: t
+            integer :: now, clock_rate
+
+            call system_clock(now,clock_rate)
+
+            tock = real(now - t)/real(clock_rate)
+        end function tock
 c-----------------------------------------------------------------------
       subroutine fd2tra (nx, ny, flox, floy, difx, dify, phi,
      .                   trax, tray, pos, meth)
@@ -670,7 +687,8 @@ cnxg      data igs/1/
       use OMPPandf ,only:RhsEval,TimeConvert,TimingPandf,TimeBlock1
       use OMPPandf,only:TimeBlock2,TimeBlock3,TimeBlock4,TimeBlock5
 
-      real :: t_start,t_stop
+      integer :: t_start
+      real, external :: tock
 *  -- procedures for atomic and molecular rates --
       integer zmax,znuc
       real dene,denz(0:1),radz(0:1)
@@ -840,7 +858,7 @@ c ... Get initial value of system cpu timer.
          tsjf = gettime(sec4)
       endif
 
-      if ( (xc .lt. 0.or.rhseval.gt.0) .or.
+      if ( (xc .lt. 0) .or.
      .     ((0<=yc).and.(yc-yinc<=0)).and.isjaccorall==1 ) then
                                               # use full ix range near yc=0
                                               # with integrated core flux BC
@@ -967,7 +985,7 @@ c...  Reset ioniz. and rad. indices to a point if this is a Jacobian calc.
          endif
 
 c...  Set flag that indicates wide open Jac'n "box" for subroutine bouncon.
-      if (xc .lt. 0.or. RhsEval.gt.0) then
+      if (xc .lt. 0) then
          openbox = .true.
       elseif (xccuts .or. xcturb) then
          openbox = .true.
@@ -976,7 +994,11 @@ c...  Set flag that indicates wide open Jac'n "box" for subroutine bouncon.
       else
          openbox = .false.
       endif
-
+      if (yl(neq+1) .le. 0) then
+      RhsEval=1
+      else
+      RhsEval=0
+      endif
 c...  Set flags that indicate when the Jac'n "box" overlaps left or right
 c...  boundary cells of a mesh region.  Used in subroutine bouncon.
       xcnearlb = .false.
@@ -990,19 +1012,18 @@ c...  boundary cells of a mesh region.  Used in subroutine bouncon.
          xcnearrb = xcnearrb .or.
      .      ( (xc-xlinc.le.ixrb(jx)+1) .and. (xc+xrinc.ge.ixrb(jx)) )
       enddo
-      if (xc .lt. 0.or.RhsEval.gt.0) xcnearrb = .true.
+      if (xc .lt. 0) xcnearrb = .true.
 
 ************************************************************************
 c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
-        if (TimingPandf.gt.0) call cpu_time(t_start)
+        if (TimingPandf.gt.0) call tick(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
          call convsr_aux (xc, yc)
-        if (TimingPandf.gt.0) call cpu_time(t_stop)
-        if (TimingPandf.gt.0) TimeConvert=t_stop-t_start+TimeConvert
+        if (TimingPandf.gt.0) TimeConvert=tock(t_start)+TimeConvert
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
-      if (TimingPandf.gt.0) call cpu_time(t_start)
+      if (TimingPandf.gt.0) call tick(t_start)
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
@@ -1470,10 +1491,9 @@ c             non-physical interface between upper target plates for dnull
         else    # test on zi > 1.e-10 to skip whole loop
         endif
   100 continue  # Giant loop over ifld (species)
-       if (TimingPandf.gt.0) call cpu_time(t_stop)
-       if (TimingPandf.gt.0) TimeBlock1=t_stop-t_start+TimeBlock1
+       if (TimingPandf.gt.0) TimeBlock1=tock(t_start)+TimeBlock1
 c--------------------------------------------------------------------------------------
-       if (TimingPandf.gt.0) call cpu_time(t_start)
+       if (TimingPandf.gt.0) call tick(t_start)
 
 c ... Save values returned by Hirshman mombal for Jacobian calc. to
 c ... minimize calls - restore the "m" or ix-1 values at the end of pandf
@@ -1580,7 +1600,7 @@ c     saved here so they can be restored below.
 
 
       do iy = iys1, iyf6
-         if (xc .gt.0.and. RhsEval.lt.1) then
+         if (xc .gt.0) then
             ix = xc
             ix1 = ixm1(ix,iy)
             if (isimpon .eq. 5) then   # Hirshmans reduced-ion approx.
@@ -1721,8 +1741,7 @@ c ..       switch to right plate(s)
           enddo
         enddo
       endif
-      if (TimingPandf.gt.0) call cpu_time(t_stop)
-      if (TimingPandf.gt.0) TimeBlock2=t_stop-t_start+TimeBlock2
+      if (TimingPandf.gt.0) TimeBlock2=tock(t_start)+TimeBlock2
 ***********************************************************************
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
 *     or if isphiofft = 1.
@@ -1732,7 +1751,7 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
 ***********************************************************************
-      if (TimingPandf.gt.0) call cpu_time(t_start)
+      if (TimingPandf.gt.0) call tick(t_start)
 
       do 25 iy = j1, j6
 	 do 24 ix = i1, i6
@@ -2089,11 +2108,10 @@ c*****************************************************************
            endif       #if-loop on ipsorave
          endif         #omit whole loop if zi(ifld) = 0. (neutrals)
         enddo          #end loop over hydrogen species (ifld)
-        if (TimingPandf.gt.0) call cpu_time(t_stop)
-      if (TimingPandf.gt.0) TimeBlock3=t_stop-t_start+TimeBlock3
+      if (TimingPandf.gt.0) TimeBlock3=tock(t_start)+TimeBlock3
 
 **c ... Can now calc current from nucx since it is updated
-      if (TimingPandf.gt.0) call cpu_time(t_start)
+      if (TimingPandf.gt.0) call tick(t_start)
       if (cfqyn .gt. 0.) call calc_curr_cx
 
 c ... Ionization and recombination of impurities.
@@ -2426,13 +2444,12 @@ c *** Now do the gas
       endif
 
 
-      if (TimingPandf.gt.0) call cpu_time(t_stop)
-      if (TimingPandf.gt.0) TimeBlock4=t_stop-t_start+TimeBlock4
+      if (TimingPandf.gt.0) TimeBlock4=tock(t_start)+TimeBlock4
 *****************************************************************
 c In the case of neutral parallel mom, call neudif to get
 c flux fngy, vy and uu, now that we have evaluated nuix etc.
 *****************************************************************
-      if (TimingPandf.gt.0) call cpu_time(t_start)
+      if (TimingPandf.gt.0) call tick(t_start)
 
 ccc      if (isupgon .eq. 1 .and. zi(ifld) .eq. 0.0) call neudif
       if (ineudif .eq. 1) then
@@ -2448,8 +2465,7 @@ c ..Timing
       else
          call neudifo
       endif
-      if (TimingPandf.gt.0) call cpu_time(t_stop)
-      if (TimingPandf.gt.0) TimeBlock5=t_stop-t_start+TimeBlock5
+      if (TimingPandf.gt.0) TimeBlock5=tock(t_start)+TimeBlock5
 *****************************************************************
 *  Other volume sources calculated in old SRCMOD
 *****************************************************************
@@ -5189,8 +5205,6 @@ cc      Use(Selec)   # i2,i5,j2,j5
       Use(Compla)  # zi
       Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx
       Use(Cdv)
-      Use(ParallelOptions) , only:OMPParallelPandf
-      Use(OMPPandf) , only:TimingPandf
 
 *  -- arguments
       integer,intent(in):: xc, yc, ieq, neq     # ieq is the equation index for Jac. calc
@@ -5225,14 +5239,8 @@ c
 c  PANDF calculates the equations in the interior of the grid, plus calls
 c  bouncon for B.C. and poten for potential
 c
-      if (xc.lt.0.and.yc.lt.0.and.yl(neq+1).lt.0) then
-c      call ParallelPandf(xc, yc, neq, time, yl, yldot)
-c      else
-      TimingPandf=1
-c     write(*,*) "timing pandf1 on"
-      endif
+
       call pandf(xc, yc, neq, time, yl, yldot)
-      TimingPandf=0
 
 c
 c...  If isflxvar=0, we use ni,v,Te,Ti,ng as variables, and the ODEs need
@@ -5345,3 +5353,5 @@ c...  timestep dtphi
       return
       end
 c****** end of subroutine pandf1 ************
+
+

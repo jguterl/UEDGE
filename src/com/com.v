@@ -13,7 +13,6 @@ iomfit  integer /1/     # switch used by OMFIT
 OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ParallelJac     integer /0/        # [0]: serial jacobian calc [1] omp parallel jacobian calc
-OMPParallelPandf integer /0/
 DebugJac          integer /0/
 
 ***** HybridOptions:
@@ -84,9 +83,19 @@ nnzcum(Nthreads) _integer
 
 
 **** OMPPandf:
-OMPParallelPandf1 integer /0/
-OMPCheckParallelPandf integer /0/
+OMPThreadedPandf integer /0/
+OMPThreadedPandfDebug integer /0/
+OMPThreadedPandfVerbose integer /0/
+OMPPandf_Nthreads integer /0/ # Nthreads for threaded pandf set by internal functions. Do not modify and use OMPPandfNthreads instead.
+OMPPandfNthreads integer /20/ # Nthreads for threaded pandf.
+OMPParallelPandf integer /0/
+OMPThreadedPandfngxflux integer /1/
+OMPThreadedPandfngyflux integer /1/
+OMPThreadedPandfngxyflux integer /1/
+OMPCheckThreadedPandf integer /1/
 TimePandf real /0.0/
+TimeSerialPandf real /0.0/
+TimeParallelPandf real /0.0/
 TimingPandf integer /0/
 OMPTimePandf real /0.0/
 OMPpandfivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
@@ -100,6 +109,8 @@ TimeBlock3 real /0/
 TimeBlock4 real /0/
 TimeBlock5 real /0/
 OMPRhseval integer /0/
+OMPyindex(0:ny+1) _integer
+OMPxindex(0:nx+1) _integer
 
 ***** Verbose:
 VerboseCall        integer /0/     # Print name of subroutine when this one is called. Can be used to explore call trees
