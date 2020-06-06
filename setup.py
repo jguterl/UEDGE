@@ -128,8 +128,9 @@ cargs=[]
 ompargs=['--ompverbose']
 if mpi:
     fargs=fargs+['-DMPIJAC']
-   
+extraompargs=[]   
 if omp:
+    extraompargs+=['-fopenmp']
     cargs=cargs+['-fopenmp']
     fargs=fargs+['-fopenmp']
     ompargs=ompargs+['--omppkg {} --ompvarlistfile {}'.format(','.join(omppackages),omplisthtreadprivatevars)]
@@ -310,7 +311,7 @@ setup(name="uedge",
                              libraries=libraries,
                              define_macros=define_macros,
                              extra_objects=uedgeobjects,
-                             extra_link_args=['-fopenmp','-g','-DFORTHON'] +
+                             extra_link_args=extraompargs+['-g','-DFORTHON'] +
                              fcompiler.extra_link_args,
                              extra_compile_args=fcompiler.extra_compile_args+['-g']
                              )],
