@@ -2267,3 +2267,20 @@ if (isbcwdt .eq. 0) then  ! omit b.c. eqns
         endif
 end subroutine
 
+        subroutine tick(t)
+        implicit none
+            integer, intent(OUT) :: t
+
+            call system_clock(t)
+        end subroutine tick
+
+        real function tock(t)
+         implicit none
+            integer, intent(in) :: t
+            integer :: now, clock_rate
+
+            call system_clock(now,clock_rate)
+
+            tock = real(now - t)/real(clock_rate)
+        end function tock
+
