@@ -1,4 +1,4 @@
 __version__='v7.1.0.0'
 GitTag='v7.1.0.0'
-GitBranch='paralleljac'
-GitHash='19b2d220023ad2c8ce828d22c059730e87fa696e'
+GitBranch='parallel'
+GitHash='2e4b5e7c0e23cb2af265b74d6719e78a25d20e48'
