@@ -159,6 +159,8 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     if (OMPVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
 
     if (nnzcum(Nthreads).gt.nnzmx) then
+        write(*,*) 'nnzcum='
+        write(*,*) nnzmx
         call xerrab(' Problem: nnzcum > nnzmx...')
     endif
 
