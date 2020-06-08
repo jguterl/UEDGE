@@ -11,7 +11,7 @@ import git
 from Forthon.compilers import FCompiler
 import getopt
 
-version='7.0.8.4.15rc1'
+version='7.0.9.2.0rc1'
 
 GitHash=''
 GitRemoteRepo=''

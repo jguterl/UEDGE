@@ -195,6 +195,7 @@ kybohm
 kye_use
 kyi_use
 lng
+loglambda
 mfl
 msh
 msor
@@ -250,6 +251,7 @@ pr
 prad
 pradc
 pradcff
+pradhyd
 pradz
 pradzc
 pre
@@ -329,7 +331,6 @@ totfeexl
 totfeexr
 totfeixl
 totfeixr
-totintrv
 travis
 trax_use
 tray_use
@@ -396,6 +397,7 @@ w1
 w2
 w3
 wjdote
+wvh
 xcnearlb
 xcnearrb
 yld_carbi

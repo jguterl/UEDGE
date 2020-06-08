@@ -48,7 +48,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
-    if (exmain_aborted==1) call xerrab('exmain aborted...')
+    if (exmain_aborted) call xerrab('exmain aborted...')
     if (OMPParallelJac==1 .and. MPIParallelJac==0) then
         call jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     elseif (OMPParallelJac==0 .and. MPIParallelJac==1) then

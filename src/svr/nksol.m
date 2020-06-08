@@ -1098,7 +1098,7 @@ cpetsc        nksoltime(iter+1)=gettime(sec4)
 cpetsc        nksollinits(iter+1)=nli
 cpetsc        nksolfeval(iter+1)=nfe
 cpetsc      endif
-      if (exmain_aborted==1) call xerrab('exmain aborted...')
+      if (exmain_aborted) call xerrab('exmain aborted...')
       call nkstop(n,u,rwork(lup),savf,fnrm,su,sf,stptol,rwork(lx),
      *            ftol,iret,iter,itermx,mxtkn,ncscmx,iterm)
 c
