@@ -5987,12 +5987,12 @@ c ..Timing;initialize
       OMPThreadedPandf=0
       endif
 
-c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex,OMPThreadedPandf)
-c$omp& shared(angfx,sx,gx,gxf,fy0,fyp,fym,fypx,fymx,rrv,flalfgxya)
+c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex)
+c$omp& shared(angfx,sx,gx,gxf,fy0,fyp,fym,fypx,fymx,rrv,flalfgxya,dxnog)
 c$omp& num_threads(OMPPandf_Nthreads) copyin(tg,ng,vygtan,uu,nuix,pg,up,i1, i5,j8, j4)
 c$omp& if (OMPThreadedPandf.gt.0)
       do  iy = j4, j8
-        if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
+        if (OMPThreadedPandf.gt.0) OMPyindex(iy)=omp_get_thread_num()
           do 887 ix = i1, i5
             iy1 = max(0,iy-1)
             iy2 = min(ny+1,iy+1)
@@ -6115,7 +6115,7 @@ c ..Timing; initiate time for y-direction calc
       endif
 
 c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,dynog)
 c$omp& num_threads(OMPPandf_Nthreads) copyin(ngy0,ngy1,vy,nuix,pgy0,pgy1,j1,j5,i8, i4)
 c$omp& if (OMPThreadedPandf.gt.0)
       do 890 iy = j1, j5
@@ -6244,7 +6244,7 @@ c ..Timing
               OMPThreadedPandf=0
         endif
 c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex,OMPThreadedPandf)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
 c$omp& num_threads(OMPPandf_Nthreads) copyin(j1, j6,i6, i1)
 c$omp& if (OMPThreadedPandf.gt.0)
          do 8905 iy = j1, min(j6, ny)

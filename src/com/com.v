@@ -87,7 +87,7 @@ OMPThreadedPandf integer /0/
 OMPThreadedPandfDebug integer /0/
 OMPThreadedPandfVerbose integer /0/
 OMPPandf_Nthreads integer /0/ # Nthreads for threaded pandf set by internal functions. Do not modify and use OMPPandfNthreads instead.
-OMPPandfNthreads integer /20/ # Nthreads for threaded pandf.
+OMPPandfNthreads integer /64/ # Nthreads for threaded pandf.
 OMPParallelPandf integer /0/
 OMPThreadedPandfngxflux integer /1/
 OMPThreadedPandfngyflux integer /1/

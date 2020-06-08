@@ -349,7 +349,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
     if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
-    if (ShowTime.gt.0) write(iout,'(a,f8.2)') 'Time in jac_calc:',OMPTimeJacCalc
+    if (ShowTime.gt.0) write(iout,'(a,f8.2,a,I3,a)') 'Time in omp jac_calc:',OMPTimeJacCalc,'[',Nthreads,']'
     return
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
@@ -1272,7 +1272,7 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
     MPITimeJacCalc=gettime(sec4)-MPITimeJacCalc
     if (istimingon .eq. 1) MPITotJacCalc = MPITimeJacCalc+MPITotJacCalc
-    if (ShowTime.gt.0) write(iout,*)HybridStamp,'Time in jac_calc:',MPITimeJacCalc
+    if (ShowTime.gt.0) write(iout,*)HybridStamp,'Time in hybrid jac_calc:',MPITimeJacCalc
 
     return
 end subroutine jac_calc_hybrid
