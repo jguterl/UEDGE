@@ -671,7 +671,9 @@ cnxg      data igs/1/
       Use(Interp)				 # ngs, tgs
       use OMPPandf ,only:RhsEval,TimeConvert,TimingPandf,TimeBlock1
       use OMPPandf ,only:TimeBlock2,TimeBlock3,TimeBlock4,TimeBlock5
-
+      use OMPPandf ,only:TimeBlock6,TimeBlock7,TimeBlock8,TimeBlock9
+      use OMPPandf ,only:TimeBlock10,TimeBlock11,TimeBlock12,TimeBlock13
+      use OMPPandf ,only:TimeBlock14,TimeBlock15,TimeBlock16
       integer :: t_start
       real, external :: tock
 *  -- procedures for atomic and molecular rates --
@@ -1002,13 +1004,13 @@ c...  boundary cells of a mesh region.  Used in subroutine bouncon.
 ************************************************************************
 c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
-        if (TimingPandf.gt.0) call tick(t_start)
+        if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
          call convsr_aux (xc, yc)
-        if (TimingPandf.gt.0) TimeConvert=tock(t_start)+TimeConvert
+        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert=tock(t_start)+TimeConvert
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
-      if (TimingPandf.gt.0) call tick(t_start)
+      if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
@@ -1448,9 +1450,9 @@ c             non-physical interface between upper target plates for dnull
         else    # test on zi > 1.e-10 to skip whole loop
         endif
   100 continue  # Giant loop over ifld (species)
-       if (TimingPandf.gt.0) TimeBlock1=tock(t_start)+TimeBlock1
+       if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock1=tock(t_start)+TimeBlock1
 c--------------------------------------------------------------------------------------
-       if (TimingPandf.gt.0) call tick(t_start)
+       if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 
 c ... Save values returned by Hirshman mombal for Jacobian calc. to
 c ... minimize calls - restore the "m" or ix-1 values at the end of pandf
@@ -1697,7 +1699,7 @@ c ..          switch to right plate(s)
           enddo
         enddo
       endif # checks if isimpon > 0
-      if (TimingPandf.gt.0) TimeBlock2=tock(t_start)+TimeBlock2
+      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock2=tock(t_start)+TimeBlock2
 
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
 *     or if isphiofft = 1.
@@ -1707,7 +1709,7 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
 ***********************************************************************
-      if (TimingPandf.gt.0) call tick(t_start)
+      if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 
       do 25 iy = j1, j6
 	 do 24 ix = i1, i6
@@ -2060,10 +2062,10 @@ c*****************************************************************
            endif       #if-loop on ipsorave
          endif         #omit whole loop if zi(ifld) = 0. (neutrals)
         enddo          #end loop over hydrogen species (ifld)
-      if (TimingPandf.gt.0) TimeBlock3=tock(t_start)+TimeBlock3
+      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock3=tock(t_start)+TimeBlock3
 
 **c ... Can now calc current from nucx since it is updated
-      if (TimingPandf.gt.0) call tick(t_start)
+      if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
       if (cfqyn .gt. 0.) call calc_curr_cx
 
 c ... Ionization and recombination of impurities.
@@ -2396,12 +2398,12 @@ c *** Now do the gas
       endif
 
 
-      if (TimingPandf.gt.0) TimeBlock4=tock(t_start)+TimeBlock4
+      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock4=tock(t_start)+TimeBlock4
 *****************************************************************
 c In the case of neutral parallel mom, call neudif to get
 c flux fngy, vy and uu, now that we have evaluated nuix etc.
 *****************************************************************
-      if (TimingPandf.gt.0) call tick(t_start)
+      if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 
 ccc      if (isupgon .eq. 1 .and. zi(ifld) .eq. 0.0) call neudif
       if (ineudif .eq. 1) then
@@ -2417,10 +2419,11 @@ c ..Timing
       else
          call neudifo
       endif
-      if (TimingPandf.gt.0) TimeBlock5=tock(t_start)+TimeBlock5
+      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock5=tock(t_start)+TimeBlock5
 *****************************************************************
 *  Other volume sources calculated in old SRCMOD
 *****************************************************************
+      if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *  ---------------------------------------------------------------------
 *  electron-ion transfer terms and an
 *  approximation to the ion-ion thermal force.
@@ -2679,11 +2682,13 @@ ccc
    44    continue
        endif      # test if zi(ifld) > 1.e-20
   102 continue    # large loop for ifld = 1, nfsp
-
+              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock6=tock(t_start)+TimeBlock6
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 ****************************************************************
 ****************************************************************
 *  Heat Conduction. (old PHYTHC)
 ****************************************************************
+
 *  ---------------------------------------------------------------------
 *  compute conductivities on cell faces
 *  ---------------------------------------------------------------------
@@ -2909,6 +2914,8 @@ c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energ
  61   continue
 c
 c
+            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock7=tock(t_start)+TimeBlock7
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
       if (isupgon(1).eq.1) then
 c
 c ----- Section for the inertial neutral fluid; we need to do different
@@ -3072,7 +3079,8 @@ cJG          nhi_nha=0.0
         enddo
        enddo
       endif
-
+            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 c ... Call routine to evaluate gas energy fluxes
 ****************************************************************
       call engbalg
@@ -3321,7 +3329,8 @@ c                   if (ix .eq. 1 .and. iy .eq. 1) write(iout,*) 'sng_ue', ifld,
  301     continue
  302   continue
        enddo       # end of ifld loop
-
+        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock9=tock(t_start)+TimeBlock9
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *********************************************************************
 c  Here we do the neutral gas diffusion model
 c  The diffusion is flux limited using the thermal flux
@@ -3441,7 +3450,8 @@ ccc Distance between veloc. cell centers:
    92       continue
    93    continue
 
-
+        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock10=tock(t_start)+TimeBlock10
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *  -- compute the momentum transport --
 
          call fd2tra (nx,ny,flox,floy,conx,cony,
@@ -3784,7 +3794,8 @@ c  -- it is included in frici from mombal or mombalni
 
  105  continue
 
-
+              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock11=tock(t_start)+TimeBlock11
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 ****************************************************************
 ****************************************************************
 *  Here starts the old ENEBAL
@@ -4123,7 +4134,8 @@ c...Add the charge-exhange neutral contributions to ion+neutral temp eq.
      .                       + cfneut*cfneutsor_ei*cngtgy(1)*2.5*fngy(ix,iy,1)
  144        continue
  145     continue
-
+              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock12=tock(t_start)+TimeBlock12
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *  ---------------------------------------------------------------------
 *  compute the electron and the ion energy flow.
 *  ---------------------------------------------------------------------
@@ -4352,7 +4364,8 @@ c ... ## IJ 2016/10/19 add MC neutral flux
   309    continue
   310 continue
 
-
+              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock13=tock(t_start)+TimeBlock13
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *  -- total energy residual and equipartition --
 
 c...  Electron radiation loss -- ionization and recombination
@@ -4661,7 +4674,8 @@ c******************************************************************
           endif
         enddo
       enddo
-
+       if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock14=tock(t_start)+TimeBlock14
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 c******************************************************************
 c...  Update resee over whole "box" because initially set to zero
 c******************************************************************
@@ -4835,7 +4849,8 @@ c ... The factor (1-iseqalg(iv)) above forces yldot=0 for algebraic
 c ... equations, except up(nx,,); these yldot are subsequently set in
 c ... subroutine bouncon.
 
-
+        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock15=tock(t_start)+TimeBlock15
+         if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 c  POTEN calculates the electrostatic potential, and BOUNCON calculates the
 c  equations for the boundaries. For the vodpk solver, the B.C. are ODEs
 c  in time (rate equations).  Both bouncon and poten must be called before
@@ -4901,6 +4916,7 @@ c...  Finally, reset some source terms if this is a Jacobian evaluation
          endif
       end if #ismcnon
 
+      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock16=tock(t_start)+TimeBlock16
 c ... Accumulate cpu time spent here.
       if(xc .lt. 0) then
          ttotfe = ttotfe + gettime(sec4) - tsfe

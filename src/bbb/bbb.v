@@ -3851,3 +3851,6 @@ setLogFile(filename:string)   subroutine
      # sets the filename base to which to direct log output
 writeToLog(message:string)    subroutine
      # writes a message to the uedge log file
+
+PrintTimingPandf() subroutine
+    # write timing info for pandf in rhs mode

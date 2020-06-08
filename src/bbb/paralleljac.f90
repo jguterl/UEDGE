@@ -2284,3 +2284,27 @@ end subroutine
             tock = real(now - t)/real(clock_rate)
         end function tock
 
+subroutine PrintTimingPandf()
+    use OMPPandf
+    write(*,*) '----- Timing Pandf in evalrhs mode----'
+    write(*,*)'TimeConvert', TimeConvert
+write(*,*)'TimeBlock1', TimeBlock1
+write(*,*)'TimeBlock2' ,TimeBlock2
+write(*,*)'TimeBlock3', TimeBlock3
+write(*,*)'TimeBlock4', TimeBlock4
+write(*,*)'TimeBlock5', TimeBlock5
+write(*,*)'TimeBlock6', TimeBlock6
+write(*,*)'TimeBlock7', TimeBlock7
+write(*,*)'TimeBlock8', TimeBlock8
+write(*,*)'TimeBlock9', TimeBlock9
+write(*,*)'TimeBlock10', TimeBlock10
+write(*,*)'TimeBlock11' ,TimeBlock11
+write(*,*)'TimeBlock12', TimeBlock12
+write(*,*)'TimeBlock13' ,TimeBlock13
+write(*,*)'TimeBlock14', TimeBlock14
+write(*,*)'TimeBlock15', TimeBlock15
+write(*,*)'TimeBlock16', TimeBlock16
+end subroutine PrintTimingPandf
+
+
+
