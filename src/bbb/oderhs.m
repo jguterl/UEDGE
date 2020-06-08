@@ -2470,7 +2470,8 @@ c...  Force fluxes and gradients on cuts to be zero for half-space problems
      .                                   rrv(ix,iy)*sx(ix,iy)/gxf(ix,iy)
          enddo
       enddo
-
+              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock6=tock(t_start)+TimeBlock6
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *  -- Now loop over all ion species for seec, seic, and smoc --
 
       do 101 ifld = 1, nusp  #not nfsp; up only for ifld<=nusp
@@ -2548,6 +2549,8 @@ c... REMEMBER TO ADD CONTRIBUTION TO SEEC FROM V2 1/26/95
    34    continue
 
   101 continue
+            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock7=tock(t_start)+TimeBlock7
+              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 *
 ******************************************************************
 **  Other physics coefficients. (old PHYVIS)
@@ -2682,7 +2685,7 @@ ccc
    44    continue
        endif      # test if zi(ifld) > 1.e-20
   102 continue    # large loop for ifld = 1, nfsp
-              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock6=tock(t_start)+TimeBlock6
+            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
               if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
 ****************************************************************
 ****************************************************************
@@ -2914,8 +2917,7 @@ c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energ
  61   continue
 c
 c
-            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock7=tock(t_start)+TimeBlock7
-              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
+
       if (isupgon(1).eq.1) then
 c
 c ----- Section for the inertial neutral fluid; we need to do different
@@ -3079,8 +3081,7 @@ cJG          nhi_nha=0.0
         enddo
        enddo
       endif
-            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
-              if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
+
 c ... Call routine to evaluate gas energy fluxes
 ****************************************************************
       call engbalg
