@@ -77,18 +77,18 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
       call jac_write('paralleljac.dat',neq, jac, ja, ia)
       call jac_write('serialjac.dat',neq, jaccopy, jacopy, iacopy)
       endif
-      write(*,*) '----- Comparing jacobians...'
+      write(*,*) '----- Comparing jacobians...: nzmax=',ia(neq)-1
       do i=1,ia(neq)-1
        if (abs(jaccopy(i)-jac(i)).gt.1e-14) then
            write(*,*) ' ****** diff between jacs (must stop and check) :',i,jac(i),jaccopy(i),'|',ja(i),jacopy(i)
            do iv=1,neq
-            if (i>ia(iv)) then
+            if (i>=ia(iv)) then
             write(*,*) 'idx row parallel:',iv
             exit
             endif
            enddo
            do iv=1,neq
-            if (i>iacopy(iv)) then
+            if (i>=iacopy(iv)) then
             write(*,*) 'idx row serial:',iv
             exit
             endif
@@ -566,10 +566,10 @@ end subroutine OMPJacBuilder
         ii2 = min(iv+ml, neq)
         ! ... Reset range if this is a potential perturbation with isnewpot=1
         !         if (isphion*isnewpot.eq.1 .and. mod(iv,numvar).eq.0) then
-        if (isphion*isnewpot.eq.1) then
-            ii1 = max(iv-4*numvar*nx, 1)      ! 3*nx may be excessive
-            ii2 = min(iv+4*numvar*nx, neq)    ! 3*nx may be excessive
-        endif
+!        if (isphion*isnewpot.eq.1) then
+!            ii1 = max(iv-4*numvar*nx, 1)      ! 3*nx may be excessive
+!            ii2 = min(iv+4*numvar*nx, neq)    ! 3*nx may be excessive
+!        endif
         ! ... Reset range if extrapolation boundary conditions are used
         if (isextrnpf+isextrtpf+isextrngc+isextrnw+isextrtw.gt.0) then
             ii1 = max(iv-2*numvar*(nx+3), 1)      ! guess to include extrap. bc
