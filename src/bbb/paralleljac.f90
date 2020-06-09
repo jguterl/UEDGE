@@ -85,6 +85,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
             exit
             endif
            enddo
+           exit
        endif
       enddo
       endif
