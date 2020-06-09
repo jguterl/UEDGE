@@ -48,7 +48,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real   :: jaccopy(nnzmx)     ! nonzero Jacobian elements
     integer:: jacopy(nnzmx)   ! col indices of nonzero Jacobian elements
     integer:: iacopy(neq+1)   ! pointers to beginning of each row in jac,ja
-    integer i,iv
+    integer i,iv,ForceSerialCheck
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
     if (exmain_aborted) call xerrab('exmain aborted...')
@@ -61,18 +61,26 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     else
         call xerrab('Cannot call calc_jac_parallel OMP and MPI jac calc are not enabled')
     endif
-
+    ForceSerialCheck=1
     if (DebugJac.gt.0) then
+    if (ForceSerialCheck.gt.0) then
+    write(*,*) 'Force check of serial evaluation of jacobian'
+    write(*,*) '----- Performing first serial Evaluation of jacobian...'
+    call jac_calc (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
+    write(*,*) '----- Performing second serial Evaluation of jacobian...'
+      call jac_calc (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jaccopy, jacopy, iacopy)
+    else
       write(*,*) '--- Checking if parallel and serial evaluations of jacobian are the same...'
        write(*,*) '----- Performing serial Evaluation of jacobian...'
       call jac_calc (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jaccopy, jacopy, iacopy)
      write(*,*) '----- Writing jacobian into serialjac.dat and paralleljac.dat'
       call jac_write('paralleljac.dat',neq, jac, ja, ia)
       call jac_write('serialjac.dat',neq, jaccopy, jacopy, iacopy)
+      endif
       write(*,*) '----- Comparing jacobians...'
-      do i=1,nnzmx
+      do i=1,ia(neq)-1
        if (abs(jaccopy(i)-jac(i)).gt.1e-14) then
-           write(*,*) 'diff jac para/serial:',i,jac(i),jaccopy(i),'|',ja(i),jacopy(i)
+           write(*,*) ' ****** diff between jacs (must stop and check) :',i,jac(i),jaccopy(i),'|',ja(i),jacopy(i)
            do iv=1,neq
             if (i>ia(iv)) then
             write(*,*) 'idx row parallel:',iv
@@ -88,6 +96,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
            exit
        endif
       enddo
+
       endif
 
 end subroutine jac_calc_parallel
