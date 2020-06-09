@@ -2184,21 +2184,21 @@ end subroutine DebugHelper
 !!            enddo
 !!      endif
 !!end subroutine ParallelPandf
-!subroutine Compare(yldot,yldotsave,neq)
-!integer:: iv,neq
-!real yldot(neq+2),yldotsave(neq+2)
-!            do iv=1,neq
-!                if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
-!                    if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
-!                    write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
-!                    call xerrab('stop')
-!                    else
-!                    write(*,*) '>>>>',iv,0
-!                    endif
-!                    !call xerrab('diff in rhsnk')
-!                endif
-!            enddo
-!end subroutine Compare
+subroutine Compare(yldot,yldotsave,neq)
+integer:: iv,neq
+real yldot(neq+2),yldotsave(neq+2)
+            do iv=1,neq
+                if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
+                    if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
+                    write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
+                    call xerrab('stop')
+                    else
+                    write(*,*) '>>>>',iv,0
+                    endif
+                    !call xerrab('diff in rhsnk')
+                endif
+            enddo
+end subroutine Compare
 subroutine AddTimeDerivative(neq,yl,yldot)
 use Compla,only: zi
 use UEpar,only:isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy,ineudif,fdtnixy,&
