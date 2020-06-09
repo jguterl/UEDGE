@@ -9157,14 +9157,6 @@ c ... Calculate Jacobian matrix.
       if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
-      if (DebugJac.gt.0) then
-      write(*,*) 'Writing jacobian into serialjac.dat and paralleljac.dat'
-
-      call jac_write('paralleljac.dat',neq, jac, jacj, jaci)
-      call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
-     .               nnzmx, jac, jacj, jaci)
-      call jac_write('serialjac.dat',neq, jac, jacj, jaci)
-      endif
       else
       call jac_calc (neq, tp, yl, f0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)

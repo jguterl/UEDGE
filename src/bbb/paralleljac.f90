@@ -30,7 +30,7 @@ end subroutine InitParallel
 subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     Use Output
-    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac
+    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,DebugJac
     Use Cdv,only:exmain_aborted
     implicit none
     ! ... Input arguments:
@@ -45,7 +45,10 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real,intent(out)   :: jac(nnzmx)     ! nonzero Jacobian elements
     integer,intent(out):: ja(nnzmx)   ! col indices of nonzero Jacobian elements
     integer,intent(out):: ia(neq+1)   ! pointers to beginning of each row in jac,ja
-
+    real   :: jaccopy(nnzmx)     ! nonzero Jacobian elements
+    integer:: jacopy(nnzmx)   ! col indices of nonzero Jacobian elements
+    integer:: iacopy(neq+1)   ! pointers to beginning of each row in jac,ja
+    integer i,iv
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
     if (exmain_aborted) call xerrab('exmain aborted...')
@@ -58,6 +61,33 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     else
         call xerrab('Cannot call calc_jac_parallel OMP and MPI jac calc are not enabled')
     endif
+
+    if (DebugJac.gt.0) then
+      write(*,*) '--- Checking if parallel and serial evaluations of jacobian are the same...'
+       write(*,*) '----- Performing serial Evaluation of jacobian...'
+      call jac_calc (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jaccopy, jacopy, iacopy)
+     write(*,*) '----- Writing jacobian into serialjac.dat and paralleljac.dat'
+      call jac_write('paralleljac.dat',neq, jac, ja, ia)
+      call jac_write('serialjac.dat',neq, jaccopy, jacopy, iacopy)
+      write(*,*) '----- Comparing jacobians...'
+      do i=1,nnzmx
+       if (abs(jaccopy(i)-jac(i)).gt.1e-14) then
+           write(*,*) 'diff jac para/serial:',i,jac(i),jaccopy(i),'|',ja(i),jacopy(i)
+           do iv=1,neq
+            if (i>ia(iv)) then
+            write(*,*) 'idx row parallel:',iv
+            exit
+            endif
+           enddo
+           do iv=1,neq
+            if (i>iacopy(iv)) then
+            write(*,*) 'idx row serial:',iv
+            exit
+            endif
+           enddo
+       endif
+      enddo
+      endif
 
 end subroutine jac_calc_parallel
 !-------------------------------------------------------------------------------------------------
@@ -358,6 +388,7 @@ end subroutine jac_calc_omp
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac,OMPTimeJacRow
+    use OMPPandf,only:RhsEval
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -418,10 +449,10 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     endif
     tid=-1
     nnzlocal=-10000
-
+    RhsEval=0
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
-    !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
+    !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq,RhsEval)&
     !$omp& firstprivate(nnzmxperthreadcopy,nthreadscopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
     !$omp& private(TimeThread)
 
@@ -2064,110 +2095,110 @@ subroutine DebugHelper(FileName)
     close(iunit)
 end subroutine DebugHelper
 
-subroutine OMPPandfCalc(neq,yl,yldot)
-    use OmpOptions, only:Nthreads
-    use OMPPandf,only:OMPPandfivmin,OMPPandfivmax,RhsEval,OMPRhsEval
-    use Indexes,only:igyl
-    use Selec,only:xlinc,xrinc,yinc,isjaccorall
-    integer iv,ith,xc,yc,xrincbkp,yincbkp,xlincbkp
-    integer,intent(in)::neq
-    real,intent(in)::yl(*)
-    real,intent(out)::yldot(*)
-    real:: yldotcopy(1:neq+2),ylcopy(1:neq+2),wk(1:neq+2)
-    real::LoadWeight(1:Nthreads)
-
-    yldotcopy(1:neq+2)=0
-    ylcopy(1:neq+1)=yl(1:neq+1)
-
-    if (OMPPandfivmin(1)==0) then
-    LoadWeight(1:Nthreads)=1
-    call OMPSplitIndex(1,neq,Nthreads,OMPPandfivmin,OMPPandfivmax,LoadWeight)
-    endif
-! Set xinc,yinc to zero
-    OMPRhsEval=1
-    !isjaccorall=0
-    xlincbkp=xlinc
-    xrincbkp=xrinc
-    yincbkp=yinc
-    xlinc=0
-    xrinc=0
-    yinc=0
-    ylcopy(1+neq)=1
-    !call convert
-    !!$omp parallel do default(shared) firstprivate(yldotcopy) firstprivate(xc,yc,iv)
-    loopthread:do ith=1,Nthreads
-    loopiv: do iv=OMPPandfivmin(ith),OMPPandfivmax(ith)
-        ! ... Set spatial-location indices for this dependent variable.
-        xc = igyl(iv,1)
-        yc = igyl(iv,2)
-        call pandf (xc, yc, neq, 0, yl, yldotcopy)
-
-     enddo loopiv
-     !!$omp critical
-     yldot(OMPPandfivmin(ith):OMPPandfivmax(ith))=yldotcopy(OMPPandfivmin(ith):OMPPandfivmax(ith))
-     !!$omp end critical
-     enddo loopthread
-     !!$omp end parallel do
-
-    xlinc=xlincbkp
-    xrinc=xrincbkp
-    yinc=yincbkp
-    OMPRhsEval=0
-    !isjaccorall=1
-     !!call AddTimeDerivative(neq,yl,yldot)
-
-
-end subroutine OMPPandfCalc
-
-!    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
-!    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
-!    integer,intent(in)::neq,xc,yc
+!subroutine OMPPandfCalc(neq,yl,yldot)
+!    use OmpOptions, only:Nthreads
+!    use OMPPandf,only:OMPPandfivmin,OMPPandfivmax,RhsEval,OMPRhsEval
+!    use Indexes,only:igyl
+!    use Selec,only:xlinc,xrinc,yinc,isjaccorall
+!    integer iv,ith,xc,yc,xrincbkp,yincbkp,xlincbkp
+!    integer,intent(in)::neq
 !    real,intent(in)::yl(*)
 !    real,intent(out)::yldot(*)
-!    real,intent(in)::time
-!    real::yldotcopy(1:neq)
-!    real::TimeStart,TimeEnd
-!    integer ::iv
-!    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
-!      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
-!      call OMPPandfCalc(neq,yl,yldot)
-!      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
-!      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
+!    real:: yldotcopy(1:neq+2),ylcopy(1:neq+2),wk(1:neq+2)
+!    real::LoadWeight(1:Nthreads)
 !
-!      if (OMPCheckParallelPandf.gt.0) then
-!      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
-!          yldotcopy(1:neq)=yldot(1:neq)
-!          call cpu_time(TimeStart)
-!          call pandf (xc, yc, neq, time, yl, yldot)
-!          call cpu_time(TimeEnd)
-!          TimePandf=TimeEnd-TimeStart+TimePandf
+!    yldotcopy(1:neq+2)=0
+!    ylcopy(1:neq+1)=yl(1:neq+1)
+!
+!    if (OMPPandfivmin(1)==0) then
+!    LoadWeight(1:Nthreads)=1
+!    call OMPSplitIndex(1,neq,Nthreads,OMPPandfivmin,OMPPandfivmax,LoadWeight)
+!    endif
+!! Set xinc,yinc to zero
+!    OMPRhsEval=1
+!    !isjaccorall=0
+!    xlincbkp=xlinc
+!    xrincbkp=xrinc
+!    yincbkp=yinc
+!    xlinc=0
+!    xrinc=0
+!    yinc=0
+!    ylcopy(1+neq)=1
+!    !call convert
+!    !!$omp parallel do default(shared) firstprivate(yldotcopy) firstprivate(xc,yc,iv)
+!    loopthread:do ith=1,Nthreads
+!    loopiv: do iv=OMPPandfivmin(ith),OMPPandfivmax(ith)
+!        ! ... Set spatial-location indices for this dependent variable.
+!        xc = igyl(iv,1)
+!        yc = igyl(iv,2)
+!        call pandf (xc, yc, neq, 0, yl, yldotcopy)
+!
+!     enddo loopiv
+!     !!$omp critical
+!     yldot(OMPPandfivmin(ith):OMPPandfivmax(ith))=yldotcopy(OMPPandfivmin(ith):OMPPandfivmax(ith))
+!     !!$omp end critical
+!     enddo loopthread
+!     !!$omp end parallel do
+!
+!    xlinc=xlincbkp
+!    xrinc=xrincbkp
+!    yinc=yincbkp
+!    OMPRhsEval=0
+!    !isjaccorall=1
+!     !!call AddTimeDerivative(neq,yl,yldot)
+
+
+!end subroutine OMPPandfCalc
+!
+!!    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
+!!    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
+!!    integer,intent(in)::neq,xc,yc
+!!    real,intent(in)::yl(*)
+!!    real,intent(out)::yldot(*)
+!!    real,intent(in)::time
+!!    real::yldotcopy(1:neq)
+!!    real::TimeStart,TimeEnd
+!!    integer ::iv
+!!    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
+!!      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
+!!      call OMPPandfCalc(neq,yl,yldot)
+!!      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
+!!      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
+!!
+!!      if (OMPCheckParallelPandf.gt.0) then
+!!      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
+!!          yldotcopy(1:neq)=yldot(1:neq)
+!!          call cpu_time(TimeStart)
+!!          call pandf (xc, yc, neq, time, yl, yldot)
+!!          call cpu_time(TimeEnd)
+!!          TimePandf=TimeEnd-TimeStart+TimePandf
+!!            do iv=1,neq
+!!                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
+!!                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
+!!                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
+!!                    else
+!!                    write(*,*) '>>>>',iv,0
+!!                    endif
+!!                    !call xerrab('diff in rhsnk')
+!!                endif
+!!            enddo
+!!      endif
+!!end subroutine ParallelPandf
+!subroutine Compare(yldot,yldotsave,neq)
+!integer:: iv,neq
+!real yldot(neq+2),yldotsave(neq+2)
 !            do iv=1,neq
-!                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
-!                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
-!                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
+!                if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
+!                    if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
+!                    write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
+!                    call xerrab('stop')
 !                    else
 !                    write(*,*) '>>>>',iv,0
 !                    endif
 !                    !call xerrab('diff in rhsnk')
 !                endif
 !            enddo
-!      endif
-!end subroutine ParallelPandf
-subroutine Compare(yldot,yldotsave,neq)
-integer:: iv,neq
-real yldot(neq+2),yldotsave(neq+2)
-            do iv=1,neq
-                if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
-                    if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
-                    write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
-                    call xerrab('stop')
-                    else
-                    write(*,*) '>>>>',iv,0
-                    endif
-                    !call xerrab('diff in rhsnk')
-                endif
-            enddo
-end subroutine Compare
+!end subroutine Compare
 subroutine AddTimeDerivative(neq,yl,yldot)
 use Compla,only: zi
 use UEpar,only:isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy,ineudif,fdtnixy,&

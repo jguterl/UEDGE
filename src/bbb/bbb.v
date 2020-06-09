@@ -2714,6 +2714,14 @@ jaci(neqp1)	_integer	# Nonzero structure of Jacobian matrix jac.
 				# jaci(i+1) - jaci(i) = no. of nonzeros
 				# in row i of jac.
 jacj(nnzmx)	_integer	# Column indices of nonzero entries in jac.
+jaccopy(nnzmx)	_real		# Nonzero entries of the Jacobian matrix.
+				# This array, together with jacj and jaci,
+				# contain the Jacobian in compressed sparse
+				# row format.
+jacicopy(neqp1)	_integer	# Nonzero structure of Jacobian matrix jac.
+				# jaci(i+1) - jaci(i) = no. of nonzeros
+				# in row i of jac.
+jacjcopy(nnzmx)	_integer	# Column indices of nonzero entries in jac.
 isjacstnlon     integer    /0/  # Compute 9-pt stencil in ivl2gstnl - serial
 fixsfset        integer    /1/  # [0/1] Fix use of sf as worker array when calling jac_calc in sfsetnk. Use a new worker array instead.
 
