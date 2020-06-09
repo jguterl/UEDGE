@@ -61,7 +61,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     else
         call xerrab('Cannot call calc_jac_parallel OMP and MPI jac calc are not enabled')
     endif
-    ForceSerialCheck=1
+    ForceSerialCheck=0
     if (DebugJac.gt.0) then
     if (ForceSerialCheck.gt.0) then
     write(*,*) 'Force check of serial evaluation of jacobian'
