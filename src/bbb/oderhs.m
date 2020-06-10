@@ -598,6 +598,7 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       real tv,t0,t1,t2,a,ueb
       integer idum, idumaray(1)
       real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg
+      real qsh,csh,qfl
       integer impflag
 cnxg      data igs/1/
       Use(Output)
@@ -669,7 +670,7 @@ cnxg      data igs/1/
       Use(Npes_mpi)              # mype
       Use(RZ_grid_info)  		 # bpol
       Use(Interp)				 # ngs, tgs
-      use OMPPandf ,only:RhsEval,TimeConvert,TimingPandf,TimeBlock1
+      use OMPPandf ,only:RhsEval,TimeConvert0,TimeConvert1,TimingPandf,TimeBlock1
       use OMPPandf ,only:TimeBlock2,TimeBlock3,TimeBlock4,TimeBlock5
       use OMPPandf ,only:TimeBlock6,TimeBlock7,TimeBlock8,TimeBlock9
       use OMPPandf ,only:TimeBlock10,TimeBlock11,TimeBlock12,TimeBlock13
@@ -1006,8 +1007,10 @@ c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
         if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
+         if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert0=tock(t_start)+TimeConvert0
+         if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
          call convsr_aux (xc, yc)
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert=tock(t_start)+TimeConvert
+        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert1=tock(t_start)+TimeConvert1
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
       if (TimingPandf.gt.0.and.rhseval.gt.0) call tick(t_start)
@@ -5439,6 +5442,7 @@ c
       logical isxyfl
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
+      real qsh,csh,qfl
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -5925,6 +5929,7 @@ c
       integer iym1,iyp1,iyp2,ixm1b,ixp1b,ixp2b
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       logical isxyfl
+      real qsh,csh,qfl
       real(Size4) sec4, gettime
       real t,t0,t1,t2,a
       use omp_lib
@@ -5932,9 +5937,9 @@ c
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
       Use(Phyvar)   # pi,me,mp,ev,qe,rt8opi
-      Use(UEpar)    # methg,
-                    # qfl,csh,qsh,cs,
-                    # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+      Use(UEpar)    # methg,isupgon,iigsp,nlimgx,nlimgy,agdc,cflbg,fixresng
+                    # qfl,csh,qsh,cs
+                    #
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -5958,6 +5963,7 @@ c
       Use(MCN_sources)  # cfneut_sng, cfneutdiv_fng, ... mcfngx, mcfngy, ...
       Use(Interp)		# ngs, tgs
       use OMPPandf
+      use OmpCopybbb
 
       use Lsode,only:neq
       use OmpThreadCopybbb
@@ -5971,6 +5977,8 @@ c ------------------
       methgy = methg/10
 
 c      write(*,*) "neudifpg"
+      floxg(0:nx+1,0:ny+1) = 0
+      conxg(0:nx+1,0:ny+1) = 0
       do 895 igsp = 1, ngsp
 
 c *********************************************
@@ -5987,10 +5995,25 @@ c ..Timing;initialize
       OMPThreadedPandf=0
       endif
 
-c$OMP PARALLEL DO default(firstprivate) shared(ompyindex,ompxindex)
-c$omp& shared(angfx,sx,gx,gxf,fy0,fyp,fym,fypx,fymx,rrv,flalfgxya,dxnog)
-c$omp& num_threads(OMPPandf_Nthreads) copyin(tg,ng,vygtan,uu,nuix,pg,up,i1, i5,j8, j4)
-c$omp& if (OMPThreadedPandf.gt.0)
+         if (OMPThreadedPandf.gt.0) then
+            call OmpCopyPointertg
+            call OmpCopyPointerng
+            call OmpCopyPointervygtan
+            call OmpCopyPointeruu
+            call OmpCopyPointernuix
+            call OmpCopyPointerup
+            call OmpCopyPointerpg
+            call OmpCopyPointerfloxg
+            call OmpCopyPointerconxg
+          endif
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(firstprivate)
+c$omp& shared(OMPyindex,ny,ixp1,nx,temin,ev,igsp,mg)
+c$omp& shared(angfx,sx,gx,gxf,fy0,fyp,fym,fypx,fymx,rrv,flalfgxya,dxnog,lgmax,OMPThreadedPandf)
+c$omp& num_threads(OMPPandf_Nthreads)
+c$omp& firstprivate(iy1,iy2,ix2,ix4,ix6,t0,t1,vtn,vtnp,nu1,nu2,tgf,flalfgx_adj)
+c$omp& firstprivate(qsh,csh,qfl,qtgf,grdnv,nconv,qr)
+c$omp& copyin(i1, i5,j8, j4)
+ccc tg,ng,vygtan,uu,nuix,pg,up
       do  iy = j4, j8
         if (OMPThreadedPandf.gt.0) OMPyindex(iy)=omp_get_thread_num()
           do 887 ix = i1, i5
@@ -6113,10 +6136,20 @@ c ..Timing; initiate time for y-direction calc
       else
       OMPThreadedPandf=0
       endif
+      if (OMPThreadedPandf.gt.0) then
+            call OmpCopyPointerpgy1
+            call OmpCopyPointerpgy0
+            call OmpCopyPointernuix
+            call OmpCopyPointervy
+            call OmpCopyPointerngy1
+            call OmpCopyPointerngy0
+            call OmpCopyPointerfloyg
+            call OmpCopyPointerconyg
+          endif
 
 c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex)
 c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,dynog)
-c$omp& num_threads(OMPPandf_Nthreads) copyin(ngy0,ngy1,vy,nuix,pgy0,pgy1,j1,j5,i8, i4)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(j1,j5,i8, i4)
 c$omp& if (OMPThreadedPandf.gt.0)
       do 890 iy = j1, j5
       if (OMPThreadedPandf.gt.0) OMPyIndex(iy)=omp_get_thread_num()
@@ -6243,6 +6276,10 @@ c ..Timing
               else
               OMPThreadedPandf=0
         endif
+        if (OMPThreadedPandf.gt.0) then
+
+            call OmpCopyPointerfngxy
+          endif
 c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex,OMPThreadedPandf)
 c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
 c$omp& num_threads(OMPPandf_Nthreads) copyin(j1, j6,i6, i1)
@@ -6574,6 +6611,7 @@ c --------------------------------------------------------------------------
       logical isxyfl
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
+      real qsh,csh,qfl
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -6980,6 +7018,7 @@ c ..  the gas fluxes and then used to form fnix if isupgon(igsp)=1
       integer iy1, methgx, methgy, iy2, jx
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
+      real qsh,csh,qfl
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx
       Use(Share)    # nxpt,geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -7448,6 +7487,7 @@ c --------------------------------------------------------------------------
 
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t0,t1,t,a
+      real qsh,csh,qfl
 
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
@@ -8249,7 +8289,7 @@ ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
       TimingPandf=0
       TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
       call Compare(yldot,yldotsave,neq)
-
+      call Compare(yl,yl,neq)
       if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
       OMPParallelPandf=1
       endif

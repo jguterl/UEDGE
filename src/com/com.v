@@ -102,7 +102,8 @@ OMPpandfivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivma
 OMPpandfivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPPandfVerbose           integer /0/
 RhsEval integer /0/
-TimeConvert real /0/
+TimeConvert0 real /0/
+TimeConvert1 real /0/
 TimeBlock1 real /0/
 TimeBlock2 real /0/
 TimeBlock3 real /0/

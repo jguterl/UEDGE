@@ -112,9 +112,9 @@ ncrhs     integer
 istep     integer
 iter      integer
 dp1       real
-qfl       real
-csh       real
-qsh       real
+#qfl       real
+#csh       real
+#qsh       real
 mfl       real
 msh       real
 ro        real

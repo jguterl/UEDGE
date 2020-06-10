@@ -82,14 +82,14 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
        if (abs(jaccopy(i)-jac(i)).gt.1e-14) then
            write(*,*) ' ****** diff between jacs (must stop and check) :',i,jac(i),jaccopy(i),'|',ja(i),jacopy(i)
            do iv=1,neq
-            if (i>=ia(iv)) then
-            write(*,*) 'idx row parallel:',iv
+            if (i<ia(iv)) then
+            write(*,*) 'idx row parallel:',iv-1
             exit
             endif
            enddo
            do iv=1,neq
-            if (i>=iacopy(iv)) then
-            write(*,*) 'idx row serial:',iv
+            if (i<iacopy(iv)) then
+            write(*,*) 'idx row serial:',iv-1
             exit
             endif
            enddo
@@ -1508,8 +1508,6 @@ subroutine DebugHelper(FileName)
     call WriteArrayReal(conyi,size(conyi),iunit)
     write(iunit,*) "cs"
     write(iunit,*) cs
-    write(iunit,*) "csh"
-    write(iunit,*) csh
     write(iunit,*) "ctaue"
     write(iunit,*) ctaue
     write(iunit,*) "ctaui"
@@ -1912,12 +1910,8 @@ subroutine DebugHelper(FileName)
     call WriteArrayReal(pwrzec,size(pwrzec),iunit)
     write(iunit,*) "q2cd"
     call WriteArrayReal(q2cd,size(q2cd),iunit)
-    write(iunit,*) "qfl"
-    write(iunit,*) qfl
     write(iunit,*) "qipar"
     call WriteArrayReal(qipar,size(qipar),iunit)
-    write(iunit,*) "qsh"
-    write(iunit,*) qsh
     write(iunit,*) "resco"
     call WriteArrayReal(resco,size(resco),iunit)
     write(iunit,*) "resee"
@@ -2194,14 +2188,18 @@ end subroutine DebugHelper
 !!            enddo
 !!      endif
 !!end subroutine ParallelPandf
+
+
 subroutine Compare(yldot,yldotsave,neq)
 integer:: iv,neq
 real yldot(neq+2),yldotsave(neq+2)
             do iv=1,neq
                 if (abs(yldotsave(iv)-yldot(iv)).gt.1e-14) then
                     if (max(abs(yldot(iv)),abs(yldotsave(iv)))>0) then
+                    if (abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))>1e-14) then
                     write(*,*) '>>>>',iv,yldotsave(iv),yldot(iv),abs(yldotsave(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotsave(iv)))
                     call xerrab('stop')
+                    endif
                     else
                     write(*,*) '>>>>',iv,0
                     endif
@@ -2209,6 +2207,9 @@ real yldot(neq+2),yldotsave(neq+2)
                 endif
             enddo
 end subroutine Compare
+
+
+
 subroutine AddTimeDerivative(neq,yl,yldot)
 use Compla,only: zi
 use UEpar,only:isbcwdt,isnionxy,isuponxy,isteonxy,istionxy,isngonxy,isphionxy,ineudif,fdtnixy,&
@@ -2330,7 +2331,8 @@ end subroutine
 subroutine PrintTimingPandf()
     use OMPPandf
     write(*,*) '----- Timing Pandf in evalrhs mode----'
-    write(*,*)'TimeConvert', TimeConvert
+    write(*,*)'TimeConvert0', TimeConvert0
+    write(*,*)'TimeConvert1', TimeConvert1
 write(*,*)'TimeBlock1', TimeBlock1
 write(*,*)'TimeBlock2' ,TimeBlock2
 write(*,*)'TimeBlock3', TimeBlock3
