@@ -6385,7 +6385,7 @@ c ..Timing
 
 c...  Fix the total fluxes; note the loop indices same as fd2tra
 c...  Flux-limit the total poloidal flux here
-        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux.gt.0) then
+        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux2.gt.0) then
               OMPThreadedPandf=1
               OMPyindex(:)=-1
               OMPxindex(:)=-1
@@ -6425,7 +6425,7 @@ c$OMP end parallel do
             call OmpThreadCopyfngx
 c ...   adjust y-fluxes to prevent pumpout
 
-        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux.gt.0) then
+        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux2.gt.0) then
               OMPThreadedPandf=1
               OMPyindex(:)=-1
               OMPxindex(:)=-1
@@ -8327,14 +8327,12 @@ ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
 
       if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
       OMPParallelPandf=0
-
       walltime=omp_get_wtime()
       TimingPandf=1
       call pandf1 (-1, -1, 0, neq, tloc, yl, yldotsave)
       TimingPandf=0
       TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
       call Compare(yldot,yldotsave,neq)
-      call Compare(yl,yl,neq)
       if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
       OMPParallelPandf=1
       endif
