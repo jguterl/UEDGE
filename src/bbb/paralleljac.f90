@@ -93,6 +93,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
             exit
             endif
            enddo
+           call xerrab('Parallel evaluation of Jacobian differs from serial evaluation... ')
            exit
        endif
       enddo

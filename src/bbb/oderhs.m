@@ -8377,10 +8377,10 @@ c ... Reset range if this is a potential perturbation with isnewpot=1
 ccc         if (isphion*isnewpot.eq.1 .and. mod(iv,numvar).eq.0) then
 cc  Comment out;storage for Jac inconsistent if mu & ml above not used
 cc  Reported by R. Smirnov Feb. 2020
-cc         if (isphion*isnewpot.eq.1 .and. mfnkso < 4) then
-cc            ii1 = max(iv-4*numvar*nx, 1)      # 3*nx may be excessive
-cc            ii2 = min(iv+4*numvar*nx, neq)    # 3*nx may be excessive
-cc         endif
+*         if (isphion*isnewpot.eq.1) then
+*            ii1 = max(iv-4*numvar*nx, 1)      # 3*nx may be excessive
+*            ii2 = min(iv+4*numvar*nx, neq)    # 3*nx may be excessive
+*         endif
 c ... Reset range if extrapolation boundary conditions are used
 cc  This reset of ii1,2 may also cause storage prob.; see just above
          if (isextrnpf+isextrtpf+isextrngc+isextrnw+isextrtw.gt.0) then
@@ -9594,7 +9594,7 @@ c ... Calculate right-hand sides at unperturbed values of variables.
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-cJG possible recursive compilation issue with sf
+cJG possible recursive issue with sf (compiler dependant result)
       if(fixsfset.gt.0) then
       if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, tp, yl, yldot0, lbw, ubw, wk,
@@ -9602,13 +9602,6 @@ cJG possible recursive compilation issue with sf
       else
       call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
-      endif
-      if (DebugJac.gt.0) then
-      write(*,*) 'Writing jacobian into serialjac.dat and paralleljac.dat'
-      call jac_write('paralleljac.dat',neq, jac, jacj, jaci)
-      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, wk,
-     .               nnzmx, jac, jacj, jaci)
-      call jac_write('serialjac.dat',neq, jac, jacj, jaci)
       endif
       else
       if (ParallelJac.eq.1) then
