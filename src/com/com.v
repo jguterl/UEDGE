@@ -91,9 +91,9 @@ OMPPandfNthreads integer /64/ # Nthreads for threaded pandf.
 OMPParallelPandf integer /0/
 OMPThreadedPandfngxflux integer /1/
 OMPThreadedPandfngyflux integer /1/
-OMPThreadedPandfngxflux integer /0/
+OMPThreadedPandfngxflux2 integer /0/
 OMPThreadedPandfngyflux2 integer /0/
-OMPThreadedPandfngxyflux2 integer /1/
+OMPThreadedPandfngxyflux integer /1/
 OMPCheckThreadedPandf integer /1/
 TimePandf real /0.0/
 TimeSerialPandf real /0.0/
