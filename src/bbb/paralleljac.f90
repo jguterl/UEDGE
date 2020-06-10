@@ -2334,6 +2334,9 @@ end subroutine
 subroutine PrintTimingPandf()
     use OMPPandf
     write(*,*) '----- Timing Pandf in evalrhs mode----'
+    write(*,*) 'TimeParallelPandf',TimeParallelPandf
+    write(*,*) 'TimeserialPandf',TimeSerialPandf
+    write(*,*) '-----------------------------------'
     write(*,*)'TimeConvert0', TimeConvert0
     write(*,*)'TimeConvert1', TimeConvert1
 write(*,*)'TimeBlock1', TimeBlock1

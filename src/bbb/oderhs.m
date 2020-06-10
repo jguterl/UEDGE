@@ -8318,11 +8318,13 @@ ccc 10   call convsr_vo (-1,-1, yl)  # test new convsr placement
 ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
 
  10   continue
-      walltime=omp_get_wtime()
+
       call omp_set_num_threads(OMPPandf_Nthreads)
+      walltime=omp_get_wtime()
       call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
-      call omp_set_num_threads(Nthreads)
       TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
+      call omp_set_num_threads(Nthreads)
+
       if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
       OMPParallelPandf=0
 
