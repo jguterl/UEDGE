@@ -98,9 +98,7 @@ TimeSerialPandf real /0.0/
 TimeParallelPandf real /0.0/
 TimingPandf integer /0/
 OMPTimePandf real /0.0/
-OMPpandfivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-OMPpandfivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-OMPPandfVerbose           integer /0/
+OMPPandfVerbose integer /0/
 RhsEval integer /0/
 TimeConvert0 real /0/
 TimeConvert1 real /0/

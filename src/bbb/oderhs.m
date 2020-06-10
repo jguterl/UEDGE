@@ -6381,9 +6381,29 @@ c ..Timing
         call OmpThreadCopyfngxy
 
 
+
+
 c...  Fix the total fluxes; note the loop indices same as fd2tra
 c...  Flux-limit the total poloidal flux here
+        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux.gt.0) then
+              OMPThreadedPandf=1
+              OMPyindex(:)=-1
+              OMPxindex(:)=-1
+              else
+              OMPThreadedPandf=0
+        endif
+        if (OMPThreadedPandf.gt.0) then
+
+            call OmpCopyPointerfngx
+            call OmpCopyPointerfngxy
+          endif
+
+c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex,OMPThreadedPandf)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(j4,j8,i1,i5)
+c$omp& if (OMPThreadedPandf.gt.0)
             do iy = j4, j8
+            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i1, i5
                   ix2 = ixp1(ix,iy)
                   fngx(ix,iy,igsp) = fngx(ix,iy,igsp)-fngxy(ix,iy,igsp)
@@ -6401,8 +6421,26 @@ c ...          adjust fluxes to prevent pumpout
      .                                  ng(ix,iy,igsp)/ng(ix2,iy,igsp)) )
                enddo
             enddo
+c$OMP end parallel do
+            call OmpThreadCopyfngx
 c ...   adjust y-fluxes to prevent pumpout
+
+        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux.gt.0) then
+              OMPThreadedPandf=1
+              OMPyindex(:)=-1
+              OMPxindex(:)=-1
+              else
+              OMPThreadedPandf=0
+        endif
+        if (OMPThreadedPandf.gt.0) then
+            call OmpCopyPointerfngy
+          endif
+c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex)
+c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
+c$omp& num_threads(OMPPandf_Nthreads) copyin(j1,j5,i4,i8)
+c$omp& if (OMPThreadedPandf.gt.0)
             do iy = j1, j5    # same loop ranges as for fngy in fd2tra
+            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i4, i8
                      fngy(ix,iy,igsp) = fngy(ix,iy,igsp)/( 1-2*nlimgy +
      .                         nlimgy*(ng(ix,iy+1,igsp)/ng(ix,iy,igsp)+
@@ -6417,6 +6455,8 @@ c ...   adjust y-fluxes to prevent pumpout
      .                            sqrt(1 + (fngy(ix,iy,igsp)/qfl)**2)
                enddo
             enddo
+c$OMP end parallel do
+            call OmpThreadCopyfngy
 
       endif
 c...  Finished with nonorthogonal mesh part
@@ -8194,6 +8234,7 @@ c ... Calculate the right-hand sides of the UEDGE rate equations.
       implicit none
       use omp_lib
       Use(OMPPandf)
+      Use(OMPOptions)
       Use(Math_problem_size)   # neqmx
       Use(Constraints)         # icflag,rlx,icnstr,ylprevc,ylchng
 
@@ -8278,7 +8319,9 @@ ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
 
  10   continue
       walltime=omp_get_wtime()
+      call omp_set_num_threads(OMPPandf_Nthreads)
       call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
+      call omp_set_num_threads(Nthreads)
       TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
       if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
       OMPParallelPandf=0
