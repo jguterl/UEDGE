@@ -6398,10 +6398,10 @@ c...  Flux-limit the total poloidal flux here
             call OmpCopyPointerfngxy
           endif
 
-c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex,OMPThreadedPandf)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(firstprivate)
 c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
-c$omp& num_threads(OMPPandf_Nthreads) copyin(j4,j8,i1,i5)
-c$omp& if (OMPThreadedPandf.gt.0)
+c$omp& copyin(j4,j8,i1,i5)
+c$omp& shared(OMPyindex,OMPxindex)
             do iy = j4, j8
             if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i1, i5
@@ -6414,7 +6414,7 @@ c$omp& if (OMPThreadedPandf.gt.0)
                   qfl = flalfgnx * sx(ix,iy)*(vtn + vtnp)*rt8opi*
      .                             (ng(ix,iy,igsp)+ng(ix2,iy,igsp))/16
                   fngx(ix,iy,igsp) = fngx(ix,iy,igsp)/
-     .                              sqrt(1 + (fngx(ix,iy,igsp)/qfl)**2)
+     .                              sqrt(1 + (fngx(ix,iy,igsp)/qfl)*(fngx(ix,iy,igsp)/qfl))
 c ...          adjust fluxes to prevent pumpout
                     fngx(ix,iy,igsp) = fngx(ix,iy,igsp)/( 1 - 2*nlimgx +
      .                          nlimgx*(ng(ix2,iy,igsp)/ng(ix,iy,igsp) +
@@ -6452,7 +6452,7 @@ c$omp& if (OMPThreadedPandf.gt.0)
                     qfl = flalfgny*sy(ix,iy)*(vtn+vtnp)*rt8opi*
      .                        (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp))/16
                     fngy(ix,iy,igsp) = fngy(ix,iy,igsp)/
-     .                            sqrt(1 + (fngy(ix,iy,igsp)/qfl)**2)
+     .                            sqrt(1 + (fngy(ix,iy,igsp)/qfl)*(fngy(ix,iy,igsp)/qfl))
                enddo
             enddo
 c$OMP end parallel do

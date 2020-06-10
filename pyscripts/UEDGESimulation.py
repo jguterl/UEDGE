@@ -784,7 +784,7 @@ Todo:
         """
         
         Sim.ReadInput(FileName,Folder=Folder,Initialize=True)
-        Sim.Load('last.npy',CaseName=Sim.CaseName,LoadPackage='all')
+        Sim.Load('last.npy',CaseName=Sim.CaseName,LoadPackage='plasma')
         
         
     def RunRamp(self,Data:dict,Istart:int=0,dtreal_start:float=1e-8,tstop:float=10):
