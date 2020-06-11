@@ -171,12 +171,12 @@ nym     integer /4/     # total number of cells in y direc.; nym = ny+nyomitmx
 nxpt	integer /1/	# number of x-points in (R,Z) simulation domain
 nhsp	integer	/1/	# number of hydrogenic species
 nzsp(1:ngspmx-1) integer /(ngspmx-1)*0/ # number of impurity species per gas species
-nzspt   integer /1/        # total number of impurity species
+nzspt   integer /0/        # total number of impurity species
 nzspmx  integer	   /10/	# maximum of nzsp(igsp) used for storage allocation
 nisp	integer	/1/	# number of ion species
 nusp	integer /1/		# number of parallel momentum equations
 nfsp	integer	 /1/	# number of cont. eqns or flux species (calc internal)
-ngsp	integer	/1/ +restart +regrid	# number of gas species
+ngsp	integer	/1/ 	# number of gas species
 nhgsp   integer /1/     # number of hydrogen gas species (prepare for tritium)
 imx     integer /50/    # size in x of Zagorski arrays
 imy     integer /40/    # size in y of Zagorski arrays
