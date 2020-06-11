@@ -6071,7 +6071,6 @@ ccc tg,ng,vygtan,uu,nuix,pg,up
       do  iy = j4, j8
         if (OMPThreadedPandf.gt.0) then
         OMPyindex(iy)=omp_get_thread_num()
-        if (omp_get_thread_num()==1) write(*,*)'multithreaded'
         endif
           do 887 ix = i1, i5
             iy1 = max(0,iy-1)
