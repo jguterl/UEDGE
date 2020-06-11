@@ -94,11 +94,14 @@ OMPThreadedPandfngyflux integer /1/
 OMPThreadedPandfngxflux2 integer /0/
 OMPThreadedPandfngyflux2 integer /0/
 OMPThreadedPandfngxyflux integer /1/
+OMPThreadedPandvisxflux integer /1/
 OMPCheckThreadedPandf integer /1/
 TimePandf real /0.0/
 TimeSerialPandf real /0.0/
 TimeParallelPandf real /0.0/
 TimingPandf integer /0/
+TimingParaPandf integer /0/
+TimingConvert integer /0/
 OMPTimePandf real /0.0/
 OMPPandfVerbose integer /0/
 RhsEval integer /0/
@@ -120,6 +123,32 @@ TimeBlock13 real /0/
 TimeBlock14 real /0/
 TimeBlock15 real /0/
 TimeBlock16 real /0/
+TimeConv0 real /0/
+TimeConv1 real /0/
+TimeConv2 real /0/
+TimeConv3 real /0/
+TimeConv4 real /0/
+TimeConv5 real /0/
+TimeConv6 real /0/
+TimeParaBlock1 real /0/
+TimeParaBlock2 real /0/
+TimeParaBlock3 real /0/
+TimeParaBlock4 real /0/
+TimeParaBlock5 real /0/
+TimeParaBlock6 real /0/
+TimeParaBlock7 real /0/
+TimeParaBlock8 real /0/
+TimeParaBlock9 real /0/
+TimeParaBlock10 real /0/
+TimeParaBlock11 real /0/
+TimeParaBlock12 real /0/
+TimeParaBlock13 real /0/
+TimeParalock14 real /0/
+TimeParaBlock15 real /0/
+TimeParaBlock16 real /0/
+TimeCopy0 real /0/
+TimeCopy1 real /0/
+TimeCopy2 real /0/
 OMPRhseval integer /0/
 OMPyindex(0:ny+1) _integer
 OMPxindex(0:nx+1) _integer

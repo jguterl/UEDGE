@@ -402,6 +402,9 @@ cJG     loop indexes were shared through a module. Very very bad....
       Use(Interp)      # nis,tis,phis,nxold,nyold
       Use(Share)       # nysol,nyomitmx
       Use(RZ_grid_info)   # rm,zm
+      use OMPPandf
+      integer t_start
+      real, external::tock
 
 
 *  -- procedures --
@@ -469,6 +472,9 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                  fxp (ix,iy,k)*log(pg(ixp1(ix,iy+k)  ,iy+k  ,l)) +
      .                  fxmy(ix,iy,k)*log(pg(ixm1(ix,iy+1-k),iy+1-k,l)) +
      .                  fxpy(ix,iy,k)*log(pg(ixp1(ix,iy+1-k),iy+1-k,l)) )
+
+      if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
+
 
       id = 1
       if(ixl .lt. 0 .or. yinc .ge. 6) then
@@ -603,7 +609,8 @@ cc      gpix(0,ny+1,ifld) = gpix(1,ny+1,ifld)
 cc      gpix(nx+1,0,ifld) = gpix(nx,0,ifld)
 cc      gpix(nx+1,ny+1,ifld) = gpix(nx,ny+1,ifld)
    23 continue
-
+       if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv0=tock(t_start)+TimeConv0
+       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 25 and 24
       do 26 ifld = 1, nisp
          do 25 iy = max(js-1,0), min(je,ny)
@@ -697,7 +704,8 @@ c Tom:  add comments here to explain the indices used on do 266 and 265
             tgy1(ix,iy,igsp) = interptg(ix,iy,1,igsp)
   266    continue
   267 continue
-
+         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
+       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 C ... Calculate pgy0,1 only if ineudif=2, i.e. grad_pg option
       if (ineudif == 2) then
         do igsp = 1, ngsp
@@ -762,7 +770,8 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
  30   continue
 
 c.... Define vertex values using linear interpolation
-
+      if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv2=tock(t_start)+TimeConv2
+       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c,,,  Note that here we used ixm1(ix,iy) and not ixm1(ix,js) as above
 c...  when the iy-loop starts at js-1; seems to work, but should check
 
@@ -800,7 +809,8 @@ c...  add electron contribution to prtv; ion contribution added below
  38         continue
  39      continue
  40   continue
-
+       if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv3=tock(t_start)+TimeConv3
+       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c.... reset the x-point value(s) all the time as it is easier and perhaps
 c.... cheaper than checking
 
@@ -841,12 +851,15 @@ c ... Last test (ie.gt.nx) to fix parallel version with mpi - check
      .                        + pri(ie,js+1,ifld) + pri(ie+1,js+1,ifld) )
       priv(ie,js,ifld) = priv(is,js,ifld)
       if (zi(ifld).ne.0.) prtv(is,js) = prtv(is,js) + priv(is,js,ifld)
+
+
+
  43   continue
       prtv(ie,js) = prtv(is,js)
       enddo  # end do-loop over nxpt mesh regions
 
       endif  # test on nyomit at top of do loop just above
-
+      if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv4=tock(t_start)+TimeConv4
  45   continue
 
       return

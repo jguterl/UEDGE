@@ -2157,40 +2157,42 @@ end subroutine DebugHelper
 
 !end subroutine OMPPandfCalc
 !
-!!    subroutine ParallelPandf(xc,yc,neq,time,yl,yldot)
-!!    use OMPPandf, only: OMPCheckParallelPandf,TimePandf,OMPTimePandf,OMPPandfVerbose
-!!    integer,intent(in)::neq,xc,yc
-!!    real,intent(in)::yl(*)
-!!    real,intent(out)::yldot(*)
-!!    real,intent(in)::time
-!!    real::yldotcopy(1:neq)
-!!    real::TimeStart,TimeEnd
-!!    integer ::iv
-!!    if (OMPPandfVerbose.gt.0) write(*,*) 'ParallelPandf...'
-!!      call cpu_time(TimeStart)!call omp_get_wtime(TimeStart)
-!!      call OMPPandfCalc(neq,yl,yldot)
-!!      call cpu_time(TimeEnd)!call omp_get_wtime(TimeEnd)
-!!      OMPTimePandf=TimeEnd-TimeStart+OMPTimePandf
-!!
-!!      if (OMPCheckParallelPandf.gt.0) then
-!!      if (OMPPandfVerbose.gt.0) write(*,*) 'Checking OMPPandf...'
-!!          yldotcopy(1:neq)=yldot(1:neq)
-!!          call cpu_time(TimeStart)
-!!          call pandf (xc, yc, neq, time, yl, yldot)
-!!          call cpu_time(TimeEnd)
-!!          TimePandf=TimeEnd-TimeStart+TimePandf
-!!            do iv=1,neq
-!!                if (abs(yldotcopy(iv)-yldot(iv)).gt.1e-14) then
-!!                    if (max(abs(yldot(iv)),abs(yldotcopy(iv)))>0) then
-!!                    write(*,*) '>>>>',iv,abs(yldotcopy(iv)-yldot(iv))/max(abs(yldot(iv)),abs(yldotcopy(iv)))
-!!                    else
-!!                    write(*,*) '>>>>',iv,0
-!!                    endif
-!!                    !call xerrab('diff in rhsnk')
-!!                endif
-!!            enddo
-!!      endif
-!!end subroutine ParallelPandf
+    subroutine ParallelPandf1(neq,time,yl,yldot)
+    use omp_lib
+    use OMPPandf
+    use Ompoptions
+    integer,intent(in)::neq
+    real,intent(in)::yl(*)
+    real,intent(out)::yldot(*)
+    real,intent(in)::time
+    real::yldotcopy(1:neq)
+    real::TimeStart,TimeEnd
+    real::walltime
+    real yldotsave(neq)
+    call omp_set_num_threads(OMPPandf_Nthreads)
+      walltime=omp_get_wtime()
+      TimingPandf=0
+      TimingParaPandf=1
+      call pandf1 (-1, -1, 0, neq, time, yl, yldot)
+
+      TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
+      call omp_set_num_threads(Nthreads)
+
+      if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
+      OMPParallelPandf=0
+      walltime=omp_get_wtime()
+      TimingPandf=1
+      TimingParaPandf=0
+      call pandf1 (-1, -1, 0, neq, time, yl, yldotsave)
+      TimingPandf=0
+      TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
+      call Compare(yldot,yldotsave,neq)
+      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
+      OMPParallelPandf=1
+      endif
+
+
+end subroutine ParallelPandf1
 
 
 subroutine Compare(yldot,yldotsave,neq)
@@ -2336,9 +2338,14 @@ subroutine PrintTimingPandf()
     write(*,*) '----- Timing Pandf in evalrhs mode----'
     write(*,*) 'TimeParallelPandf',TimeParallelPandf
     write(*,*) 'TimeserialPandf',TimeSerialPandf
-    write(*,*) '-----------------------------------'
+    write(*,*) '--------------------------------------'
     write(*,*)'TimeConvert0', TimeConvert0
     write(*,*)'TimeConvert1', TimeConvert1
+    write(*,*) '--------------------------------------'
+    write(*,*)'TimeCopy0', TimeCopy0
+    write(*,*)'TimeCopy1', TimeCopy1
+    write(*,*)'TimeCopy2', TimeCopy2
+    write(*,*) '--------------------------------------'
 write(*,*)'TimeBlock1', TimeBlock1
 write(*,*)'TimeBlock2' ,TimeBlock2
 write(*,*)'TimeBlock3', TimeBlock3
@@ -2355,6 +2362,16 @@ write(*,*)'TimeBlock13' ,TimeBlock13
 write(*,*)'TimeBlock14', TimeBlock14
 write(*,*)'TimeBlock15', TimeBlock15
 write(*,*)'TimeBlock16', TimeBlock16
+write(*,*) '--------------------------------------'
+write(*,*)'TimeParaBlock5', TimeParaBlock5
+write(*,*)'TimeParaBlock8', TimeParaBlock8
+write(*,*) '--------------------------------------'
+write(*,*)'TimeConv0', TimeConv0
+write(*,*)'TimeConv1', TimeConv1
+write(*,*)'TimeConv2' ,TimeConv2
+write(*,*)'TimeConv3', TimeConv3
+write(*,*)'TimeConv4', TimeConv4
+write(*,*)'TimeConv5', TimeConv5
 end subroutine PrintTimingPandf
 
 
