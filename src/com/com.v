@@ -95,6 +95,7 @@ OMPThreadedPandfngxflux2 integer /0/
 OMPThreadedPandfngyflux2 integer /0/
 OMPThreadedPandfngxyflux integer /1/
 OMPThreadedPandvisxflux integer /1/
+OMPThreadedPandvisxflux2 integer /1/
 OMPCheckThreadedPandf integer /1/
 TimePandf real /0.0/
 TimeSerialPandf real /0.0/

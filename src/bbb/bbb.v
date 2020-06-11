@@ -115,8 +115,8 @@ dp1       real
 #qfl       real
 #csh       real
 #qsh       real
-mfl       real
-msh       real
+#mfl       real
+#msh       real
 ro        real
 cs        real
 ctaue(0:nx+1,0:ny+1,nisp)  _real  #calc factor for elec Coulomb coll

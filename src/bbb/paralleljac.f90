@@ -1745,10 +1745,6 @@ subroutine DebugHelper(FileName)
     call WriteArrayReal(kyi_use,size(kyi_use),iunit)
     write(iunit,*) "lng"
     call WriteArrayReal(lng,size(lng),iunit)
-    write(iunit,*) "mfl"
-    write(iunit,*) mfl
-    write(iunit,*) "msh"
-    write(iunit,*) msh
     write(iunit,*) "msor"
     call WriteArrayReal(msor,size(msor),iunit)
     write(iunit,*) "msorold"

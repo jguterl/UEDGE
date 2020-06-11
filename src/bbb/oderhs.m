@@ -598,7 +598,7 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       real tv,t0,t1,t2,a,ueb
       integer idum, idumaray(1)
       real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg
-      real qsh,csh,qfl
+      real qsh,csh,qfl,msh,mfl
       integer impflag
 cnxg      data igs/1/
       Use(Output)
@@ -2574,9 +2574,14 @@ c... REMEMBER TO ADD CONTRIBUTION TO SEEC FROM V2 1/26/95
             call OmpCopyPointernm
             call OmpCopyPointeruu
             call OmpCopyPointerup
+            call OmpCopyPointerupi
             call OmpCopyPointervisx
             call OmpCopyPointervisy
             call OmpCopyPointertravis
+            call OmpCopyPointertrax_use
+            call OmpCopyPointertray_use
+            call OmpCopyPointereta1
+            call OmpCopyPointerloglambda
              if (TimingParaPandf.gt.0) TimeCopy0=tock(t_start)+TimeCopy0
           endif
 
@@ -2653,8 +2658,8 @@ c
  937           continue
  936        continue
 c$omp end parallel do
-        call OmpThreadCopyvisx
-        call OmpThreadCopyvisy
+c        call OmpThreadCopyvisx
+c        call OmpThreadCopyvisy
 
          endif
 c
@@ -2675,7 +2680,23 @@ c
    41       continue
    42    continue
 
+
+             if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandvisxflux2.gt.0) then
+          OMPThreadedPandf=1
+          OMPyindex(:)=-1
+          OMPxindex(:)=-1
+c            call OmpCopyPointervisx
+c            call OmpCopyPointervisy
+            call OmpCopyPointerw
+          else
+          OMPThreadedPandf=0
+          endif
+
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
+c$omp& firstprivate(iyp1,ix,ix1,t0,vtn,mfl,msh,csh,visxtmp,epstmp,a,tv2)
+c$omp& copyin(i1, i6,j1, j6)
          do 44 iy = j1, j6
+         if (OMPThreadedPandf.gt.0) OMPyindex(iy)=omp_get_thread_num()
             do 43 ix = i1, i6
 	       ctaui(ix,iy,ifld) = 2.1e13/(loglambda(ix,iy)*zi(ifld)*zi(ifld)) # mass fac?
                tv2 = ctaui(ix,iy,ifld)/(ev*sqrt(ev))
@@ -2729,10 +2750,26 @@ ccc
      .                              nm(ix,iy,ifld) +  4*eta1(ix,iy)
    43       continue
    44    continue
-
+c$omp end parallel do
+        call OmpThreadCopyvisx
+        call OmpThreadCopyvisy
+        call OmpThreadCopynuiistar
+        call OmpThreadCopyktneo
+        call OmpThreadCopyalfneo
+        call OmpThreadCopyk2neo
+        call OmpThreadCopynuii
+        call OmpThreadCopyvisxneo
+        call OmpThreadCopyctaui
 
        endif      # test if zi(ifld) > 1.e-20
+
+
+
+
   102 continue    # large loop for ifld = 1, nfsp
+
+
+
             if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
             if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaBlock8=tock(t_start)+TimeParaBlock8
               if ((TimingParaPandf.gt.0.or.TimingPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
@@ -6194,8 +6231,9 @@ c ..Timing; initiate time for y-direction calc
       OMPThreadedPandf=0
       endif
 
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(firstprivate) shared(OMPyindex,OMPxindex)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,dynog)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
+c$omp& firstprivate(ix,jx,ifld,t0,t1,tgf,vtn,vtnp,nu1,nu2,flalfgy_adj)
+c$omp& firstprivate(qsh,csh,qfl,qtgf,grdnv,nconv,qr,ty0,ty1)
 c$omp& copyin(j1,j5,i8, i4)
       do 890 iy = j1, j5
       if (OMPThreadedPandf.gt.0) OMPyIndex(iy)=omp_get_thread_num()
@@ -6322,10 +6360,10 @@ c ..Timing
               else
               OMPThreadedPandf=0
         endif
-c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex,OMPThreadedPandf)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
-c$omp& num_threads(OMPPandf_Nthreads) copyin(j1, j6,i6, i1)
-c$omp& if (OMPThreadedPandf.gt.0)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
+c$omp& firstprivate(iy1,ix,ix1,ix2,ix3,ix4,ix5,ix6,t0,t1,vtn,vtnp,nu1,nu2)
+c$omp& firstprivate(isxyfl,jx,grdnv,difgx2,flalfgxy_adj,qfl)
+c$omp& copyin(j1, j6,i6, i1)
          do 8905 iy = j1, min(j6, ny)
             if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
             iy1 = max(iy-1,0)
@@ -6413,7 +6451,7 @@ c...  Now flux limit with flalfgxy
 ccc   MER NOTE:  no xy flux limit for ix=0 or ix=nx in original code
                if (isxyfl) then
                   fngxy(ix,iy,igsp) = fngxy(ix,iy,igsp) /
-     .                           sqrt( 1 + (fngxy(ix,iy,igsp)/qfl)**2 )
+     .                           sqrt( 1 + (fngxy(ix,iy,igsp)/qfl)*(fngxy(ix,iy,igsp)/qfl) )
                endif
  8904       continue
  8905    continue
@@ -6440,10 +6478,10 @@ c...  Flux-limit the total poloidal flux here
             call OmpCopyPointerfngxy
           endif
 
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(firstprivate)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
+c$omp& firstprivate(ix,ix2,t0,t1,vtn,vtnp,nu1,nu2)
+c$omp& firstprivate(isxyfl,jx,grdnv,difgx2,flalfgxy_adj,qfl)
 c$omp& copyin(j4,j8,i1,i5)
-c$omp& shared(OMPyindex,OMPxindex)
             do iy = j4, j8
             if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i1, i5
@@ -6477,10 +6515,9 @@ c ...   adjust y-fluxes to prevent pumpout
         if (OMPThreadedPandf.gt.0) then
             call OmpCopyPointerfngy
           endif
-c$OMP PARALLEL DO default(firstprivate) shared(OMPyindex,OMPxindex)
-c$omp& shared(angfx,sy,gy,gyf,fy0,fyp,fym,fypx,fymx,flalfgxya,gxf,sx,dxnog)
-c$omp& num_threads(OMPPandf_Nthreads) copyin(j1,j5,i4,i8)
-c$omp& if (OMPThreadedPandf.gt.0)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared) shared(OMPyindex,OMPxindex)
+c$omp& firstprivate(ix,t0,t1,vtn,vtnp,qfl)
+c$omp& copyin(j1,j5,i4,i8)
             do iy = j1, j5    # same loop ranges as for fngy in fd2tra
             if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i4, i8

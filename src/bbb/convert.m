@@ -609,8 +609,11 @@ cc      gpix(0,ny+1,ifld) = gpix(1,ny+1,ifld)
 cc      gpix(nx+1,0,ifld) = gpix(nx,0,ifld)
 cc      gpix(nx+1,ny+1,ifld) = gpix(nx,ny+1,ifld)
    23 continue
-       if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv0=tock(t_start)+TimeConv0
-       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
+         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv0=tock(t_start)+TimeConv0
+         if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
+
+
+
 c Tom:  add comments here to explain the indices used on do 25 and 24
       do 26 ifld = 1, nisp
          do 25 iy = max(js-1,0), min(je,ny)
@@ -654,7 +657,8 @@ c Tom:  add comments here to explain the indices used on do 25 and 24
      .            gpiy(ix,iy,ifld)
    25    continue
    26 continue
-
+        if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
+        if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 264 and 263
       do 264 iy = max(0,js-1), min(je,ny)
          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
@@ -686,7 +690,8 @@ c Tom:  add comments here to explain the indices used on do 264 and 263
            phiy1s(ix,iy) =interpphis(ix,iy,1)
          endif
   264 continue
-
+        if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv2=tock(t_start)+TimeConv2
+        if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 266 and 265
       do 267 igsp = 1, ngsp
          do 266 iy = max(js-1,0), min(je,ny)
@@ -704,7 +709,9 @@ c Tom:  add comments here to explain the indices used on do 266 and 265
             tgy1(ix,iy,igsp) = interptg(ix,iy,1,igsp)
   266    continue
   267 continue
-         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
+
+
+         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv3=tock(t_start)+TimeConv3
        if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 C ... Calculate pgy0,1 only if ineudif=2, i.e. grad_pg option
       if (ineudif == 2) then
@@ -770,8 +777,6 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
  30   continue
 
 c.... Define vertex values using linear interpolation
-      if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv2=tock(t_start)+TimeConv2
-       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c,,,  Note that here we used ixm1(ix,iy) and not ixm1(ix,js) as above
 c...  when the iy-loop starts at js-1; seems to work, but should check
 
@@ -809,8 +814,6 @@ c...  add electron contribution to prtv; ion contribution added below
  38         continue
  39      continue
  40   continue
-       if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv3=tock(t_start)+TimeConv3
-       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c.... reset the x-point value(s) all the time as it is easier and perhaps
 c.... cheaper than checking
 
