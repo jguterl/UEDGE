@@ -841,7 +841,7 @@ c            write(iout,*) parvis
 ************************************************************************
 *   This section is to use in the calculation of the jacobian locally.
 ************************************************************************
-
+      pwrebkg(0:nx+1,0:ny+1)=pwrbkg_c
 c ... Get initial value of system cpu timer.
       if(xc .lt. 0) then
          tsfe = gettime(sec4)
