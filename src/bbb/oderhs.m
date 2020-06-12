@@ -4949,12 +4949,14 @@ c  the perturbed variables are reset below to get Jacobian correct
 c...  Finally, reset some source terms if this is a Jacobian evaluation
          if (xc .ge. 0 .and. yc .ge. 0) then
             ix1 = ixm1(xc,yc)
-            if(isimpon.gt.0) pwrzec(xc,yc) = pradold
+
 
             if (fixpwrebkg.gt.0) then
+            if(isimpon.gt.0) pwrzec(xc,yc) = pwrbkg_c
             pwrebkg(xc,yc)=pwrbkg_c
             else
             pwrebkg(xc,yc) = pwrebkgold
+            if(isimpon.gt.0) pwrzec(xc,yc) = pradold
             endif
 
             pwribkg(xc,yc) = pwribkgold
