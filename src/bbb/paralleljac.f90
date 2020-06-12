@@ -48,7 +48,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     real   :: jaccopy(nnzmx)     ! nonzero Jacobian elements
     integer:: jacopy(nnzmx)   ! col indices of nonzero Jacobian elements
     integer:: iacopy(neq+1)   ! pointers to beginning of each row in jac,ja
-    integer i,iv,ForceSerialCheck
+    integer i,iv,ForceSerialCheck,t_start
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
     if (exmain_aborted) call xerrab('exmain aborted...')
@@ -72,7 +72,9 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     else
       write(*,*) '--- Checking if parallel and serial evaluations of jacobian are the same...'
        write(*,*) '----- Performing serial Evaluation of jacobian...'
+       call tick(t_start)
       call jac_calc (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jaccopy, jacopy, iacopy)
+      write(*,*) '----- Serial Evaluation of jacobian done in: ',tock(t_start) ,' s'
      write(*,*) '----- Writing jacobian into serialjac.dat and paralleljac.dat'
       call jac_write('paralleljac.dat',neq, jac, ja, ia)
       call jac_write('serialjac.dat',neq, jaccopy, jacopy, iacopy)
