@@ -49,6 +49,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     integer:: jacopy(nnzmx)   ! col indices of nonzero Jacobian elements
     integer:: iacopy(neq+1)   ! pointers to beginning of each row in jac,ja
     integer i,iv,ForceSerialCheck,t_start
+    real,external::tock
     ! ... Work-array argument:
     real wk(neq)     ! work space available to this subroutine
     if (exmain_aborted) call xerrab('exmain aborted...')
