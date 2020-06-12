@@ -841,7 +841,6 @@ c            write(iout,*) parvis
 ************************************************************************
 *   This section is to use in the calculation of the jacobian locally.
 ************************************************************************
-      pwrebkg(0:nx+1,0:ny+1)=pwrbkg_c
 c ... Get initial value of system cpu timer.
       if(xc .lt. 0) then
          tsfe = gettime(sec4)
@@ -4756,8 +4755,10 @@ c******************************************************************
           pwrebkgold = pwrebkg(ix,iy)
           if (isimpon == 0) then
             pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+            pwrebkg(ix,iy) =pwrbkg_c
           else  #add impurity rad loss
             pwrebkg(ix,iy) = (tebg*ev/te(ix,iy))**iteb*pwrbkg_c
+            pwrebkg(ix,iy) =pwrbkg_c
           endif
         enddo
       enddo
@@ -4949,10 +4950,10 @@ c  the perturbed variables are reset below to get Jacobian correct
 c...  Finally, reset some source terms if this is a Jacobian evaluation
          if (xc .ge. 0 .and. yc .ge. 0) then
             ix1 = ixm1(xc,yc)
-
+            if(isimpon.gt.0) pwrzec(xc,yc) = pradold
 
             if (fixpwrebkg.gt.0) then
-            if(isimpon.gt.0) pwrzec(xc,yc) = pwrbkg_c
+
             pwrebkg(xc,yc)=pwrbkg_c
             else
             pwrebkg(xc,yc) = pwrebkgold
