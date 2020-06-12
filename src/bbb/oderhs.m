@@ -4276,8 +4276,8 @@ c  -- Add rad flux of 4th order diff operator; damp grid-scale oscillations
       do 150 iy = j2, j5
          do 149 ix = i2, i5
             resee(ix,iy) =
-     .             seec(ix,iy) + seev(ix,iy) * te(ix,iy)
-     .           + pwrsore(ix,iy)
+     .             cseec*seec(ix,iy) + cseev*seev(ix,iy) * te(ix,iy)
+     .           + cpwrsore*pwrsore(ix,iy)
      .           + cmneut * cmneutsor_ee * uesor_te(ix,iy)
      .           - nuvl(ix,iy,1)*vol(ix,iy)*bcee*ne(ix,iy)*te(ix,iy)
             resei(ix,iy) =
@@ -4770,7 +4770,7 @@ c******************************************************************
             do 535 ix = i2, i5
                resee(ix,iy) = resee(ix,iy) -
      .                            cnimp*pwrze(ix,iy)*vol(ix,iy) +
-     .                                pwrebkg(ix,iy)*vol(ix,iy)
+     .                                cpwrebkg*pwrebkg(ix,iy)*vol(ix,iy)
  535        continue
  536     continue
 
@@ -4800,7 +4800,7 @@ c******************************************************************
      .                                (phi(ix,iy+1)+phi(ix,iy))
      .                          + 0.5*fqygp(ix,iy-1)*
      .                                (phi(ix,iy)+phi(ix,iy-1))
-               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy) / ( 1. +
+               resee(ix,iy) = resee(ix,iy) + cwjdote*wjdote(ix,iy) / ( 1. +
      .                             cfwjdotelim*(te(ix,iy)/tebg)**iteb )
              enddo
            enddo
@@ -4814,7 +4814,7 @@ c******************************************************************
      .                             ex(ix, iy) *fqx(ix, iy) )/gx(ix,iy)
      .                     + 0.5*( ey(ix, iy) *fqy(ix, iy) +
      .                             ey(ix,iy-1)*fqy(ix,iy-1) )/gy(ix,iy)
-               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy)
+               resee(ix,iy) = resee(ix,iy) + cwjdote*wjdote(ix,iy)
              enddo
            enddo
          endif
