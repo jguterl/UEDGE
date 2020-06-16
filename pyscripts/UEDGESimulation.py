@@ -424,9 +424,13 @@ class UEDGESimBase(UEDGEMesh):
                 if bbb.exmain_aborted==1:
                     break
                 
-                if (bbb.iterm == 1):
+                if (bbb.iterm == 1 and bbb.exmain_aborted!=1):
                     self.AutoSave()
                     self.SaveLast() # Save data in file SaveDir/CaseName/last.npy
+                    bbb.dt_tot += bbb.dtreal
+                    self.dt_tot=bbb.dt_tot
+                    self.TimeEvolution()
+
                     if bbb.dt_tot>=bbb.t_stop:
                             bbb.exmain_aborted=1
                             self.SaveFinalState()

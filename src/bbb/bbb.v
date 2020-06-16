@@ -124,8 +124,8 @@ cwjdote   real /1.0/
 cpwrsore  real /1.0/
 ro        real
 cs        real
-ctaue(0:nx+1,0:ny+1,nisp)  _real  #calc factor for elec Coulomb coll
-ctaui(0:nx+1,0:ny+1,nisp)  _real  #calc factor for ion Coulomb coll
+ctaue(0:nx+1,0:ny+1,1:nisp)  _real  #calc factor for elec Coulomb coll
+ctaui(0:nx+1,0:ny+1,1:nisp)  _real  #calc factor for ion Coulomb coll
 fxe       real
 fxi       real
 zcoef     real          #factor (calc) give zeff dependence of elec thermal c.
