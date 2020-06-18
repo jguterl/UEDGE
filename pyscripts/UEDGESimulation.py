@@ -478,6 +478,9 @@ class UEDGESimBase(UEDGEMesh):
                     self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
                     bbb.dtreal /= self.mult_dt_bwd
                     self.dtreal=bbb.dtreal
+                    if bbb.iterm==2 and bbb.dtreal<self.dtLowThreshold:
+                        
+                        
                     bbb.iterm = 1
                     
                     if (bbb.dtreal < bbb.dt_kill):

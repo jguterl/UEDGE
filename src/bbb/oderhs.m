@@ -8489,10 +8489,10 @@ c ... Reset range if this is a potential perturbation with isnewpot=1
 ccc         if (isphion*isnewpot.eq.1 .and. mod(iv,numvar).eq.0) then
 cc  Comment out;storage for Jac inconsistent if mu & ml above not used
 cc  Reported by R. Smirnov Feb. 2020
-*         if (isphion*isnewpot.eq.1) then
-*            ii1 = max(iv-4*numvar*nx, 1)      # 3*nx may be excessive
-*            ii2 = min(iv+4*numvar*nx, neq)    # 3*nx may be excessive
-*         endif
+         if (isphion*isnewpot.eq.1) then
+            ii1 = max(iv-4*numvar*nx, 1)      # 3*nx may be excessive
+            ii2 = min(iv+4*numvar*nx, neq)    # 3*nx may be excessive
+         endif
 c ... Reset range if extrapolation boundary conditions are used
 cc  This reset of ii1,2 may also cause storage prob.; see just above
          if (isextrnpf+isextrtpf+isextrngc+isextrnw+isextrtw.gt.0) then
