@@ -403,6 +403,8 @@ cJG     loop indexes were shared through a module. Very very bad....
       Use(Share)       # nysol,nyomitmx
       Use(RZ_grid_info)   # rm,zm
       use OMPPandf
+      use OmpCopybbb
+      use omp_lib
       integer t_start
       real, external::tock
 
@@ -613,12 +615,26 @@ cc      gpix(nx+1,ny+1,ifld) = gpix(nx,ny+1,ifld)
          if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 
 
+        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedConvertni.gt.0) then
+              OMPThreadedPandf=1
+              OMPyindex(:)=-1
+              OMPxindex(:)=-1
+              call OmpCopyPointerni
+              call OmpCopyPointernis
+              call OmpCopyPointerpri
+              else
+              OMPThreadedPandf=0
+        endif
 
 c Tom:  add comments here to explain the indices used on do 25 and 24
       do 26 ifld = 1, nisp
-         do 25 iy = max(js-1,0), min(je,ny)
+cJG: isolate loop Tom:  add comments here to explain the indices used on do 25 and 24
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
+c$omp& firstprivate(inc,ix)
+         do 250 iy = max(js-1,0), min(je,ny)
+         if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
 	    inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
-            do 24 ix = ixm1(is,js), min(nx,ie), inc
+            do 240 ix = ixm1(is,js), min(nx,ie), inc
                niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
                niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
                if (nx==nxold .and. ny==nyold .and.
@@ -626,12 +642,46 @@ c Tom:  add comments here to explain the indices used on do 25 and 24
                   niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
                   niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
                endif
+               priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
+               priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
+  240       continue
+            ix = ixp1(ie,iy)
+            if (nx==nxold .and. ny==nyold .and.
+     .                                     nis(1,1,1).ne.0.) then
+               niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
+               niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
+            endif
+            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
+            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
+  250    continue
+c$OMP end parallel do
+            call OmpThreadCopyniy0
+            call OmpThreadCopyniy1
+            call OmpThreadCopyniy0s
+            call OmpThreadCopyniy1s
+            call OmpThreadCopypriy0
+            call OmpThreadCopypriy1
+
+
+cJG end isolate loop
+
+
+         do 25 iy = max(js-1,0), min(je,ny)
+	    inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
+            do 24 ix = ixm1(is,js), min(nx,ie), inc
+c               niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
+c               niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
+c               if (nx==nxold .and. ny==nyold .and.
+c     .                                       nis(1,1,1).ne.0.) then
+c                  niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
+c                  niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
+c               endif
                nity0(ix,iy) = nity0(ix,iy) + niy0(ix,iy,ifld)
                nity1(ix,iy) = nity1(ix,iy) + niy1(ix,iy,ifld)
                ney0(ix,iy) = ney0(ix,iy) + zi(ifld)*niy0(ix,iy,ifld)
                ney1(ix,iy) = ney1(ix,iy) + zi(ifld)*niy1(ix,iy,ifld)
-               priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
-               priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
+c               priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
+c               priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
                gpiy(ix,iy,ifld) = (priy1(ix,iy,ifld) -
      .                             priy0(ix,iy,ifld))/dynog(ix,iy)
                if (zi(ifld).ne.0.) gpry(ix,iy) = gpry(ix,iy) +
@@ -640,24 +690,26 @@ c Tom:  add comments here to explain the indices used on do 25 and 24
             ix = ixp1(ie,iy)
             niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
             niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
-            if (nx==nxold .and. ny==nyold .and.
-     .                                     nis(1,1,1).ne.0.) then
-               niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
-               niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
-            endif
+c            if (nx==nxold .and. ny==nyold .and.
+c     .                                     nis(1,1,1).ne.0.) then
+c               niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
+c               niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
+c            endif
             nity0(ix,iy) = nity0(ix,iy) + niy0(ix,iy,ifld)
             nity1(ix,iy) = nity1(ix,iy) + niy1(ix,iy,ifld)
             ney0(ix,iy) = ney0(ix,iy) + zi(ifld)*niy0(ix,iy,ifld)
             ney1(ix,iy) = ney1(ix,iy) + zi(ifld)*niy1(ix,iy,ifld)
-            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
-            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
+c            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
+c            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
             gpiy(ix,iy,ifld) = (priy1(ix,iy,ifld) -
      .                          priy0(ix,iy,ifld))/dynog(ix,iy)
             if (zi(ifld).ne.0.) gpry(ix,iy) = gpry(ix,iy) +
      .            gpiy(ix,iy,ifld)
    25    continue
    26 continue
+
         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
+        if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaConv1=tock(t_start)+TimeParaConv1
         if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 264 and 263
       do 264 iy = max(0,js-1), min(je,ny)

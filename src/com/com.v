@@ -96,6 +96,7 @@ OMPThreadedPandfngyflux2 integer /0/
 OMPThreadedPandfngxyflux integer /1/
 OMPThreadedPandvisxflux integer /1/
 OMPThreadedPandvisxflux2 integer /1/
+OMPThreadedConvertni integer /1/
 OMPCheckThreadedPandf integer /1/
 TimePandf real /0.0/
 TimeSerialPandf real /0.0/
@@ -126,6 +127,7 @@ TimeBlock15 real /0/
 TimeBlock16 real /0/
 TimeConv0 real /0/
 TimeConv1 real /0/
+TimeParaConv1 real /0/
 TimeConv2 real /0/
 TimeConv3 real /0/
 TimeConv4 real /0/

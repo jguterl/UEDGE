@@ -3675,7 +3675,7 @@ fnzyso(0:nx+1,nzspt+1)	_real	# profiles along outer wall
 misotope		integer /1/  # number of isotopes (including electrons)
 nchstate		integer /1/ # maximum charge state among all isotopes
 natomic(1:MXMISO)	integer  # maximum charge state of each isotope
- 		_real	[none]     # atomic mass, relative to proton
+amu(1:misotope)		_real	[none]     # atomic mass, relative to proton
 tempa(1:misotope)	_real	[J]        # temperature
 qneut(1:misotope)	_real	[J/m**2-s] # parallel heat flux of neutral
 uneut(1:misotope)	_real	[m/s]      # parallel flow speed of neutral
