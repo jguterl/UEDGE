@@ -478,7 +478,7 @@ class UEDGESimBase(UEDGEMesh):
                     self.PrintInfo('Converg. fails for bbb.dtreal; reduce time-step by 3',Back.RED) 
                     bbb.dtreal /= self.mult_dt_bwd
                     self.dtreal=bbb.dtreal
-                    if bbb.iterm==2 and bbb.dtreal<self.dtLowThreshold:
+#                    if bbb.iterm==2 and bbb.dtreal<self.dtLowThreshold:
                         
                         
                     bbb.iterm = 1
@@ -833,6 +833,13 @@ Todo:
             
             # 2) Run until completion
             self.PrintInfo('RAMP i={}/{} : '.format(irun,Istop)+','.join(ListParams),color=Back.MAGENTA)
+            FileName='final_state_ramp_'+'_'.join(ListValueParams)
+            FilePath=UEDGEToolBox.Source(FileName,Folder='SaveDir',Enforce=False,Verbose=Verbose,CaseName=self.CaseName,CheckExistence=False)
+            if UEDGEToolBox.CheckFileExist(FilePath):
+                print('File {} exists. Skipping this ramp step...'format(FilePath))
+                continue
+        if Verbose:
+            print("Saving data in file:{}".format(FilePath))
             Status=self.Cont(dt_tot=0,dtreal=dtreal_start,t_stop=tstop)
             if Status=='tstop':
                 ListValueParams=['{:2.2e}'.format(v) for k,v in Params.items()]
