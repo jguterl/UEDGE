@@ -838,8 +838,7 @@ Todo:
             if UEDGEToolBox.CheckFileExist(FilePath):
                 print('File {} exists. Skipping this ramp step...'format(FilePath))
                 continue
-        if Verbose:
-            print("Saving data in file:{}".format(FilePath))
+
             Status=self.Cont(dt_tot=0,dtreal=dtreal_start,t_stop=tstop)
             if Status=='tstop':
                 ListValueParams=['{:2.2e}'.format(v) for k,v in Params.items()]
