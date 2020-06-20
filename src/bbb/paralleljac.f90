@@ -2168,16 +2168,17 @@ end subroutine DebugHelper
     real::TimeStart,TimeEnd
     real::walltime
     real yldotsave(neq)
-    call omp_set_num_threads(OMPPandf_Nthreads)
+    call omp_set_num_threads(int(OMPPandf_Nthreads,kind=4))
       walltime=omp_get_wtime()
       TimingPandf=0
       TimingParaPandf=1
       call pandf1 (-1, -1, 0, neq, time, yl, yldot)
 
       TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
-      call omp_set_num_threads(Nthreads)
+      call omp_set_num_threads(int(Nthreads,kind=4))
 
       if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
+      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
       OMPParallelPandf=0
       walltime=omp_get_wtime()
       TimingPandf=1
@@ -2185,9 +2186,10 @@ end subroutine DebugHelper
       call pandf1 (-1, -1, 0, neq, time, yl, yldotsave)
       TimingPandf=0
       TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
-      call Compare(yldot,yldotsave,neq)
-      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
       OMPParallelPandf=1
+      call Compare(yldot,yldotsave,neq)
+
+
       endif
 
 
