@@ -2601,6 +2601,7 @@ c
           OMPxindex(:)=-1
             call OmpCopyPointervisx
             call OmpCopyPointervisy
+            if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded visxflux block'
           else
           OMPThreadedPandf=0
           endif
@@ -2687,6 +2688,7 @@ c
 c            call OmpCopyPointervisx
 c            call OmpCopyPointervisy
             call OmpCopyPointerw
+            if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded visxflux2 block'
           else
           OMPThreadedPandf=0
           endif
@@ -6098,6 +6100,7 @@ c ..Timing;initialize
       OMPThreadedPandf=1
       OMPyindex(:)=-1
       OMPxindex(:)=-1
+      if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxflux block'
       else
       OMPThreadedPandf=0
       endif
@@ -6230,6 +6233,7 @@ c ..Timing; initiate time for y-direction calc
       OMPThreadedPandf=1
       OMPyindex(:)=-1
       OMPxindex(:)=-1
+      if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngyflux block'
       else
       OMPThreadedPandf=0
       endif
@@ -6360,6 +6364,7 @@ c ..Timing
               OMPThreadedPandf=1
               OMPyindex(:)=-1
               OMPxindex(:)=-1
+              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxyflux block'
               else
               OMPThreadedPandf=0
         endif
@@ -6472,6 +6477,7 @@ c...  Flux-limit the total poloidal flux here
               OMPThreadedPandf=1
               OMPyindex(:)=-1
               OMPxindex(:)=-1
+              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxflux2 block'
               else
               OMPThreadedPandf=0
         endif
@@ -6512,6 +6518,8 @@ c ...   adjust y-fluxes to prevent pumpout
               OMPThreadedPandf=1
               OMPyindex(:)=-1
               OMPxindex(:)=-1
+              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngyflux2 block'
+
               else
               OMPThreadedPandf=0
         endif

@@ -723,7 +723,7 @@ c            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
    26 continue
 
         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
-        if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaConv1=tock(t_start)+TimeParaConv1
+        if (TimingParaConvert.gt.0.and.rhseval.gt.0) TimeParaConv1=tock(t_start)+TimeParaConv1
         if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 264 and 263
       do 264 iy = max(0,js-1), min(je,ny)

@@ -104,6 +104,7 @@ TimeParallelPandf real /0.0/
 TimingPandf integer /0/
 TimingParaPandf integer /0/
 TimingConvert integer /0/
+TimingParaConvert integer /0/
 OMPTimePandf real /0.0/
 OMPPandfVerbose integer /0/
 RhsEval integer /0/
