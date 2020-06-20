@@ -2658,8 +2658,8 @@ c
  937           continue
  936        continue
 c$omp end parallel do
-c        call OmpThreadCopyvisx
-c        call OmpThreadCopyvisy
+        call OmpThreadCopyvisx
+        call OmpThreadCopyvisy
 
          endif
 c
@@ -2685,8 +2685,8 @@ c
           OMPThreadedPandf=1
           OMPyindex(:)=-1
           OMPxindex(:)=-1
-c            call OmpCopyPointervisx
-c            call OmpCopyPointervisy
+            call OmpCopyPointervisx
+            call OmpCopyPointervisy
             call OmpCopyPointerw
             if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded visxflux2 block'
           else
@@ -6106,7 +6106,7 @@ c ..Timing;initialize
       endif
 
 
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(firstprivate)
+c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
 c$omp& firstprivate(ix,jx,ifld,iy1,iy2,ix2,ix4,ix6,t0,t1,vtn,vtnp,nu1,nu2,tgf,flalfgx_adj)
 c$omp& firstprivate(qsh,csh,qfl,qtgf,grdnv,nconv,qr)
 c$omp& copyin(i1, i5,j8, j4)
