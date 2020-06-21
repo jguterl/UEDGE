@@ -113,7 +113,9 @@ use Dim,only:ny
 OMPPandf_Nthreads=min(Nthreads,ny+2)
 OMPPandf_Nthreads=min(OMPPandf_Nthreads,OMPPandfNthreads)
 if (OMPPandf_Nthreads<1) call xerrab('OMPPandf_Nthreads<1')
-write(*,*) 'Parallel eval of Pandf for RHS activated with Pandf_Nthreads:',OMPPandf_Nthreads
+if (OMPParallelPandf.gt.0) then
+   write(*,*) 'Parallel RHS eval Pandf activated: Pandf_Nthreads=',OMPPandf_Nthreads
+endif
 call gchange('OMPPandf',0)
 if (OMPThreadedPandfngxflux.lt.1 .and. OMPThreadedPandfngyflux.gt.0) then
 call xerrab('OMPThreadedPandfngyflux cannot be on with OMPThreadedPandfngxflux')
