@@ -619,7 +619,7 @@ cc      gpix(nx+1,ny+1,ifld) = gpix(nx,ny+1,ifld)
             call OmpCopyPointerni
             call OmpCopyPointerpri
             OMPThreadedPandf=1
-              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded Convertni block'
+              if (OMPThreadedPandfVerbose.gt.1) write(*,'(a,I3,a)') 'Threaded Convertni block [',OMP_GET_NUM_THREADS(),']'
               else
               OMPThreadedPandf=0
         endif
