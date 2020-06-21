@@ -110,7 +110,7 @@ subroutine InitPandfOMP()
 use OmpOptions,only: Nthreads
 use OMPPandf
 use Dim,only:ny
-OMPPandf_Nthreads=min(Nthreads,ny+2)
+OMPPandf_Nthreads=min(Nthreads,ny)
 OMPPandf_Nthreads=min(OMPPandf_Nthreads,OMPPandfNthreads)
 if (OMPPandf_Nthreads<1) call xerrab('OMPPandf_Nthreads<1')
 if (OMPParallelPandf.gt.0) then
