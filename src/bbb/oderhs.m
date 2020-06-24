@@ -9618,7 +9618,7 @@ c ... Function:
       real(Size4) gettime
 
 c ... Local variables:
-      integer i
+      integer i,info
       integer lowd, lbw, ubw
       integer ndiag, ndiagm
       real(Size4) sec4
@@ -9645,8 +9645,11 @@ c ... Solve P*x=c for a preconditioner stored as a banded matrix.
          lowd = iwp(1)
          lbw = iwp(2)
          ubw = iwp(3)
+         if (premethbanded.eq.'lapack') then
+         call SGBTRS( 'N', neq, lbw, ubw, 1, wp, lowd, iwp(4), bl, neq,INFO )
+         else
          call sgbsl (wp, lowd, neq, lbw, ubw, iwp(4), bl, 0)
-
+         endif
          call scopy (neq, bl, 1, wk, 1)
 
 c ... Solve P*x=c for a preconditioner stored as a sparse matrix in
