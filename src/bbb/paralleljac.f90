@@ -574,7 +574,7 @@ end subroutine OMPJacBuilder
         ii2 = min(iv+ml, neq)
         ! ... Reset range if this is a potential perturbation with isnewpot=1
         !         if (isphion*isnewpot.eq.1 .and. mod(iv,numvar).eq.0) then
-        if (isphion*isnewpot.eq.1 .and. mod(iv,numvar).eq.0) then
+        if (isphion*isnewpot.eq.1) then
             ii1 = max(iv-4*numvar*nx, 1)      ! 3*nx may be excessive
             ii2 = min(iv+4*numvar*nx, neq)    ! 3*nx may be excessive
         endif
