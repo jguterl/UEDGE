@@ -2779,6 +2779,11 @@ ireorder	integer	    /1/ # Flag used to determine if a reordering
 #Jacobian matrix in full storage format
 jacfull(neq,neq) _real
 
+***** lapackLU:
+CheckBandedPrecond integer /0/
+BandedPrecondVerbose integer /0/
+
+
 ***** Preconditioning:
 #Parameters for type of preconditioning and sizes of matrices
 premeth character*8 /"ilut"/  # type of preconditioning used in the
@@ -2786,7 +2791,10 @@ premeth character*8 /"ilut"/  # type of preconditioning used in the
                               # ="banded" means use full banded jacobian as
                               #  preconditioner. Also used with mfnksol=4
                               # ="ilut" means use ilut preconditioning.
-                              # ="inel" means use INEL ILU preconditioning
+                              # ="inel" means use INEL ILU preconditionin
+premethbanded character*20 /"old"/ #='bandedfast'': dgbfa_u
+                                  #='lapack': DGBTRF
+                                  #='old': sgbco
 lenpfac        integer   /60/ # fudge factor to multiply neq by to get an
                               # estimate for the number of nonzeros in the
                               # preconditioner matrix.

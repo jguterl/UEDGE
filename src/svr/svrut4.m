@@ -1166,7 +1166,8 @@ c-----------------------------------------------------------------------
 c-----------end-of-amudia----------------------------------------------
       end
 c-----------------------------------------------------------------------
-      subroutine csrbnd (n,a,ja,ia,job,abd,nabd,lowd,ml,mu,ierr)
+      subroutine csrbnd (n,   a,   ja, ia,job,abd,nabd,lowd,ml,mu,ierr)
+c     call       csrbnd (neq, jac, ja, ia, 0, wp, lowd, lowd,lbw, ubw, ierr)
       implicit none
       integer n, job, nabd, lowd, ml, mu, ierr, m, i, ii, j, mdiag, k
       real a(*),abd(nabd,n)

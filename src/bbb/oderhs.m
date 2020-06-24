@@ -8608,9 +8608,10 @@ c ... Input arguments:
       real jac(*)        # nonzero Jacobian elements
       integer ja(*)      # col indices of nonzero Jacobian elements
       integer ia(neq+1)  # pointers to beginning of each row in jac,ja
-
+      integer t_start
 c ... Output arguments:
       real wp(*)         # matrix elements of LU
+
       integer iwp(*)     # sizes and array indices for elements of LU
 
 c ... Common blocks:
@@ -8634,13 +8635,14 @@ c ... Local variables:
       real rcond, dum(1)
       real(Size4) sec4,TimeLU
       real tsmatfac
-
+      character*80 premethinfo
+      integer info
 c ... Convert compressed sparse row to banded format and use exact
 c     factorization routine sgbco from Linpack/SLATEC.
       TimeLU = gettime(sec4)
       if (VerboseCall.gt.0) write(iout,*) '**************** calling jac_lu_decomp ********************'
       if (premeth .eq. 'banded') then
-              TimePreMeth=gettime(sec4)
+         TimePreMeth=gettime(sec4)
          lowd = 2 * lbw + ubw + 1
          call csrbnd (neq, jac, ja, ia, 0, wp, lowd, lowd,
      .                lbw, ubw, ierr)
@@ -8650,7 +8652,14 @@ c     factorization routine sgbco from Linpack/SLATEC.
             call xerrab("")
          endif
          tsmatfac = gettime(sec4)
+         if (premethbanded.eq.'lapack') then
+         call lapacksgbco(wp, lowd, neq, lbw, ubw, iwp(4), rcond, rwk1)
+         elseif (premethbanded.eq.'bandedfast') then
+           call dgbfa_u(wp,lowd,neq,lbw,ubw,iwp(4),info)
+         else
          call sgbco (wp, lowd, neq, lbw, ubw, iwp(4), rcond, rwk1)
+         endif
+
          iwp(1) = lowd
          iwp(2) = lbw
          iwp(3) = ubw
@@ -8730,7 +8739,12 @@ c ... Finally, calculate approximate LU decomposition.
 c ... Accumulate cpu time spent here.
 
  99   ttmatfac = ttmatfac + (gettime(sec4) - tsmatfac)
-      if (ShowTime.gt.0) write(iout,*) '**** Time in jac_lu_decomp:',gettime(sec4) - TimeLU
+      if (premeth.eq.'banded') then
+      write(premethinfo,*) premeth,'|',premethbanded
+      else
+      write(premethinfo,*) premeth
+      endif
+      if (ShowTime.gt.0) write(iout,*) '**** Time in jac_lu_decomp:',gettime(sec4) - TimeLU,'[',trim(premethinfo),']'
       return
       end
 c-----------------------------------------------------------------------
