@@ -150,11 +150,14 @@ Use(Dim)              # nxm,nym
 Use(Xpoint_indices)   # ixlb,ixpt1,ixmdp,ixpt2,ixrb,iysptrx1,iysptrx2
       character*(*) fname, runid
       integer nuno,ios
+      real tempa,tempb
       external freeus,remark,xerrab,gallot,rdgrid
 
 c     Read mesh parameters from a UEDGE code grid data file
 
       call freeus (nuno)
+      tempa=-9999
+      tempb=-9999
       write(*,*) 'Reading grid file:',fname
       open (nuno, file=trim(fname), form='formatted', iostat=ios,
      &      status='old')
@@ -172,12 +175,14 @@ c     Read mesh parameters from a UEDGE code grid data file
          read(nuno,1999) ixlb(2),ixpt1(2),ixmdp(2),ixpt2(2),ixrb(2)
 	 if (geometry=="dnXtarget") nxc = ixmdp(1)
       else
-         read(nuno,1999) nxm,nym,ixpt1(1),ixpt2(1),iysptrx1(1)
+         read(nuno,*) nxm,nym,ixpt1(1),ixpt2(1),iysptrx1(1),tempa,tempb
          ixlb(1)=0
          ixrb(1)=nxm
          iysptrx2(1)=iysptrx1(1)
       endif
-
+       simagxs = tempa
+       sibdrys = tempb
+        write(*,*) "simagxs,sibdrys=",simagxs,sibdrys
       close (nuno)
 
  1999 format(5i4)

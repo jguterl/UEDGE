@@ -1357,11 +1357,13 @@ c     uniquely defined; below we choose the innermost separatrix.
  25   continue
 
 c...  Calculate normalized poloidal flux for mhdgeo=1 cases (tor. equil)
-      if(mhdgeo == 1 .and. gengrid == 1) then  # otherwise sibdrys etc.=0
+      if(mhdgeo == 1) then  # otherwise sibdrys etc.=0
 	do iy = 0, ny+1
+	if (abs(sibdrys - simagxs).gt.0) then
 	  psinormf(iy) = ( 0.5*(psi(ixmp,iy,3)+psi(ixmp,iy,4)) -
      .                             simagxs ) / (sibdrys - simagxs)
 	  psinormc(iy) = (psi(ixmp,iy,0)-simagxs) / (sibdrys-simagxs)
+      endif
         enddo
       endif
 
