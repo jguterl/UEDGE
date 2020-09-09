@@ -158,20 +158,20 @@ OMPVAR='OMPFLAGS = {}'.format(' '.join(ompargs))
 
 class uedgeBuild(build):
     def run(self):
-        # with python2 everything is put into a single uedgeC.so file
-        if sys.hexversion < 0x03000000:
-            raise ValueError('Python 2 deprecated in this fork')
-            if petsc == 0:
-                call(['make', '-f', 'Makefile.Forthon'])
-            else:
-                call(['make', '-f', 'Makefile.PETSc'])
-            build.run(self)
-        else:
+#        # with python2 everything is put into a single uedgeC.so file
+#        if sys.hexversion < 0x03000000:
+#            raise ValueError('Python 2 deprecated in this fork')
+#            if petsc == 0:
+#                call(['make', '-f', 'Makefile.Forthon'])
+#            else:
+#                call(['make', '-f', 'Makefile.PETSc'])
+#            build.run(self)
+#        else:
             os.chdir('src')
             if petsc == 0:
                 call(['make', DEBUGVAR,FCOMPVAR,OMPVAR,'-f', 'Makefile.Forthon3'])
-            else:
-                call(['make', '-f', 'Makefile.PETSc3'])
+#            else:
+#                call(['make', '-f', 'Makefile.PETSc3'])
             os.chdir('..')
             build.run(self)
            
@@ -179,13 +179,13 @@ class uedgeBuild(build):
 
 class uedgeClean(build):
     def run(self):
-        if sys.hexversion < 0x03000000:
-            raise ValueError('Python 2 deprecated in this fork')
-            if petsc == 0:
-                call(['make', '-f', 'Makefile.Forthon', 'clean'])
-            else:
-                call(['make', '-f', 'Makefile.PETSc', 'clean'])
-        else:
+#        if sys.hexversion < 0x03000000:
+#            raise ValueError('Python 2 deprecated in this fork')
+#            if petsc == 0:
+#                call(['make', '-f', 'Makefile.Forthon', 'clean'])
+#            else:
+#                call(['make', '-f', 'Makefile.PETSc', 'clean'])
+#       else:
             
            
             if petsc == 0:

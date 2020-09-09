@@ -1,16 +1,16 @@
 try:
-   import IPython
-   from IPython.terminal.prompts import Prompts,Token
-   from IPython.terminal.embed import InteractiveShellEmbed
+    import IPython
+    from IPython.terminal.prompts import Prompts,Token
+    from IPython.terminal.embed import InteractiveShellEmbed
 except:
    pass
 
-try:
-   from traitlets.config.loader import Config
-except:
-   pass
+#try:
+#   from traitlets.config.loader import Config
+#except:
+#   pass
 
-import sys,os,__main__
+import sys,os#,__main__
 
 import numpy as np
 ArrayType = np.ndarray
@@ -37,22 +37,22 @@ if sys.hexversion >= 0x03000000:
     from .wdfpy import *
     from .apipy import *
     from .aphpy import *
-else:
-    from wdfpy import *
-    from svrpy import *
-    from grdpy import *
-    from flxpy import *
-    from bbbpy import *
-    from apipy import *
-    from aphpy import *
-    from compy import *
+#else:
+#    from wdfpy import *
+#    from svrpy import *
+#    from grdpy import *
+#   from flxpy import *
+##   from bbbpy import *
+#   from apipy import *
+#    from aphpy import *
+#    from compy import *
     
     
 
 
 import time
 import os.path
-import __main__
+#import __main__
 #warp_version = "$Id: uedge.py,v 7.4 2019/11/12 21:10:56 meyer8 Exp $"
 # import all of the neccesary packages
 
@@ -68,18 +68,18 @@ def oldnonzero(a):
 # mmiah: Actually, lets not.
 # print "Welcome to PyUedge"
 # Import the uedgeC shared object which contains all of UEDGE
-try:
-    import PyPDB
-    from PyPDB import PW, PR
-    from PyPDB.pypdb import *
-except:
+#try:
+#    import PyPDB
+#    from PyPDB import PW, PR
+#    from PyPDB.pypdb import *
+#except:
     # print "Unable to import PyPDB or * from PyPDB.pypdb."
     # print "Will proceed to try to import pypdb in case of old installation."
-    try:
-        from pypdb import *
-    except:
+#    try:
+#        from pypdb import *
+#    except:
         # print "pypdb not found."
-        pass
+#        pass
 #    raise
 #  mmiah: Why are we reraising the exception?  We don't
 #         necessarily need PyPDB
@@ -89,40 +89,38 @@ except:
 
 # --- Set default runid to first filename in the command line, stripping off
 # --- the .py suffix.
-if sys.argv[0]:
-    if sys.argv[0][-3:] == '.py':
-        h, t = os.path.split(sys.argv[0][:-3])
-        runid = t
-        del h, t
-    else:
-        h, t = os.path.split(sys.argv[0])
-        runid = t
-        del h, t
+#if sys.argv[0]:
+#    if sys.argv[0][-3:] == '.py':
+#        h, t = os.path.split(sys.argv[0][:-3])
+#        runid = t
+#        del h, t
+#    else:
+#        h, t = os.path.split(sys.argv[0])
+#        runid = t
+#        del h, t
 
 # --- Check if the compiler was ifort - if so, set the stacksize unlimited
 # --- The fcompname is not yet be available yet if Forthon is not up to date
 try:
-    if fcompname == 'ifort':
-        import resource
-        resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+   import resource
+   resource.setrlimit(resource.RLIMIT_STACK, (-1, -1))
+   #print('Stack set to unlimited')
 except:
     pass
 
-
-try:
-
-   class MyPrompt(Prompts):
+class MyPrompt(Prompts):
      def in_prompt_tokens(self, cli=None):
-         return [(Token.Prompt, 'UEDGE>>> ')]
+         return [(Token.Prompt, "\033[1;34mUEDGE>>>\033[0m")]
      def out_prompt_tokens(self, cli=None):
-         return [(Token.Prompt, 'UEDGE>>> ')]
-
-   get_ipython
-except:
-   sys.ps1='UEDGE>>> '
-else:
+         return [(Token.Prompt, "\033[1;34mUEDGE>>>\033[0m")]
+try:
    ip = get_ipython()
    ip.prompts = MyPrompt(ip)
+except:
+    sys.ps1 = "\n\033[1;34mUEDGE>>>\033[0m "
+    sys.ps2 = "\033[1;34m...\033[0m "
+#else:
+   
 
 
 ##############################################################################
