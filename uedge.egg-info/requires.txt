@@ -1,4 +1,0 @@
-forthon
-mppl
-colorama
-easygui
