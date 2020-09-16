@@ -8459,6 +8459,8 @@ c ... Common blocks:
       Use(Parallv)                 # nxg,nyg
       Use(Time_dep_nwt)            # nufak,dtreal,ylodt,dtuse
       Use(Selec)                   # yinc
+      Use(OmpOptions),only:iidebugprint,ivdebugprint
+
 c ... Functions:
       logical tstguardc
       real(Size4) gettime
@@ -8560,6 +8562,12 @@ cc               if (rdoff.ne.0.e0) jacelem=jacelem*(1.0e0+ranf()*rdoff)
                rcsc(nnz) = jacelem
                icsc(nnz) = ii
                nnz = nnz + 1
+            endif
+c Debug
+            if (ii==iidebugprint.and.iv==ivdebugprint) then
+                write(iout,'(i7,i7,i7, E20.12,E20.12,E20.12,E20.12,E20.12,E20.12)')
+     .           iv,nnz,ii,jacelem,wk(ii),yldot00(ii),sfscal(iv),jaccliplim,nufak
+                call DebugHelper('dumpserial.txt')
             endif
 
             if (istopjac.gt.0 .and. ii.eq.irstop .and. iv.eq.icstop) then

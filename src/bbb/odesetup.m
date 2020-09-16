@@ -330,6 +330,7 @@ c...  Calculate actual number of equations (some may be turned-off)
                                   #cvode, kinsol allow no extra storage
       neqp1 = neq + 1
       ipar(1) = neq
+
       ubw = (numvar+numvarbwpad)*(nx+ixpt2(nxpt)-max(0,ixpt1(1))+4)
       lbw = (numvar+numvarbwpad)*(nx+ixpt2(nxpt)-max(0,ixpt1(1))+4)
       if (xlinc.gt.20 .and. xrinc.gt.20 .and. yinc.gt.20) then
