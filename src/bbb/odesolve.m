@@ -410,7 +410,7 @@ cpetsc      endif
 
 c...  convert solver variables back to plasma variables
       call convsr_vo (-1, -1, yl)  # was one call to convsr
-      call convsr_aux (-1, -1)
+      call convsr_aux (-1, -1,yl)
 
 c...  If nksol is in time-dependent mode, increment istep and toutlsod
       if (svrpkg .eq. 'nksol' .and. dtreal .lt. 1.e5) then

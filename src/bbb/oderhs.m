@@ -598,7 +598,7 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       real tv,t0,t1,t2,a,ueb
       integer idum, idumaray(1)
       real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg
-      real qsh,csh,qfl,msh,mfl
+c     real qsh,csh,qfl,msh,mfl
       integer impflag
 cnxg      data igs/1/
       Use(Output)
@@ -670,15 +670,7 @@ cnxg      data igs/1/
       Use(Npes_mpi)              # mype
       Use(RZ_grid_info)  		 # bpol
       Use(Interp)				 # ngs, tgs
-      use OMPPandf ,only:RhsEval,TimeConvert0,TimeConvert1,TimingPandf,TimeBlock1
-      use OMPPandf ,only:TimeBlock2,TimeBlock3,TimeBlock4,TimeBlock5,TimeCopy1
-      use OMPPandf ,only:TimeBlock6,TimeBlock7,TimeBlock8,TimeBlock9
-      use OMPPandf ,only:TimeBlock10,TimeBlock11,TimeBlock12,TimeBlock13
-      use OMPPandf ,only:TimeBlock14,TimeBlock15,TimeBlock16
-      use OMPPandf
-      use OmpCopybbb
-      use OmpThreadCopybbb
-
+      Use(TimingPandf),only:           rhseval
       integer :: t_start
       real, external :: tock
 *  -- procedures for atomic and molecular rates --
@@ -815,6 +807,7 @@ c     (IJ  2015/04/06) add ismcnon>=3 for external call to run_neutrals
          endif
          if (yl(neq+1) .lt. 0) then       # RHS eval (not precon eval)
 			if (isextneuton .ne. 0) then  # implicit use of external neutrals inside exmain
+			call xerrab('***JG:not test for this version')
                 #Neutral step
                 dtold=dtreal
                 dtreal=dtneut
@@ -984,6 +977,9 @@ c...  Set flag that indicates wide open Jac'n "box" for subroutine bouncon.
       else
          openbox = .false.
       endif
+
+
+
       if (yl(neq+1) .le. 0) then
       RhsEval=1
       else
@@ -996,27 +992,32 @@ c...  boundary cells of a mesh region.  Used in subroutine bouncon.
          xcnearlb = xcnearlb .or.
      .       ( (xc-xlinc.le.ixlb(jx)) .and. (xc+xrinc.ge.ixlb(jx)) )
       enddo
-      if (xc .lt. 0) xcnearlb = .true.
+      if (xc .lt. 0)   xcnearlb = .true.
       xcnearrb = .false.
       do jx = 1, nxpt
          xcnearrb = xcnearrb .or.
      .      ( (xc-xlinc.le.ixrb(jx)+1) .and. (xc+xrinc.ge.ixrb(jx)) )
       enddo
-      if (xc .lt. 0) xcnearrb = .true.
-
+      if (xc .lt. 0)   xcnearlb = .true.
+c      write(*,*) '**********************'
+c      write(*,*) 'xccuts',xccuts
+c      write(*,*) 'openbox',openbox
+c      write(*,*) 'xcnearrb',xcnearrb
+c      write(*,*) 'xcnearlb',xcnearlb
+c      write(*,*) '----------------------'
 ************************************************************************
 c... First, we convert from the 1-D vector yl to the plasma variables.
 ************************************************************************
-        if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+        !!if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
          call convsr_vo (xc, yc, yl)  # pre 9/30/97 was one call to convsr
-         if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert0=tock(t_start)+TimeConvert0
-         if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
-         call convsr_aux (xc, yc)
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert1=tock(t_start)+TimeConvert1
+         !!if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert0=tock(t_start)+TimeConvert0
+         !!if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+         call convsr_aux (xc, yc,yl)
+        !!if (TimingPandf.gt.0.and.rhseval.gt.0) TimeConvert1=tock(t_start)+TimeConvert1
 
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
-      if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+      !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 
       nfsp = nisp
       if (isimpon .eq. 3 .or. isimpon .eq. 4) nfsp = nhsp
@@ -1456,9 +1457,9 @@ c             non-physical interface between upper target plates for dnull
         else    # test on zi > 1.e-10 to skip whole loop
         endif
   100 continue  # Giant loop over ifld (species)
-       if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock1=tock(t_start)+TimeBlock1
+       !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock1=tock(t_start)+TimeBlock1
 c--------------------------------------------------------------------------------------
-       if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+       !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 
 c ... Save values returned by Hirshman mombal for Jacobian calc. to
 c ... minimize calls - restore the "m" or ix-1 values at the end of pandf
@@ -1705,7 +1706,7 @@ c ..          switch to right plate(s)
           enddo
         enddo
       endif # checks if isimpon > 0
-      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock2=tock(t_start)+TimeBlock2
+      !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock2=tock(t_start)+TimeBlock2
 
 *     Calculate the currents fqx, fqy, fq2 and fqp, if isphion = 1
 *     or if isphiofft = 1.
@@ -1715,7 +1716,7 @@ ccc      if(isphion+isphiofft .eq. 1)  call calc_currents
 ***********************************************************************
 *     Calculate the electron velocities, vex, upe, ve2, vey
 ***********************************************************************
-      if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+      !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 
       do 25 iy = j1, j6
 	 do 24 ix = i1, i6
@@ -2068,10 +2069,10 @@ c*****************************************************************
            endif       #if-loop on ipsorave
          endif         #omit whole loop if zi(ifld) = 0. (neutrals)
         enddo          #end loop over hydrogen species (ifld)
-      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock3=tock(t_start)+TimeBlock3
+      !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock3=tock(t_start)+TimeBlock3
 
 **c ... Can now calc current from nucx since it is updated
-      if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+      !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
       if (cfqyn .gt. 0.) call calc_curr_cx
 
 c ... Ionization and recombination of impurities.
@@ -2404,12 +2405,12 @@ c *** Now do the gas
       endif
 
 
-      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock4=tock(t_start)+TimeBlock4
+      !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock4=tock(t_start)+TimeBlock4
 *****************************************************************
 c In the case of neutral parallel mom, call neudif to get
 c flux fngy, vy and uu, now that we have evaluated nuix etc.
 *****************************************************************
-      if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+      !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 
 ccc      if (isupgon .eq. 1 .and. zi(ifld) .eq. 0.0) call neudif
       if (ineudif .eq. 1) then
@@ -2425,12 +2426,12 @@ c ..Timing
       else
          call neudifo
       endif
-      if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaBlock5=tock(t_start)+TimeParaBlock5
-      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock5=tock(t_start)+TimeBlock5
+      !if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaBlock5=tock(t_start)+TimeParaBlock5
+      !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock5=tock(t_start)+TimeBlock5
 *****************************************************************
 *  Other volume sources calculated in old SRCMOD
 *****************************************************************
-      if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+      !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *  ---------------------------------------------------------------------
 *  electron-ion transfer terms and an
 *  approximation to the ion-ion thermal force.
@@ -2477,8 +2478,8 @@ c...  Force fluxes and gradients on cuts to be zero for half-space problems
      .                                   rrv(ix,iy)*sx(ix,iy)/gxf(ix,iy)
          enddo
       enddo
-              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock6=tock(t_start)+TimeBlock6
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+              !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock6=tock(t_start)+TimeBlock6
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *  -- Now loop over all ion species for seec, seic, and smoc --
 
       do 101 ifld = 1, nusp  #not nfsp; up only for ifld<=nusp
@@ -2556,68 +2557,32 @@ c... REMEMBER TO ADD CONTRIBUTION TO SEEC FROM V2 1/26/95
    34    continue
 
   101 continue
-            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock7=tock(t_start)+TimeBlock7
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+            !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock7=tock(t_start)+TimeBlock7
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *
 ******************************************************************
 **  Other physics coefficients. (old PHYVIS)
 ******************************************************************
-         if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+         !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 
 
-          if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0) then
-            call OmpCopyPointerni
-            call OmpCopyPointerng
-            call OmpCopyPointerti
-            call OmpCopyPointertg
-            call OmpCopyPointernm
-            call OmpCopyPointeruu
-            call OmpCopyPointerup
-            call OmpCopyPointerupi
-            call OmpCopyPointervisx
-            call OmpCopyPointervisy
-            call OmpCopyPointertravis
-            call OmpCopyPointertrax_use
-            call OmpCopyPointertray_use
-            call OmpCopyPointereta1
-            call OmpCopyPointerloglambda
-             if (TimingParaPandf.gt.0) TimeCopy0=tock(t_start)+TimeCopy0
-          endif
 
 
 * -- loop over species number --
 
       do 102 ifld = 1, nfsp
 
-
+c
 c     neutral viscosity for isupgon=1
 c
-
          if(isupgon(1) .eq. 1 .and. zi(ifld) .eq. 0)then
-
-          if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandvisxflux.gt.0) then
-          OMPThreadedPandf=1
-          OMPyindex(:)=-1
-          OMPxindex(:)=-1
-            call OmpCopyPointervisx
-            call OmpCopyPointervisy
-            if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded visxflux block'
-          else
-          OMPThreadedPandf=0
-          endif
-
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(iyp1,ix,ix1,vtn)
-c$omp& firstprivate(qsh,csh,qfl,lmfpn,lmfpperp,lmfppar,rrfac,grdnv,qr)
-c$omp& copyin(i1, i6,j1, j6)
             do 936 iy = j1,j6
-               if (OMPThreadedPandf.gt.0) OMPyindex(iy)=omp_get_thread_num()
                iyp1 = min(iy+1,ny+1)
                do 937 ix = i1,i6
 c
                   ix1 = ixm1(ix,iy)
                   vtn = sqrt(max(tg(ix,iy,1),temin*ev)/mi(ifld))
- 		  qfl = flalfvgxa(ix)*nm(ix,iy,ifld)*vtn*vtn
+ 		  qfl = flalfvgxa(ix)*nm(ix,iy,ifld)*vtn**2
                   if(isvisxn_old == 1) then
                     lmfpn = 1./(sigcx *
      .                          (ni(ix,iy,1) + rnn2cx*ni(ix,iy,ifld)))
@@ -2647,8 +2612,7 @@ c
      .               + cfanomvisxg*travis(ifld)*nm(ix,iy,ifld)
 
 c    Now do y-direction; csh is the same for neutrals, but should use den face
- 		  qfl = flalfvgya(iy)*nm(ix,iy,ifld)*vtn*vtn
-
+ 		  qfl = flalfvgya(iy)*nm(ix,iy,ifld)*vtn**2
                   qsh = csh * (up(ix,iy,ifld)-up(ix,iyp1,ifld)) *
      .                                                        gyf(ix,iy)
                   visy(ix,iy,ifld)= cfvisyn*csh /
@@ -2657,10 +2621,6 @@ c    Now do y-direction; csh is the same for neutrals, but should use den face
 c
  937           continue
  936        continue
-c$omp end parallel do
-        call OmpThreadCopyvisx
-        call OmpThreadCopyvisy
-
          endif
 c
 c
@@ -2672,7 +2632,7 @@ c
  39      continue
 
          do 42 jfld = 1, nisp
-            tv = zi(jfld)*zi(jfld) / sqrt((mi(ifld)+mi(jfld))/(2*mp))
+            tv = zi(jfld)**2 / sqrt((mi(ifld)+mi(jfld))/(2*mp))
             do 41 iy = j1, j6
                do 40 ix = i1, i6
                   w(ix,iy) = w(ix,iy) + tv*ni(ix,iy,jfld)
@@ -2680,26 +2640,9 @@ c
    41       continue
    42    continue
 
-
-             if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandvisxflux2.gt.0) then
-          OMPThreadedPandf=1
-          OMPyindex(:)=-1
-          OMPxindex(:)=-1
-            call OmpCopyPointervisx
-            call OmpCopyPointervisy
-            call OmpCopyPointerw
-            if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded visxflux2 block'
-          else
-          OMPThreadedPandf=0
-          endif
-
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(iyp1,ix,ix1,t0,vtn,mfl,msh,csh,visxtmp,epstmp,a,tv2)
-c$omp& copyin(i1, i6,j1, j6)
          do 44 iy = j1, j6
-         if (OMPThreadedPandf.gt.0) OMPyindex(iy)=omp_get_thread_num()
             do 43 ix = i1, i6
-	       ctaui(ix,iy,ifld) = 2.1e13/(loglambda(ix,iy)*zi(ifld)*zi(ifld)) # mass fac?
+	       ctaui(ix,iy,ifld) = 2.1e13/(loglambda(ix,iy)*zi(ifld)**2) # mass fac?
                tv2 = ctaui(ix,iy,ifld)/(ev*sqrt(ev))
                if (convis .eq. 0) then
                   a = max (ti(ix,iy), temin*ev)
@@ -2751,29 +2694,12 @@ ccc
      .                              nm(ix,iy,ifld) +  4*eta1(ix,iy)
    43       continue
    44    continue
-c$omp end parallel do
-        call OmpThreadCopyvisx
-        call OmpThreadCopyvisy
-        call OmpThreadCopynuiistar
-        call OmpThreadCopyktneo
-        call OmpThreadCopyalfneo
-        call OmpThreadCopyk2neo
-        call OmpThreadCopynuii
-        call OmpThreadCopyvisxneo
-        call OmpThreadCopyctaui
-
        endif      # test if zi(ifld) > 1.e-20
-
-
-
-
   102 continue    # large loop for ifld = 1, nfsp
 
-
-
-            if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
-            if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaBlock8=tock(t_start)+TimeParaBlock8
-              if ((TimingParaPandf.gt.0.or.TimingPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+            !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock8=tock(t_start)+TimeBlock8
+            !if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeParaBlock8=tock(t_start)+TimeParaBlock8
+              !if ((TimingParaPandf.gt.0.or.TimingPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 ****************************************************************
 ****************************************************************
 *  Heat Conduction. (old PHYTHC)
@@ -3417,8 +3343,8 @@ c                   if (ix .eq. 1 .and. iy .eq. 1) write(iout,*) 'sng_ue', ifld,
  301     continue
  302   continue
        enddo       # end of ifld loop
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock9=tock(t_start)+TimeBlock9
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+        !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock9=tock(t_start)+TimeBlock9
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *********************************************************************
 c  Here we do the neutral gas diffusion model
 c  The diffusion is flux limited using the thermal flux
@@ -3538,8 +3464,8 @@ ccc Distance between veloc. cell centers:
    92       continue
    93    continue
 
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock10=tock(t_start)+TimeBlock10
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+        !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock10=tock(t_start)+TimeBlock10
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *  -- compute the momentum transport --
 
          call fd2tra (nx,ny,flox,floy,conx,cony,
@@ -3882,8 +3808,8 @@ c  -- it is included in frici from mombal or mombalni
 
  105  continue
 
-              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock11=tock(t_start)+TimeBlock11
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+              !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock11=tock(t_start)+TimeBlock11
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 ****************************************************************
 ****************************************************************
 *  Here starts the old ENEBAL
@@ -4222,8 +4148,8 @@ c...Add the charge-exhange neutral contributions to ion+neutral temp eq.
      .                       + cfneut*cfneutsor_ei*cngtgy(1)*2.5*fngy(ix,iy,1)
  144        continue
  145     continue
-              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock12=tock(t_start)+TimeBlock12
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+              !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock12=tock(t_start)+TimeBlock12
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *  ---------------------------------------------------------------------
 *  compute the electron and the ion energy flow.
 *  ---------------------------------------------------------------------
@@ -4452,8 +4378,8 @@ c ... ## IJ 2016/10/19 add MC neutral flux
   309    continue
   310 continue
 
-              if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock13=tock(t_start)+TimeBlock13
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+              !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock13=tock(t_start)+TimeBlock13
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 *  -- total energy residual and equipartition --
 
 c...  Electron radiation loss -- ionization and recombination
@@ -4764,8 +4690,8 @@ c******************************************************************
           endif
         enddo
       enddo
-       if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock14=tock(t_start)+TimeBlock14
-              if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+       !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock14=tock(t_start)+TimeBlock14
+              !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 c******************************************************************
 c...  Update resee over whole "box" because initially set to zero
 c******************************************************************
@@ -4939,8 +4865,8 @@ c ... The factor (1-iseqalg(iv)) above forces yldot=0 for algebraic
 c ... equations, except up(nx,,); these yldot are subsequently set in
 c ... subroutine bouncon.
 
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock15=tock(t_start)+TimeBlock15
-         if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
+        !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock15=tock(t_start)+TimeBlock15
+         !if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
 c  POTEN calculates the electrostatic potential, and BOUNCON calculates the
 c  equations for the boundaries. For the vodpk solver, the B.C. are ODEs
 c  in time (rate equations).  Both bouncon and poten must be called before
@@ -4955,7 +4881,6 @@ c...  Finally, reset some source terms if this is a Jacobian evaluation
             if(isimpon.gt.0) pwrzec(xc,yc) = pradold
 
             if (fixpwrebkg.gt.0) then
-
             pwrebkg(xc,yc)=pwrbkg_c
             else
             pwrebkg(xc,yc) = pwrebkgold
@@ -5008,7 +4933,7 @@ c...  Finally, reset some source terms if this is a Jacobian evaluation
          endif
       end if #ismcnon
 
-      if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock16=tock(t_start)+TimeBlock16
+      !if (TimingPandf.gt.0.and.rhseval.gt.0) TimeBlock16=tock(t_start)+TimeBlock16
 c ... Accumulate cpu time spent here.
       if(xc .lt. 0) then
          ttotfe = ttotfe + gettime(sec4) - tsfe
@@ -5107,7 +5032,7 @@ c ... Common blocks:
       Use(Comtra)       # fricflf,sigvi_floor
       Use(Share)        # cutlo
       Use(Verbose)
-      Use(ParallelOptions)
+      Use(ParallelSettings),only:OMPParallelJac,OMPParallelPandf1
 c ... External functions:
       real rra, rsa
 
@@ -5117,7 +5042,7 @@ c ... Local variables:
       real rdum, dloglam, epar, parcurrent, umass, lmfpe, lmfpi,
      .     ltmax, tif, flxlimf, umassni, massni
       if (VerboseCall.gt.0)  write(iout,*) ' *********** calling mombal **************'
-      if (OMPParallelJac.gt.0) then
+      if (OMPParallelJac.gt.0 .or. OMPParallelPandf1.gt.0) then
 			      write(iout,*) 'This routine is not validated for paralel shared memory (openmp) construction of the jacobian'
 			      write(iout,*) 'due to mppl preprocessing of variable declaration in severla subroutines of fmombal (and maybe others)'
 			      call xerrab('Exiting...')
@@ -5530,7 +5455,6 @@ c
       logical isxyfl
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
-      real qsh,csh,qfl
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -5583,7 +5507,7 @@ c.... First the flux in the x-direction
             qfl = flalfgxa(ix,igsp) * sx(ix,iy) * (vtn + vtnp)*rt8opi*
      .           (ng(ix,iy,igsp)*gx(ix,iy) + ng(ix2,iy,igsp)*gx(ix2,iy))
      .                                      / (8*(gx(ix,iy)+gx(ix2,iy)))
-            csh = (1-isgasdc) * cdifg(igsp) * sx(ix,iy) / dynog(ix,iy) *
+            csh = (1-isgasdc) * cdifg(igsp) * sx(ix,iy) * gxf(ix,iy) *
      .                ave( stretcx(ix,iy)*vtn**2/nu1,
      .                     stretcx(ix2,iy)*vtnp**2/nu2 ) +
      .              isgasdc * sx(ix,iy) * gxf(ix,iy) * difcng +
@@ -5937,15 +5861,6 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-       if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
-      endif
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -6015,20 +5930,19 @@ c
       real flalfgx_adj, flalfgy_adj, flalfgxy_adj
       integer iy1, methgx, methgy, iy2, jx, jfld, ifld
       integer iym1,iyp1,iyp2,ixm1b,ixp1b,ixp2b
-      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       logical isxyfl
-      real qsh,csh,qfl
-      real(Size4) sec4, gettime
+      integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
+      real(Size4) sec4, gettime
 
-      use omp_lib
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
       Use(Phyvar)   # pi,me,mp,ev,qe,rt8opi
-      Use(UEpar)    # methg,isupgon,iigsp,nlimgx,nlimgy,agdc,cflbg,fixresng
-                    # qfl,csh,qsh,cs
-                    #
+      Use(UEpar)    # methg,
+                    # qfl,csh,qsh,cs,
+                    # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -6051,13 +5965,7 @@ c
       Use(MCN_dim)      # ngsp, ...
       Use(MCN_sources)  # cfneut_sng, cfneutdiv_fng, ... mcfngx, mcfngy, ...
       Use(Interp)		# ngs, tgs
-      use OMPPandf
-      use OmpCopybbb
 
-      use Lsode,only:neq
-      use OmpThreadCopybbb
-      integer :: t_start
-      real, external :: tock
 *  -- procedures --
       real ave
       ave(t0,t1) = 2*t0*t1 / (cutlo+t0+t1)
@@ -6066,28 +5974,7 @@ c ------------------
       methgx = mod(methg, 10)
       methgy = methg/10
 
-c      write(*,*) "neudifpg"
-
-
-            if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0) then
-            call tick(t_start)
-            call OmpCopyPointertg
-            call OmpCopyPointerng
-            call OmpCopyPointernm
-            call OmpCopyPointervygtan
-            call OmpCopyPointeruu
-            call OmpCopyPointernuix
-            call OmpCopyPointerup
-            call OmpCopyPointerpg
-            call OmpCopyPointerpgy1
-            call OmpCopyPointerpgy0
-            call OmpCopyPointernuix
-            call OmpCopyPointervy
-            call OmpCopyPointerngy1
-            call OmpCopyPointerngy0
-            if (TimingParaPandf.gt.0.and.rhseval.gt.0) TimeCopy1=tock(t_start)+TimeCopy1
-          endif
-
+c      write (*,*) "neudifpg"
       do 895 igsp = 1, ngsp
 
 c *********************************************
@@ -6096,26 +5983,9 @@ c *********************************************
 
 c ..Timing;initialize
       if(istimingon==1) tsngxlog = gettime(sec4)
-      if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux.gt.0) then
-      OMPThreadedPandf=1
-      OMPyindex(:)=-1
-      OMPxindex(:)=-1
-      if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxflux block'
-      else
-      OMPThreadedPandf=0
-      endif
 
-
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(ix,jx,ifld,iy1,iy2,ix2,ix4,ix6,t0,t1,vtn,vtnp,nu1,nu2,tgf,flalfgx_adj)
-c$omp& firstprivate(qsh,csh,qfl,qtgf,grdnv,nconv,qr)
-c$omp& copyin(i1, i5,j8, j4)
-ccc tg,ng,vygtan,uu,nuix,pg,up
-      do  iy = j4, j8
-        if (OMPThreadedPandf.gt.0) then
-        OMPyindex(iy)=omp_get_thread_num()
-        endif
-          do 887 ix = i1, i5
+      do 888 iy = j4, j8
+         do 887 ix = i1, i5
             iy1 = max(0,iy-1)
             iy2 = min(ny+1,iy+1)
             ix2 = ixp1(ix,iy)
@@ -6197,8 +6067,8 @@ c...  boundary face - shouldnot matter(just set BC) except for guard-cell values
                endif
             enddo
             conxg(ix,iy) = csh / (1 + qr**flgamg)**(1/flgamg)
-
             if (isdifxg_aug .eq. 1) conxg(ix,iy) = csh*(1+qr) #augment diffusion
+
 c...  themal force temperature gradient term is included in floxg
 	    floxg(ix,iy) = (qtgf/tgf) / (1 + qr**flgamg)**(1/flgamg)
 c...  now add the ion convective velocity for charge-exchange neutrals
@@ -6211,17 +6081,13 @@ c...  For one impurity, add convect vel for elastic scattering with ions
      .                cngniflox(ifld,igsp)*sx(ix,iy)*uu(ix,iy,ifld)/tgf
            enddo
          endif
+
   887    continue
          conxg(nx+1,iy) = 0
-        enddo
-c$OMP end parallel do
-c ..Timing; add info if timing is on
-        if(istimingon==1) ttngxlog=ttngxlog+(gettime(sec4)-tsngxlog)
-        if ((TimingPandf.gt.0.or.TimingParaPandf.gt.0).and.rhseval.gt.0) call tick(t_start)
-        call OmpThreadCopyconxg
-        call OmpThreadCopyfloxg
-        if (TimingPandf.gt.0.and.rhseval.gt.0) TimeCopy2=tock(t_start)+TimeCopy2
+  888 continue
 
+c ..Timing; add info if timing is on
+      if(istimingon==1) ttngxlog=ttngxlog+(gettime(sec4)-tsngxlog)
 
 c *******************************************************
 c.... Now the flux in the y-direction
@@ -6229,21 +6095,8 @@ c *******************************************************
 
 c ..Timing; initiate time for y-direction calc
       if(istimingon==1) tsngylog = gettime(sec4)
-      if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux.gt.0) then
-      OMPThreadedPandf=1
-      OMPyindex(:)=-1
-      OMPxindex(:)=-1
-      if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngyflux block'
-      else
-      OMPThreadedPandf=0
-      endif
 
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(ix,jx,ifld,t0,t1,tgf,vtn,vtnp,nu1,nu2,flalfgy_adj)
-c$omp& firstprivate(qsh,csh,qfl,qtgf,grdnv,nconv,qr,ty0,ty1)
-c$omp& copyin(j1,j5,i8, i4)
       do 890 iy = j1, j5
-      if (OMPThreadedPandf.gt.0) OMPyIndex(iy)=omp_get_thread_num()
          do 889 ix = i4, i8
 	    t0 = max(tg(ix,iy,igsp),temin*ev)
 	    t1 = max(tg(ix,iy+1,igsp),temin*ev)
@@ -6332,15 +6185,10 @@ c...  For impurities, add convect vel for elastic scattering with ions
          endif
 
   889    continue
-
   890 continue
-c$OMP end parallel do
+
 c ..Timing; add increment if timing is on
       if(istimingon==1) ttngylog=ttngylog+(gettime(sec4)-tsngylog)
-        call OmpThreadCopyconyg
-        call OmpThreadCopyfloyg
-
-
 
 *  --------------------------------------------------------------------
 *  compute the neutral particle flow
@@ -6350,9 +6198,6 @@ c ..Timing
 
       call fd2tra (nx,ny,floxg,floyg,conxg,conyg,
      .             pg(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
-
-
-
 c ..Timing
       if(istimingon==1) ttngfd2=ttngfd2+(gettime(sec4)-tsngfd2)
 
@@ -6360,20 +6205,8 @@ c...  Addition for nonorthogonal mesh
       if (isnonog .eq. 1) then
 c ..Timing
       if(istimingon==1) tsngfxy = gettime(sec4)
-         if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxyflux.gt.0) then
-              OMPThreadedPandf=1
-              OMPyindex(:)=-1
-              OMPxindex(:)=-1
-              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxyflux block'
-              else
-              OMPThreadedPandf=0
-        endif
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(iy1,ix,ix1,ix2,ix3,ix4,ix5,ix6,t0,t1,vtn,vtnp,nu1,nu2)
-c$omp& firstprivate(isxyfl,jx,grdnv,difgx2,flalfgxy_adj,qfl)
-c$omp& copyin(j1, j6,i6, i1)
+
          do 8905 iy = j1, min(j6, ny)
-            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
             iy1 = max(iy-1,0)
             do 8904 ix = i1, min(i6, nx)
                ix1 = ixm1(ix,iy)
@@ -6459,40 +6292,16 @@ c...  Now flux limit with flalfgxy
 ccc   MER NOTE:  no xy flux limit for ix=0 or ix=nx in original code
                if (isxyfl) then
                   fngxy(ix,iy,igsp) = fngxy(ix,iy,igsp) /
-     .                           sqrt( 1 + (fngxy(ix,iy,igsp)/qfl)*(fngxy(ix,iy,igsp)/qfl) )
+     .                           sqrt( 1 + (fngxy(ix,iy,igsp)/qfl)**2 )
                endif
  8904       continue
  8905    continue
-c$OMP end parallel do
 c ..Timing
       if(istimingon==1) ttngfxy=ttngfxy+(gettime(sec4)-tsngfxy)
-        call OmpThreadCopyfngxy
-
-
-
 
 c...  Fix the total fluxes; note the loop indices same as fd2tra
 c...  Flux-limit the total poloidal flux here
-        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngxflux2.gt.0) then
-              OMPThreadedPandf=1
-              OMPyindex(:)=-1
-              OMPxindex(:)=-1
-              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngxflux2 block'
-              else
-              OMPThreadedPandf=0
-        endif
-        if (OMPThreadedPandf.gt.0) then
-
-            call OmpCopyPointerfngx
-            call OmpCopyPointerfngxy
-          endif
-
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(ix,ix2,t0,t1,vtn,vtnp,nu1,nu2)
-c$omp& firstprivate(isxyfl,jx,grdnv,difgx2,flalfgxy_adj,qfl)
-c$omp& copyin(j4,j8,i1,i5)
             do iy = j4, j8
-            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i1, i5
                   ix2 = ixp1(ix,iy)
                   fngx(ix,iy,igsp) = fngx(ix,iy,igsp)-fngxy(ix,iy,igsp)
@@ -6503,34 +6312,15 @@ c$omp& copyin(j4,j8,i1,i5)
                   qfl = flalfgnx * sx(ix,iy)*(vtn + vtnp)*rt8opi*
      .                             (ng(ix,iy,igsp)+ng(ix2,iy,igsp))/16
                   fngx(ix,iy,igsp) = fngx(ix,iy,igsp)/
-     .                              sqrt(1 + (fngx(ix,iy,igsp)/qfl)*(fngx(ix,iy,igsp)/qfl))
+     .                              sqrt(1 + (fngx(ix,iy,igsp)/qfl)**2)
 c ...          adjust fluxes to prevent pumpout
                     fngx(ix,iy,igsp) = fngx(ix,iy,igsp)/( 1 - 2*nlimgx +
      .                          nlimgx*(ng(ix2,iy,igsp)/ng(ix,iy,igsp) +
      .                                  ng(ix,iy,igsp)/ng(ix2,iy,igsp)) )
                enddo
             enddo
-c$OMP end parallel do
-            call OmpThreadCopyfngx
 c ...   adjust y-fluxes to prevent pumpout
-
-        if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedPandfngyflux2.gt.0) then
-              OMPThreadedPandf=1
-              OMPyindex(:)=-1
-              OMPxindex(:)=-1
-              if (OMPThreadedPandfVerbose.gt.1) write(*,*) 'Running threaded fngyflux2 block'
-
-              else
-              OMPThreadedPandf=0
-        endif
-        if (OMPThreadedPandf.gt.0) then
-            call OmpCopyPointerfngy
-          endif
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared) shared(OMPyindex,OMPxindex)
-c$omp& firstprivate(ix,t0,t1,vtn,vtnp,qfl)
-c$omp& copyin(j1,j5,i4,i8)
             do iy = j1, j5    # same loop ranges as for fngy in fd2tra
-            if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
                do ix = i4, i8
                      fngy(ix,iy,igsp) = fngy(ix,iy,igsp)/( 1-2*nlimgy +
      .                         nlimgy*(ng(ix,iy+1,igsp)/ng(ix,iy,igsp)+
@@ -6542,11 +6332,9 @@ c$omp& copyin(j1,j5,i4,i8)
                     qfl = flalfgny*sy(ix,iy)*(vtn+vtnp)*rt8opi*
      .                        (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp))/16
                     fngy(ix,iy,igsp) = fngy(ix,iy,igsp)/
-     .                            sqrt(1 + (fngy(ix,iy,igsp)/qfl)*(fngy(ix,iy,igsp)/qfl))
+     .                            sqrt(1 + (fngy(ix,iy,igsp)/qfl)**2)
                enddo
             enddo
-c$OMP end parallel do
-            call OmpThreadCopyfngy
 
       endif
 c...  Finished with nonorthogonal mesh part
@@ -6653,7 +6441,7 @@ c ... is it correct to use ng instead of ni??? i.e. will ng enter jacobian?
             if (igsp.eq.1 .and. ishymol.eq.1)
      .            resng(ix,iy,igsp) = resng(ix,iy,igsp) + psordis(ix,iy)
             resng(ix,iy,igsp) = resng(ix,iy,igsp) - cfneutdiv*
-     .          (cfneutdiv_fng*(fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
+     .          cfneutdiv_fng*((fngx(ix,iy,igsp) - fngx(ix1,iy, igsp)) +
      .          fluxfacy*(fngy(ix,iy,igsp) - fngy(ix,iy-1,igsp)) )
 
 c ... IJ 2016/10/19 add MC neut flux if flags set
@@ -6670,15 +6458,6 @@ c ... IJ 2016/10/19 add MC neut flux if flags set
 
  891      continue
  892    continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-      if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
-      endif
       endif
 
  895  continue   # end of igsp loop from the beginning of subroutine
@@ -6723,7 +6502,6 @@ c END subroutine neudifpg
 c --------------------------------------------------------------------------
 
 
-
 c --------------------------------------------------------------------------
 c   Below subroutine neudifl is just like subroutine neudif, except that the
 c   log of the gas density is used, and then converted back to give the
@@ -6738,10 +6516,10 @@ c --------------------------------------------------------------------------
       real vtn, vtnp, qr, qtgf, nconv, grdnv, difgx2
       real tnuiz,ngnot,lmfp,ty0,ty1,nlmt,ffyo,ffyi
       integer iy1, methgx, methgy, iy2, jx
-      logical isxyfl
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
-      real qsh,csh,qfl
+      logical isxyfl
+
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
       Use(Share)    # geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -6749,6 +6527,7 @@ c --------------------------------------------------------------------------
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy,nlimiy,rld2dx,rld2dy
+
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -7082,17 +6861,7 @@ c.... Calculate the residual for the gas equation for diffusive neutral case
      .                                  resng(ix,iy,igsp)+psordis(ix,iy)
  891        continue
  892     continue
-cJG We add here the initiliazation of resng when isupgon(igsp).ne.0
-       else
-       if (fixresng.gt.0) then
-              do iy = j2, j5
-                do  ix = i2, i5
-                resng(ix,iy,igsp) = 0.0
-       enddo
-       enddo
       endif
-      endif
-
 
  895  continue   # end of igsp loop from the beginning of subroutine
 
@@ -7148,7 +6917,7 @@ c ..  the gas fluxes and then used to form fnix if isupgon(igsp)=1
       integer iy1, methgx, methgy, iy2, jx
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t,t0,t1,t2,a
-      real qsh,csh,qfl
+
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx
       Use(Share)    # nxpt,geometry,nxc,isnonog,cutlo,islimon,ix_lim,iy_lims
@@ -7156,6 +6925,7 @@ c ..  the gas fluxes and then used to form fnix if isupgon(igsp)=1
       Use(UEpar)    # methg,
                     # qfl,csh,qsh,cs,
                     # isupgon,iigsp,nlimgx,nlimgy
+
       Use(Coefeq)   # cngfx,cngfy,cngmom,cmwall,cdifg,rld2dxg,rld2dyg
       Use(Bcond)    # albedoo,albedoi
       Use(Parallv)  # nxg,nyg
@@ -7580,6 +7350,7 @@ c END subroutine neudifo - old version of neudif
 c --------------------------------------------------------------------------
 
 
+
 c-----------------------------------------------------------------------
       subroutine timimpfj (tsimp, xc)
       real(Size4) tsimp
@@ -7617,7 +7388,7 @@ c --------------------------------------------------------------------------
 
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real t0,t1,t,a
-      real qsh,csh,qfl
+c      real qsh,csh,qfl
 
       Use(Dim)      # nx,ny,nhsp,nisp,ngsp,nxpt
       Use(Xpoint_indices)      # ixlb,ixpt1,ixpt2,ixrb,iysptrx1
@@ -7862,6 +7633,7 @@ c...  If isflxvar=2, variables are ni,v,nTe,nTi,ng. Boundary equations and
 c...  potential equations are not reordered.
 
       if(isflxvar.ne.1 .and. isrscalf.eq.1) call rscalf(yl,yldot)
+
 c
 c ... Now add psuedo or real timestep for nksol method, but not both
       if (nufak.gt.1.e5 .and. dtreal.lt.1.e-5) then
@@ -7870,9 +7642,9 @@ c ... Now add psuedo or real timestep for nksol method, but not both
 
 c...  Add a real timestep, dtreal, to the nksol equations
 c...  NOTE!! condition yl(neq+1).lt.0 means a call from nksol, not jac_calc
-
       if(dtreal < 1.e15) then
        if((svrpkg=='nksol' .and. yl(neq+1)<0) .or. svrpkg == 'petsc') then
+
          if (isbcwdt .eq. 0) then  # omit b.c. eqns
 cccMER   NOTE: what about internal guard cells (for dnbot,dnull,limiter) ???
             j2l = 1
@@ -7962,7 +7734,6 @@ c...  timestep dtphi
 
        endif   #if-test on svrpkg and yl(neq+1)
       endif    #if-test on dtreal
-
       return
       end
 c****** end of subroutine pandf1 ************
@@ -8322,9 +8093,8 @@ c-----------------------------------------------------------------------
 c ... Calculate the right-hand sides of the UEDGE rate equations.
 
       implicit none
-      use omp_lib
-      Use(OMPPandf)
-      Use(OMPOptions)
+      Use(ParallelSettings),only: OMPParallelPandf1
+
       Use(Math_problem_size)   # neqmx
       Use(Constraints)         # icflag,rlx,icnstr,ylprevc,ylchng
 
@@ -8408,7 +8178,7 @@ ccc 10   call convsr_vo (-1,-1, yl)  # test new convsr placement
 ccc      call convsr_aux (-1,-1, yl) # test new convsr placement
 
  10   continue
-      if (OMPParallelPandf.gt.0) then
+      if (OMPParallelPandf1.gt.0) then
       call ParallelPandf1(neq, tloc, yl, yldot)
       else
       call pandf1 (-1, -1, 0, neq, tloc, yl, yldot)
@@ -8459,7 +8229,7 @@ c ... Common blocks:
       Use(Parallv)                 # nxg,nyg
       Use(Time_dep_nwt)            # nufak,dtreal,ylodt,dtuse
       Use(Selec)                   # yinc
-      Use(OmpOptions),only:iidebugprint,ivdebugprint
+      Use(OMPJacSettings),only:iidebugprint,ivdebugprint
 
 c ... Functions:
       logical tstguardc
@@ -9306,7 +9076,7 @@ c ... Common blocks:
                           # isuponxy,isteonxy,istionxy,isngonxy,isphionxy
       Use(Jac_work_arrays) # iwwp,wwp,liwp,lwp  # diagnostic arrays in this sub
       Use(Verbose)
-      Use(ParallelOptions),only:ParallelJac,DebugJac
+      Use(ParallelSettings),only:ParallelJac
 
 c ... Local variables:
       real tp
@@ -9724,7 +9494,7 @@ c ... Common blocks:
       Use(Time_dep_nwt)        # ydt_max0,nufak0
       Use(Share)               # cutlo
       Use(Verbose)
-      Use(ParallelOptions)
+      Use(ParallelSettings),only:ParallelJac
 
 c ... Local variables:
       real tp
@@ -9814,7 +9584,7 @@ c ... Local variables:
       integer iv,iv1,iv2,iv3,iv4,ifld,igsp,ix,iy,iym1,iyp1,ixm1u,ixp1u
       real up_5ca
 
-
+       write(*,*) '>>>>>>>>>>>>>>>>>>>>>>>>. set_dt <<<<<<<<<<<<<<<<<<<<<<<<'
       call rhsnk (neq, yl, f0)    # Reset f0 with nufak off
 
 c ... special new section for adjustable timesteps
@@ -10045,7 +9815,7 @@ c ... Be sure that algebraic equations (esp. limiter) have large dt
           if (iseqalg(iv).eq.1) dtuse(iv) = 1.e20
         enddo
       endif
-
+      write(*,*) '>>>>>>>>>>>>>>>>>>>>>>>>. set_dt <<<<<<<<<<<<<<<<<<<<<<<<'
       return
       end
 c-----------------------------------------------------------------------
