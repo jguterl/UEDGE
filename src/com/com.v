@@ -9,24 +9,28 @@ iout  integer /6/     # switch used by OMFIT
 ***** OMFIT:
 iomfit  integer /1/     # switch used by OMFIT
 
-***** ParallelOptions:
+***** ParallelSettings:
+OMPParallelPandf1 integer /0/      # [0]: serial pandf1 rhs calc [1] omp parallel pandf1 rhs calc
 OMPParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 MPIParallelJac     integer /0/     # [0]: serial jacobian calc [1] omp parallel jacobian calc
 ParallelJac     integer /0/        # [0]: serial jacobian calc [1] omp parallel jacobian calc
-DebugJac          integer /0/
-CheckJac          integer /0/      # [0/1]: Turn on on-the-fly comparison of parallel vs serial evaluation of Jacobian.
-                                   # If differences between para and serial Jacobians, dump both Jacs in serialjac.dat and paralleljac.dat with routine jac_write in current working folder. See UEDGEToolBox docs for analysis tools.
-DumpJac           integer /0/      # [0/1]: Turn on dumping of data for the diverging element of serial and parallel jacobian (only available when CheckJac is on). See UEDGEToolBox docs for analysis tools.
-DumpFullJac  integer /0/      # [0/1]: Turn on dumping of full serial jacobian for analysis of bandwidth (dumping in file ). See UEDGEToolBox docs docs for analysis tools.
-ForceSerialCheck  integer /0/      # [0/1]: Force two sequential serial evaluations of the Jacobian to verify that Jacobian evaluation is reproducible (fail when e.g. variables are not properly initialized in pandf).
-***** HybridOptions:
+
+***** OMPSettings:
+OMPAllocDebug integer /0/ #Print info on allocation and association of variables
+OMPneq  integer # number of equation (=neq)
+OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
+OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
+Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
+OMPCopyDebug integer /0/ #Print debug info for omp constructs
+
+***** HybridSettings:
 HybridOMPMPI    integer /0/        # Flag for HybridOMPMPI. Automatically turn on with OMPParallelJac and PMIParallelJac
 HybridDebug integer /0/ #Print debug info for omp constructs
 HybridVerbose integer /1/ #Print info for omp jacobian calculation
 HybridCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 HybridStamp       character*20 # Stamp for hybrid output (not an user input)
 
-***** MpiOptions:
+***** MPIJacSettings:
 MPIRank integer /0/ # Rank of the processor
 ComSize integer /1/ # Size of the common world
 MPIDebug integer /0/ #Print debug info for omp constructs
@@ -43,7 +47,7 @@ MPIAutoBalance integer /1/ # Automatic load balancing for MPI tasks
 MPIBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(tproc/<tproc>)**s)
 MPIStamp          character*20 # Stamp for MPI output (not an user input)
 
-***** MpiJacobian:
+***** MPIJacobian:
 MPIivmin(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread (not an user input)
 MPIivmax(0:Nprocs-1)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread (not an user input)
 MPIiJacRow(MPIneq) _integer #
@@ -52,28 +56,29 @@ MPIrJacElem(nnzmxperproc) _real #
 MPILoadWeight(0:Nprocs-1)  _real  # weight for load distribution of jacobian calculation among threads
 MPITimeLocalJac(0:Nprocs-1)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
 
-***** OmpOptions:
-OMPAllocDebug integer /0/ #Print info on allocation and association of variables
-OMPDebug integer /0/ #Print debug info for omp constructs
-OMPVerbose integer /1/ #Print info for omp jacobian calculation
-OMPCopyDebug integer /0/ #Print debug info for omp constructs
+
+***** OMPJacSettings:
+OMPJacDebug integer /0/ #Print debug info for omp constructs
+OMPJacVerbose integer /1/ #Print info for omp jacobian calculation
 iidebugprint      integer /-1/ # index ii of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. iv is determined by ivdebugprint
 ivdebugprint      integer /-1/ # index iv of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. ii is determined by iidebugprint
 WriteJacobian     integer /0/ # Write jacobian in an ascii text file
 OMPlenpfac       integer /1/ # Factor to increase nnzmxperthread
 nnzmxperthread   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
-OMPneq  integer # number of equation (=neq)
-OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
-OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
-Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
-OMPStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
+OMPJacStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
 OMPTimingJacRow    integer /0/ # Profile execution time of calculatation of each row of the jacobian
+DebugJac          integer /0/
+CheckJac          integer /0/      # [0/1]: Turn on on-the-fly comparison of parallel vs serial evaluation of Jacobian.
+                                  # If differences between para and serial Jacobians, dump both Jacs in serialjac.dat and paralleljac.dat with routine jac_write in current working folder. See UEDGEToolBox docs for analysis tools.
+DumpJac           integer /0/      # [0/1]: Turn on dumping of data for the diverging element of serial and parallel jacobian (only available when CheckJac is on). See UEDGEToolBox docs for analysis tools.
+DumpFullJac  integer /0/      # [0/1]: Turn on dumping of full serial jacobian for analysis of bandwidth (dumping in file ). See UEDGEToolBox docs docs for analysis tools.
+ForceSerialCheck  integer /0/      # [0/1]: Force two sequential serial evaluations of the Jacobian to verify that Jacobian evaluation is reproducible (fail when e.g. variables are not properly initialized in pandf).
 
-***** OmpJacobian:
+***** OMPJacobian:
 OMPivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPLoadWeight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
@@ -85,27 +90,48 @@ rJacElem(nnzmxperthread,Nthreads) _real #
 nnz(Nthreads) _integer
 nnzcum(Nthreads) _integer
 
+**** OMPPandf1Settings:
+OMPPandf1Stamp character*20 /"*OMPPandf1* "/ # Stamp for hybrid output (not an user input)
+OMPPandf1Debug integer /0/
+OMPPandf1Verbose integer /0/
+OMPPandf1FlagVerbose integer /0/
+OMPCheckParallelPandf1 integer /1/
+NthreadsPandf1 integer /64/ # Nthreads for threaded pandf1.
+OMPPandf1yinc integer /3/
+OMPPandf1padyinc integer /3/
+OMPTimeParallelPandf1 real /0.0/
+OMPTimeSerialPandf1 real /0.0/
+OMPPandf1RunPara integer /1/
 
-**** OMPPandf:
-OMPThreadedPandf integer /0/
-OMPThreadedPandfDebug integer /0/
-OMPThreadedPandfVerbose integer /0/
-OMPPandf_Nthreads integer /0/ # Nthreads for threaded pandf set by internal functions. Do not modify and use OMPPandfNthreads instead.
-OMPPandfNthreads integer /64/ # Nthreads for threaded pandf.
-OMPParallelPandf integer /0/
-OMPThreadedPandfngxflux integer /1/
-OMPThreadedPandfngyflux integer /1/
-OMPThreadedPandfngxflux2 integer /0/
-OMPThreadedPandfngyflux2 integer /0/
-OMPThreadedPandfngxyflux integer /1/
-OMPThreadedPandvisxflux integer /1/
-OMPThreadedPandvisxflux2 integer /1/
-OMPThreadedConvertni integer /1/
-OMPCheckThreadedPandf integer /1/
+**** OMPPandf1:
+OMPic(1:Nthreads) _integer
+OMPyinc(1:Nthreads) _integer
+OMPivthread(1:OMPneq) _integer
+OMPTimeLocalPandf1(1:Nthreads) _real
+OMPTimeCollectPandf1(1:Nthreads) _real
+
+
+#**** OMPPandf:
+#OMPThreadedPandf integer /0/
+#OMPThreadedPandfDebug integer /0/
+#OMPThreadedPandfVerbose integer /0/
+#OMPPandf_Nthreads integer /0/ # Nthreads for threaded pandf set by internal functions. Do not modify and use OMPPandfNthreads instead.
+#OMPPandfNthreads integer /64/ # Nthreads for threaded pandf.
+#OMPParallelPandf integer /0/
+#OMPThreadedPandfngxflux integer /1/
+#OMPThreadedPandfngyflux integer /1/
+#OMPThreadedPandfngxflux2 integer /0/
+#OMPThreadedPandfngyflux2 integer /0/
+#OMPThreadedPandfngxyflux integer /1/
+#OMPThreadedPandvisxflux integer /1/
+#OMPThreadedPandvisxflux2 integer /1/
+#OMPThreadedConvertni integer /1/
+#OMPCheckThreadedPandf integer /1/
+
+**** TimingPandf:
 TimePandf real /0.0/
 TimeSerialPandf real /0.0/
 TimeParallelPandf real /0.0/
-TimingPandf integer /0/
 TimingParaPandf integer /0/
 TimingConvert integer /0/
 TimingParaConvert integer /0/
@@ -157,9 +183,6 @@ TimeParaBlock16 real /0/
 TimeCopy0 real /0/
 TimeCopy1 real /0/
 TimeCopy2 real /0/
-OMPRhseval integer /0/
-OMPyindex(0:ny+1) _integer
-OMPxindex(0:nx+1) _integer
 
 
 ***** Verbose:

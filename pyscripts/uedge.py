@@ -110,9 +110,9 @@ except:
 
 class MyPrompt(Prompts):
      def in_prompt_tokens(self, cli=None):
-         return [(Token.Prompt, "\033[1;34mUEDGE>>>\033[0m")]
+         return [(Token.Prompt, "UEDGE>>>")]
      def out_prompt_tokens(self, cli=None):
-         return [(Token.Prompt, "\033[1;34mUEDGE>>>\033[0m")]
+         return [(Token.Prompt, "UEDGE>>>")]
 try:
    ip = get_ipython()
    ip.prompts = MyPrompt(ip)

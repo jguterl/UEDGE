@@ -112,11 +112,11 @@ ncrhs     integer
 istep     integer
 iter      integer
 dp1       real
-#qfl       real
-#csh       real
-#qsh       real
-#mfl       real
-#msh       real
+qfl       real
+csh       real
+qsh       real
+mfl       real
+msh       real
 cseec     real /1.0/
 cseev     real /1.0/
 cpwrebkg  real /1.0/

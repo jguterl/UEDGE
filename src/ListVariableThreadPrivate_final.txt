@@ -41,7 +41,6 @@ difp_use
 dp1
 dphi_iy1
 dtold
-dtreal
 dutm_use
 dztot
 eeli
@@ -237,7 +236,6 @@ nuvl
 nz2
 nzloc
 openbox
-parvis
 pg
 pgy0
 pgy1
@@ -331,7 +329,6 @@ totfeexl
 totfeexr
 totfeixl
 totfeixr
-travis
 trax_use
 tray_use
 ttimpfe
@@ -407,3 +404,4 @@ zeff
 znot
 impradloc
 yldot_pert
+yinc

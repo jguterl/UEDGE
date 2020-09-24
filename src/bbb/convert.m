@@ -103,7 +103,7 @@ c...  Omit constraint check on x-boundaries for Ti - ckinfl problem
 	  if(isngonxy(ix,iy,igsp) .eq. 1) then
             iv = iv + 1
             if(ineudif .ne. 3) then
-             yl(iv) = ng(ix,iy,igsp)/n0g(igsp)
+              yl(iv) = ng(ix,iy,igsp)/n0g(igsp)
             elseif(ineudif .eq. 3) then
               yl(iv) = lng(ix,iy,igsp)
             endif
@@ -163,9 +163,8 @@ c ... The other variables are added in the routine convr_auxo
       implicit none
 
 *  -- input arguments
-      integer,intent(in):: ixl, iyl
-      integer inc
-      real,intent(in):: yl(*)
+      integer ixl, iyl, inc
+      real yl(*)
 
 *  -- local variables
       real ntemp
@@ -173,7 +172,7 @@ c ... The other variables are added in the routine convr_auxo
       integer ifld, id,ix,iy,igsp,ix1,ix2
       real t1,t2
       integer inegt, inegng, inegni, ixneg, iyneg, ifldneg, igspneg
-      Use(Output)
+
 c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
       Use(Dim)                 # nx,ny,nhsp,nzsp,nisp,nusp,ngsp
       Use(Xpoint_indices)      # ixpt1,ixpt2
@@ -183,6 +182,7 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
       Use(UEpar)       # itrap_negt,itrap_negng,
                        # isnionxy,isuponxy,isteonxy,istionxy,
                        # isngonxy,isphionxy
+
       Use(Selec)       # yinc,ixm1,ixp1
       Use(Indexes)
       Use(Comgeo)
@@ -196,27 +196,39 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
       Use(Indices_domain_dcg)   #isddcon
       Use(Npes_mpi)             #mype
 
+
       integer ifake  #forces Forthon scripts to put implicit none above here
 
 c ... Set mpi indices, etc
 CC c_mpi      include 'mpif.h'
 c_mpi      integer status(MPI_STATUS_SIZE)
 c_mpi      integer ierr
+
       id = 1
-      if(ixl .lt. 0 .or. yinc .ge. 6) then
+      if(ixl .lt. 0 .or. yinc .ge. 10) then
          is = 1-ixmnbcl
          ie = nx+ixmxbcl
       else
          is = ixl
          ie = ixl
       endif
+cJG modif parapandf
+c      if(ixl .ge. 0 .and. iyl.lt.0) then
+c         is = max(1-ixmnbcl,ixl-xlinc)
+c         ie = min(nx+ixmxbcl,ixl+xrinc)
+c      endif
 
-      if(iyl .lt. 0 .or. yinc .ge. 6) then
+      if(iyl .lt. 0 .or. yinc .ge. 10) then
          js = 1-iymnbcl
          je = ny+iymxbcl
       else
          js = iyl
          je = iyl
+      endif
+cJG modif parapandf
+      if(ixl .lt. 0 .and. iyl.ge.0) then
+         js = max(1-iymnbcl,iyl-yinc)
+         je = min(ny+iymxbcl,iyl+yinc)
       endif
 
         do 20 iy = js, je
@@ -306,12 +318,12 @@ c_mpi      integer ierr
 
       if (inegni .gt. 0 .and. itrap_negni.eq.1) then
          call remark("***  ni is negative - calculation stopped")
-	 write(iout,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
+	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
          call xerrab("")
       endif
       if (inegng .gt. 0 .and. itrap_negng.eq.1) then
          call remark("***  ng is negative - calculation stopped")
-	 write(iout,*) 'At  ix =', ixneg, ' iy =', iyneg, ' igsp =', igspneg
+	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' igsp =', igspneg
          call xerrab("")
       endif
 cc Since Te and Ti have temin eV floors, this not used
@@ -365,7 +377,7 @@ c++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 c ***** end of subroutines convsr_vo ********
 c-----------------------------------------------------------------------
-      subroutine convsr_aux (ixl, iyl)
+      subroutine convsr_aux (ixl, iyl, yl)
 
 c...  Calculates various plasmas quantities used repeatedly in pandf
 
@@ -373,6 +385,7 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
 
 *  -- input arguments
       integer ixl, iyl, inc
+      real yl(1)
 *  -- local variables
       real ntemp
       integer is, ie, js, je, k, l
@@ -381,8 +394,7 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
       integer impflag, inegt, inegng
       integer jx,ixlp1,ixlp2,ixrm1
 *  -- external functions
-      real zimp
-      real rnec, zeffc
+      real zimp, rnec, zeffc, intpnog
 
       Use(Dim)                 # nx,ny,nhsp,nzsp,nisp,nusp,ngsp
       Use(Xpoint_indices)      # ixpt1,ixpt2,iysptrx1,iysptrx2,ixlb,ixrb
@@ -390,7 +402,6 @@ c...  Calculates various plasmas quantities used repeatedly in pandf
       Use(Compla)      # ,zi,zeff,zimpc
       Use(Ynorm)       # isflxvar,temp0,nnorm,ennorm,fnorm,n0,n0g
       Use(UEpar)       # itrap_negt,itrap_negng
-cJG     loop indexes were shared through a module. Very very bad....
       Use(Selec)       # yinc,ixm1,ixp1
       Use(Indexes)
       Use(Comgeo)      # xcs, yyc
@@ -402,13 +413,6 @@ cJG     loop indexes were shared through a module. Very very bad....
       Use(Interp)      # nis,tis,phis,nxold,nyold
       Use(Share)       # nysol,nyomitmx
       Use(RZ_grid_info)   # rm,zm
-      use OMPPandf
-      use OmpCopybbb
-      use OmpThreadCopybbb
-      use omp_lib
-      integer t_start
-      real, external::tock
-
 
 *  -- procedures --
       real interpte,interpti,interpphi,interpni,interppri,interpng,
@@ -476,24 +480,31 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                  fxmy(ix,iy,k)*log(pg(ixm1(ix,iy+1-k),iy+1-k,l)) +
      .                  fxpy(ix,iy,k)*log(pg(ixp1(ix,iy+1-k),iy+1-k,l)) )
 
-      if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
-
-
       id = 1
-      if(ixl .lt. 0 .or. yinc .ge. 6) then
+      if(ixl .lt. 0 .or. yinc .ge. 10) then
          is = 0
          ie = nx+1
       else
          is = ixl
          ie = ixl
       endif
+cJG
+c      if(ixl .ge. 0 .and. iyl.lt.0) then
+c         is = max(0,ixl-xlinc)
+c         ie = min(nx+1,ixl+xrinc)
+c      endif
 
-      if(iyl .lt. 0 .or. yinc .ge. 6) then
+      if(iyl .lt. 0 .or. yinc .ge. 10) then
          js = 0
          je = ny+1
       else
          js = iyl
          je = iyl
+      endif
+cJG
+      if(ixl .lt. 0 .and. iyl.ge.0) then
+         js = max(0,iyl-yinc)
+         je = min(ny+1,iyl+yinc)
       endif
 
       do iy = js, je
@@ -612,46 +623,12 @@ cc      gpix(0,ny+1,ifld) = gpix(1,ny+1,ifld)
 cc      gpix(nx+1,0,ifld) = gpix(nx,0,ifld)
 cc      gpix(nx+1,ny+1,ifld) = gpix(nx,ny+1,ifld)
    23 continue
-         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv0=tock(t_start)+TimeConv0
-         if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
-
-         if (OMPParallelPandf.gt.0 .and. RhsEval.gt.0.and.OMPThreadedConvertni.gt.0) then
-            call OmpCopyPointerni
-            call OmpCopyPointerpri
-            OMPThreadedPandf=1
-              if (OMPThreadedPandfVerbose.gt.1) then
-c$omp parallel
-              if (OMP_GET_THREAD_NUM().eq.0) then
-              write(*,'(a,I3,a)') 'Threaded Convertni block [',OMP_GET_NUM_THREADS(),']'
-              endif
-c$omp end parallel
-              endif
-              else
-              OMPThreadedPandf=0
-        endif
-
 
 c Tom:  add comments here to explain the indices used on do 25 and 24
       do 26 ifld = 1, nisp
-
-      if (OMPThreadedPandf.gt.0) then
-              OMPyindex(:)=-1
-              OMPxindex(:)=-1
-            call OmpCopyPointerniy0
-            call OmpCopyPointerniy1
-            call OmpCopyPointerniy0s
-            call OmpCopyPointerniy1s
-            call OmpCopyPointerpriy0
-            call OmpCopyPointerpriy1
-       endif
-
-cJG: isolate loop Tom:  add comments here to explain the indices used on do 25 and 24
-c$OMP PARALLEL DO if (OMPThreadedPandf.gt.0) default(shared)
-c$omp& firstprivate(inc,ix,ifld)
-         do 250 iy = max(js-1,0), min(je,ny)
-         if (OMPThreadedPandf.gt.0) ompyIndex(iy)=omp_get_thread_num()
-	        inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
-            do 240 ix = ixm1(is,js), min(nx,ie), inc
+         do 25 iy = max(js-1,0), min(je,ny)
+	    inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
+            do 24 ix = ixm1(is,js), min(nx,ie), inc
                niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
                niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
                if (nx==nxold .and. ny==nyold .and.
@@ -659,9 +636,17 @@ c$omp& firstprivate(inc,ix,ifld)
                   niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
                   niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
                endif
+               nity0(ix,iy) = nity0(ix,iy) + niy0(ix,iy,ifld)
+               nity1(ix,iy) = nity1(ix,iy) + niy1(ix,iy,ifld)
+               ney0(ix,iy) = ney0(ix,iy) + zi(ifld)*niy0(ix,iy,ifld)
+               ney1(ix,iy) = ney1(ix,iy) + zi(ifld)*niy1(ix,iy,ifld)
                priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
                priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
-  240       continue
+               gpiy(ix,iy,ifld) = (priy1(ix,iy,ifld) -
+     .                             priy0(ix,iy,ifld))/dynog(ix,iy)
+               if (zi(ifld).ne.0.) gpry(ix,iy) = gpry(ix,iy) +
+     .            gpiy(ix,iy,ifld)
+   24       continue
             ix = ixp1(ie,iy)
             niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
             niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
@@ -670,57 +655,12 @@ c$omp& firstprivate(inc,ix,ifld)
                niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
                niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
             endif
-            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
-            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
-  250    continue
-c$OMP end parallel do
-          if (OMPThreadedPandf.gt.0) then
-            call OmpThreadCopyniy0
-            call OmpThreadCopyniy1
-            call OmpThreadCopyniy0s
-            call OmpThreadCopyniy1s
-            call OmpThreadCopypriy0
-            call OmpThreadCopypriy1
-            endif
-
-cJG end isolate loop
-
-
-         do 25 iy = max(js-1,0), min(je,ny)
-	    inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
-            do 24 ix = ixm1(is,js), min(nx,ie), inc
-c               niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
-c               niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
-c               if (nx==nxold .and. ny==nyold .and.
-c     .                                       nis(1,1,1).ne.0.) then
-c                  niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
-c                  niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
-c               endif
-               nity0(ix,iy) = nity0(ix,iy) + niy0(ix,iy,ifld)
-               nity1(ix,iy) = nity1(ix,iy) + niy1(ix,iy,ifld)
-               ney0(ix,iy) = ney0(ix,iy) + zi(ifld)*niy0(ix,iy,ifld)
-               ney1(ix,iy) = ney1(ix,iy) + zi(ifld)*niy1(ix,iy,ifld)
-c               priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
-c               priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
-               gpiy(ix,iy,ifld) = (priy1(ix,iy,ifld) -
-     .                             priy0(ix,iy,ifld))/dynog(ix,iy)
-               if (zi(ifld).ne.0.) gpry(ix,iy) = gpry(ix,iy) +
-     .            gpiy(ix,iy,ifld)
-   24       continue
-            ix = ixp1(ie,iy)
-c            niy0(ix,iy,ifld) = interpni(ix,iy,0,ifld)
-c            niy1(ix,iy,ifld) = interpni(ix,iy,1,ifld)
-c            if (nx==nxold .and. ny==nyold .and.
-c     .                                     nis(1,1,1).ne.0.) then
-c               niy0s(ix,iy,ifld) = interpnis(ix,iy,0,ifld)
-c               niy1s(ix,iy,ifld) = interpnis(ix,iy,1,ifld)
-c            endif
             nity0(ix,iy) = nity0(ix,iy) + niy0(ix,iy,ifld)
             nity1(ix,iy) = nity1(ix,iy) + niy1(ix,iy,ifld)
             ney0(ix,iy) = ney0(ix,iy) + zi(ifld)*niy0(ix,iy,ifld)
             ney1(ix,iy) = ney1(ix,iy) + zi(ifld)*niy1(ix,iy,ifld)
-c            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
-c            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
+            priy0(ix,iy,ifld) = interppri(ix,iy,0,ifld)
+            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
             gpiy(ix,iy,ifld) = (priy1(ix,iy,ifld) -
      .                          priy0(ix,iy,ifld))/dynog(ix,iy)
             if (zi(ifld).ne.0.) gpry(ix,iy) = gpry(ix,iy) +
@@ -728,9 +668,6 @@ c            priy1(ix,iy,ifld) = interppri(ix,iy,1,ifld)
    25    continue
    26 continue
 
-        if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv1=tock(t_start)+TimeConv1
-        if (TimingParaConvert.gt.0.and.rhseval.gt.0) TimeParaConv1=tock(t_start)+TimeParaConv1
-        if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 c Tom:  add comments here to explain the indices used on do 264 and 263
       do 264 iy = max(0,js-1), min(je,ny)
          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
@@ -762,8 +699,7 @@ c Tom:  add comments here to explain the indices used on do 264 and 263
            phiy1s(ix,iy) =interpphis(ix,iy,1)
          endif
   264 continue
-        if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv2=tock(t_start)+TimeConv2
-        if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
+
 c Tom:  add comments here to explain the indices used on do 266 and 265
       do 267 igsp = 1, ngsp
          do 266 iy = max(js-1,0), min(je,ny)
@@ -782,9 +718,6 @@ c Tom:  add comments here to explain the indices used on do 266 and 265
   266    continue
   267 continue
 
-
-         if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv3=tock(t_start)+TimeConv3
-       if (TimingConvert.gt.0.and.rhseval.gt.0) call tick(t_start)
 C ... Calculate pgy0,1 only if ineudif=2, i.e. grad_pg option
       if (ineudif == 2) then
         do igsp = 1, ngsp
@@ -849,6 +782,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
  30   continue
 
 c.... Define vertex values using linear interpolation
+
 c,,,  Note that here we used ixm1(ix,iy) and not ixm1(ix,js) as above
 c...  when the iy-loop starts at js-1; seems to work, but should check
 
@@ -886,6 +820,7 @@ c...  add electron contribution to prtv; ion contribution added below
  38         continue
  39      continue
  40   continue
+
 c.... reset the x-point value(s) all the time as it is easier and perhaps
 c.... cheaper than checking
 
@@ -926,15 +861,12 @@ c ... Last test (ie.gt.nx) to fix parallel version with mpi - check
      .                        + pri(ie,js+1,ifld) + pri(ie+1,js+1,ifld) )
       priv(ie,js,ifld) = priv(is,js,ifld)
       if (zi(ifld).ne.0.) prtv(is,js) = prtv(is,js) + priv(is,js,ifld)
-
-
-
  43   continue
       prtv(ie,js) = prtv(is,js)
       enddo  # end do-loop over nxpt mesh regions
 
       endif  # test on nyomit at top of do loop just above
-      if (TimingConvert.gt.0.and.rhseval.gt.0) TimeConv4=tock(t_start)+TimeConv4
+
  45   continue
 
       return
@@ -979,7 +911,7 @@ c...  Simple averages are used
 
       Use(Dim)            # nx,ny,nhsp,nzsp,nisp,nusp,ngsp
       Use(Xpoint_indices) # ixpt1,ixpt2,iysptrx1
-      Use(Compla)         # ni,up,..,niv,upv,
+      Use(Compla)         # ni,up,..,niv,upv
       Use(Selec)          # ixp1
       Use(Share)          # nysol,nyomitmx
 

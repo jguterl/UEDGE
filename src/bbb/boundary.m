@@ -63,8 +63,8 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
 
       Use(MCN_dim)
       Use(MCN_sources) # edisspl, edisspr, cmntgpl, cmntgpl
-      use OMPPandf,only:RhsEval
       Use(Locflux)
+      Use(TimingPandf),only:rhseval
 
 c...  local scalars
       real totfeix, totfeex, kfeix, vyn, cosphi,
@@ -1726,6 +1726,7 @@ c     First, the density equations --
                 endif # end if-test on recylb
               else                                     ## ions
                 if (isextrnp==0) then                  # zero x-gradient
+
                    yldot(iv1) = nurlxn*(ni(ixt1,iy,ifld)-ni(ixt,iy,ifld))/
      .                                                          n0(ifld)
                 else                                   # extrapolation

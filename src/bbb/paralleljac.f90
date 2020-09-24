@@ -5,10 +5,10 @@
 !-------------------------------------------------------------------------------------------------
 subroutine InitParallel
     Use Output
-    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,ParallelJac
-    Use HybridOptions,only:HybridOMPMPI
+    Use ParallelSettings,only:OMPParallelJac,MPIParallelJac,ParallelJac,OMPParallelPandf1
+    Use HybridSettings,only:HybridOMPMPI
     implicit none
-    if (OMPParallelJac==1 .and. MPIParallelJac==0) then
+    if ((OMPParallelJac==1 .or. OMPParallelPandf1.gt.0) .and. MPIParallelJac==0) then
         call InitOMP
         ParallelJac=1
     elseif (OMPParallelJac==0 .and. MPIParallelJac==1) then
@@ -30,8 +30,8 @@ end subroutine InitParallel
 subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     Use Output
-    Use ParallelOptions,only:OMPParallelJac,MPIParallelJac,DebugJac,    ForceSerialCheck,CheckJac,DumpFullJac, DumpJac
-    Use OmpOptions,only:iidebugprint,ivdebugprint
+    Use ParallelSettings,only:OMPParallelJac,MPIParallelJac
+    Use OMPJacSettings,only:iidebugprint,ivdebugprint,DebugJac,ForceSerialCheck,CheckJac,DumpFullJac, DumpJac
     Use Cdv,only:exmain_aborted
     implicit none
     ! ... Input arguments:
@@ -151,32 +151,35 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 end subroutine jac_calc_parallel
 !-------------------------------------------------------------------------------------------------
 #ifdef _OPENMP
-subroutine InitPandfOMP()
-use OmpOptions,only: Nthreads
-use OMPPandf
-use Dim,only:ny
-OMPPandf_Nthreads=min(Nthreads,ny)
-OMPPandf_Nthreads=min(OMPPandf_Nthreads,OMPPandfNthreads)
-if (OMPPandf_Nthreads<1) call xerrab('OMPPandf_Nthreads<1')
-if (OMPParallelPandf.gt.0) then
-   write(*,*) 'Parallel RHS eval Pandf activated: Pandf_Nthreads=',OMPPandf_Nthreads
-endif
-call gchange('OMPPandf',0)
-if (OMPThreadedPandfngxflux.lt.1 .and. OMPThreadedPandfngyflux.gt.0) then
-call xerrab('OMPThreadedPandfngyflux cannot be on with OMPThreadedPandfngxflux')
-endif
-
-if ((OMPThreadedPandfngxflux.lt.1 .or. OMPThreadedPandfngyflux.lt.1) .and. OMPThreadedPandfngxyflux.gt.0) then
-call xerrab('OMPThreadedPandfngxyflux cannot be on with OMPThreadedPandfngxflux and OMPThreadedPandfngyflux')
-endif
-
-end subroutine InitPandfOMP
+!subroutine InitPandfOMP()
+!use OMPJacSettings,only: Nthreads
+!use OMPPandf
+!use Dim,only:ny
+!OMPPandf_Nthreads=min(Nthreads,ny)
+!OMPPandf_Nthreads=min(OMPPandf_Nthreads,OMPPandfNthreads)
+!if (OMPPandf_Nthreads<1) call xerrab('OMPPandf_Nthreads<1')
+!if (OMPParallelPandf.gt.0) then
+!   write(*,*) 'Parallel RHS eval Pandf activated: Pandf_Nthreads=',OMPPandf_Nthreads
+!endif
+!call gchange('OMPPandf',0)
+!if (OMPThreadedPandfngxflux.lt.1 .and. OMPThreadedPandfngyflux.gt.0) then
+!call xerrab('OMPThreadedPandfngyflux cannot be on with OMPThreadedPandfngxflux')
+!endif
+!
+!if ((OMPThreadedPandfngxflux.lt.1 .or. OMPThreadedPandfngyflux.lt.1) .and. OMPThreadedPandfngxyflux.gt.0) then
+!call xerrab('OMPThreadedPandfngxyflux cannot be on with OMPThreadedPandfngxflux and OMPThreadedPandfngyflux')
+!endif
+!
+!end subroutine InitPandfOMP
 
 subroutine InitOMP()
     Use Output
-    Use OmpOptions,only:Nthreads,nnzmxperthread,omplenpfac,ompneq,OMPVerbose,OMPStamp
-    Use MPIOptions,only:nnzmxperproc,MPIrank
-    Use HybridOptions,only: HybridOMPMPI,Hybridstamp
+    Use OMPJacSettings,only:nnzmxperthread,omplenpfac,OMPJacVerbose,OMPJacStamp
+    Use OMPSettings,only:Nthreads,ompneq
+    Use ParallelSettings,only: OMPParallelPandf1
+    Use OMPPandf1Settings,only: OMPPandf1FlagVerbose
+    Use MPIJacSettings,only:nnzmxperproc,MPIrank
+    Use HybridSettings,only: HybridOMPMPI,Hybridstamp
     Use Jacobian,only:nnzmx
     Use Lsode, only:neq
 
@@ -187,25 +190,26 @@ subroutine InitOMP()
     ! prepare MPI/Hybrid stamps for output
     if (HybridOMPMPI>0) then
         write(MPIRankTag,'(I4)') MPIrank
-        write(OMPstamp,'(a,a,a)') '[',trim(adjustl(trim(MPIRankTag))),'] OMPJac* '
+        write(OMPJacStamp,'(a,a,a)') '[',trim(adjustl(trim(MPIRankTag))),'] OMPJac* '
     else
-        !write(OMPstamp,'(a)') '*OMPJac* '
+        !write(OMPJacStamp,'(a)') '*OMPJac* '
     endif
-    if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Max number of threads available:',OMP_GET_MAX_THREADS()
+    if (OMPJacVerbose.gt.1) write(iout,*) OMPJacStamp,' Max number of threads available:',OMP_GET_MAX_THREADS()
     call OMP_SET_NUM_THREADS(OMP_GET_MAX_THREADS())
 
     !$omp parallel
     if (OMP_GET_THREAD_NUM().eq.0) then
         if (Nthreads.gt.OMP_GET_MAX_THREADS()) then
-            if (OMPVerbose.gt.1) write(iout,*) OMPStamp,' Warning: # threads requested > # threads available'
+            if (OMPJacVerbose.gt.1) write(iout,*) OMPJacStamp,' Warning: # threads requested > # threads available'
 
             Nthreads=OMP_GET_NUM_THREADS()
-            write(iout,*) OMPStamp,' Nthreads:', Nthreads
+
+            write(iout,*) OMPJacStamp,' Nthreads:', Nthreads
         endif
         if (Nthreads.le.0) then
             call xerrab('Nthread must be >0')
         endif
-        if (OMPVerbose.gt.0) write(iout,'(a,a,i3)') OMPStamp,' Number of threads for omp calculations:',Nthreads
+        if (OMPJacVerbose.gt.0) write(iout,'(a,a,i3)') OMPJacStamp,' Number of threads for omp calculations:',Nthreads
     endif
     !$omp END parallel
 
@@ -223,14 +227,19 @@ subroutine InitOMP()
         endif
     endif
     ompneq=neq
-    call gchange('OmpJacobian',0)
-    call InitPandfOMP
+    call gchange('OMPJacobian',0)
+    if (OMPParallelPandf1.gt.0) then
+      OMPPandf1FlagVerbose=1
+      call gchange('OMPPandf1',0)
+    endif
+
 end subroutine InitOMP
 !-------------------------------------------------------------------------------------------------
 subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     use Output
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPTimeJacRow
-    use OmpOptions,only:Nthreads,OMPDebug,OMPVerbose,OMPStamp,OMPTimingJacRow
+    use OMPJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPTimeJacRow
+    use OMPJacSettings,only:OMPJacDebug,OMPJacVerbose,OMPJacStamp,OMPTimingJacRow
+    use OMPSettings,only:Nthreads
     integer,intent(in):: neq
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
     real,intent(out)   :: rcsc(nnzmx)     ! nonzero Jacobian elements
@@ -245,11 +254,11 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     do ith=2,Nthreads
         nnzcum(ith)=nnzcum(ith-1)+nnz(ith)-1
     enddo
-    if (OMPDebug.gt.0) then
-        write(iout,*) OMPStamp,' nnz:',nnz(1:Nthreads)
-        write(iout,*) OMPStamp,' nnzcum:',nnzcum(1:Nthreads)
+    if (OMPJacDebug.gt.0) then
+        write(iout,*) OMPJacStamp,' nnz:',nnz(1:Nthreads)
+        write(iout,*) OMPJacStamp,' nnzcum:',nnzcum(1:Nthreads)
     endif
-    if (OMPVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
+    if (OMPJacVerbose.gt.0) write(iout,'(a,i9)') '**** Number of non-zero Jacobian elems:',nnzcum(Nthreads)
 
     if (nnzcum(Nthreads).gt.nnzmx) then
         write(*,*) 'nnzcum=',nnzcum
@@ -293,9 +302,10 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     OMPTotTimeCollect,OMPTotTimeBuild,OMPTotJacCalc
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
-    use OmpOptions,only:OMPDebug,Nthreads,OMPVerbose,OMPDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
-        OMPLoadBalance,OMPAutoBalance,OMPStamp,OMPBalanceStrength
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPLoadWeight,OMPTimeLocalJac
+    use OMPSettings,only:Nthreads
+    use OMPJacSettings,only:OMPJacDebug,OMPJacVerbose,OMPJacDebug,nnzmxperthread,OMPCheckNaN,WriteJacobian,&
+        OMPLoadBalance,OMPAutoBalance,OMPJacStamp,OMPBalanceStrength
+    use OMPJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPLoadWeight,OMPTimeLocalJac
     use UEpar, only: svrpkg
     use Math_problem_size,only:neqmx
     implicit none
@@ -343,7 +353,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   Get the range of the iv index for each thread
     call OMPSplitIndex(1,neq,Nthreads,OMPivmin,OMPivmax,OMPLoadWeight)
 
-    if (OMPVerbose.gt.0) then
+    if (OMPJacVerbose.gt.0) then
         write(iout,*)' *OMPJac* neq=',neq,neqmx
         write(iout,*)' *OMPJac* Ivmin(ith),Ivmax(ith), OMPLoadWeight(ith),OMPTimeLocalJac(ith) ***'
         do ith=1,Nthreads
@@ -356,8 +366,8 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !    iJacCol(1:nnzmxperthread,1:Nthreads)=0
     !    rJacElem(1:nnzmxperthread,1:Nthreads)=0.0
     !    iJacRow(1:neq,1:Nthreads)=0
-    !    if (OMPDebug.gt.0) then
-    !        write(iout,*) OMPStamp,' Jacobian arrays set to zero'
+    !    if (OMPJacDebug.gt.0) then
+    !        write(iout,*) OMPJacStamp,' Jacobian arrays set to zero'
     !    endif
     OMPTimeJacCalc= gettime(sec4)
 
@@ -381,7 +391,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
     OMPTimeBuild=gettime(sec4)-OMPTimeBuild
     if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
-    if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to build jac:',OMPTimeBuild
+    if (OMPJacVerbose.gt.0) write(iout,*)OMPJacStamp,' Time to build jac:',OMPTimeBuild
     !   end build jacobian ##############################################################
 
     !   collect jacobian ##############################################################
@@ -389,7 +399,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     call OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
     OMPTimeCollect=gettime(sec4)-OMPTimeCollect
     if (istimingon .eq. 1) OMPTotTimeCollect = OMPTimeCollect+OMPTotTimeCollect
-    if (OMPVerbose.gt.0) write(iout,*)OMPStamp,' Time to collect jac:',OMPTimeCollect
+    if (OMPJacVerbose.gt.0) write(iout,*)OMPJacStamp,' Time to collect jac:',OMPTimeCollect
     !   end collect jacobian ##############################################################
 
     jcsc(neq+1) = nnzcumout+1 ! This is set here out of OMPJAcCollect for compatibility with hybrid jac_calc
@@ -449,9 +459,9 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 end subroutine jac_calc_omp
 !-------------------------------------------------------------------------------------------------
 subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    use OmpOptions,only:OMPDebug,OMPCopyArray,OMPCopyScalar,nthreads,nnzmxperthread,OMPStamp,OMPVerbose
+    use OMPJacSettings,only:OMPJacDebug,nnzmxperthread,OMPJacStamp,OMPJacVerbose
+    use OMPSettings,only: OMPCopyArray,OMPCopyScalar,Nthreads
     use OMPJacobian, only:OMPivmin,OMPivmax,OMPTimeLocalJac,OMPTimeJacRow
-    use OMPPandf,only:RhsEval
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -478,17 +488,17 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     integer:: ith,tid,nnzlocal,ithcopy
     DOUBLE PRECISION :: TimeThread
 
-    if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying data....'
+    if (OMPJacDebug.gt.0)write(iout,*) OMPJacStamp,' Copying data....'
 
     if (OMPCopyArray.gt.0) then
-        if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying array....'
+        if (OMPJacDebug.gt.0)write(iout,*) OMPJacStamp,' Copying array....'
         call OmpCopyPointerbbb
         call OmpCopyPointercom
         call OmpCopyPointerapi
     endif
 
     if (OMPCopyScalar.gt.0) then
-        if (OMPDebug.gt.0)write(iout,*) OMPStamp,' Copying scalar....'
+        if (OMPJacDebug.gt.0)write(iout,*) OMPJacStamp,' Copying scalar....'
         call OmpCopyScalarbbb
         call OmpCopyScalarcom
         call OmpCopyScalarapi
@@ -507,15 +517,15 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     ylcopy(1:neq+2)=yl(1:neq+2) ! a very barbarian use of yl(neq+1) is implemented as a switch in pandf... Error-prone!
     wkcopy(1:neq)=wk(1:neq) ! Could be set equal to zero as well. The worker wk is not an output...
 
-    if (OMPDebug.gt.0) then
-        write(iout,*) OMPStamp,' Starting parallel loop'
+    if (OMPJacDebug.gt.0) then
+        write(iout,*) OMPJacStamp,' Starting parallel loop'
     endif
     tid=-1
     nnzlocal=-10000
-    RhsEval=0
+
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do default(shared)&
-    !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq,RhsEval)&
+    !$omp& firstprivate(ithcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
     !$omp& firstprivate(nnzmxperthreadcopy,nthreadscopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
     !$omp& private(TimeThread)
 
@@ -523,12 +533,12 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
         ithcopy=ith
-        if (OMPDebug.gt.0) write(iout,*) OMPStamp,' Thread id:',tid,' <-> ith:',ithcopy
+        if (OMPJacDebug.gt.0) write(iout,*) OMPJacStamp,' Thread id:',tid,' <-> ith:',ithcopy
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
 
         call LocalJacBuilder(ivmincopy(ithcopy),ivmaxcopy(ithcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
             iJacColcopy,rJacElemcopy,iJacRowcopy,ithcopy,nnzlocal,nnzmxperthreadcopy,nthreadscopy,TimeJacRowcopy)
-        if (OMPDebug.gt.0) write(iout,*) OMPStamp,',',tid,' nzlocal:',nnzlocal
+        if (OMPJacDebug.gt.0) write(iout,*) OMPJacStamp,',',tid,' nzlocal:',nnzlocal
 
         !$omp  critical
         iJacCol(1:nnzlocal,ithcopy)=iJacColCopy(1:nnzlocal)
@@ -539,16 +549,16 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         !$omp  end critical
 
         OMPTimeLocalJac(ithcopy)=omp_get_wtime() - Timethread
-        if (OMPVerbose.gt.1) write(*,*) OMPStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
-        if (OMPVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
+        if (OMPJacVerbose.gt.1) write(*,*) OMPJacStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ithcopy)
+        if (OMPJacVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
     enddo loopthread
     !$omp  END PARALLEL DO
 
 
     nnz(1:Nthreads)=nnzcopy(1:Nthreads) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
 
-    if (OMPDebug.gt.0) then
-        write(iout,*) OMPStamp,' End of parallel loop....'
+    if (OMPJacDebug.gt.0) then
+        write(iout,*) OMPJacStamp,' End of parallel loop....'
     endif
 
 
@@ -577,7 +587,7 @@ end subroutine OMPJacBuilder
     use Model_choice,only:iondenseqn
     use Bcond,only:isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
-    use OmpOptions,only:iidebugprint,ivdebugprint,OMPTimingJacRow
+    use OMPJacSettings,only:iidebugprint,ivdebugprint,OMPTimingJacRow
     use Jacobian_csc,only:yldot_pert
     use omp_lib
 
@@ -762,8 +772,8 @@ end subroutine LocalJacBuilder
 !-------------------------------------------------------------------------------------------------
 #ifdef MPIJAC
 subroutine InitMPI
-    Use MpiOptions,only:Nprocs,ComSize,MPIRank,mpilenpfac,mpineq,MPIVerbose,nnzmxperproc,MPIstamp
-    Use HybridOptions,only:Hybridstamp,HybridOMPMPI
+    Use MPIJacSettings,only:Nprocs,ComSize,MPIRank,mpilenpfac,mpineq,MPIVerbose,nnzmxperproc,MPIstamp
+    Use HybridSettings,only:Hybridstamp,HybridOMPMPI
     use mpi
     use Output
     use LSode,only:neq
@@ -806,7 +816,7 @@ subroutine InitMPI
     endif
     if (MPIVerbose.gt.0) write(iout,'(a,a,i10)') MPIStamp,' nnzmxperproc:',nnzmxperproc
     mpineq=neq
-    call gchange('MpiJacobian',0)
+    call gchange('MPIJacobian',0)
     if (MPIVerbose.gt.0) write(iout,'(a,a)') MPIStamp,'  MPI variables allocated'
 
 end subroutine InitMPI
@@ -825,7 +835,7 @@ subroutine jac_calc_mpi (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
-    use MPIOptions,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
+    use MPIJacSettings,only:Nprocs,MPIVerbose,MPIDebug,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
         MPILoadBalance,MPIAutoBalance,MPIStamp,MPIBalanceStrength
     use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPILoadWeight,MPITimeLocalJac
     use UEpar, only: svrpkg
@@ -979,8 +989,8 @@ end subroutine jac_calc_mpi
 subroutine MPICollectBroadCastTime(TimeLocal)
     use Output
     use mpi
-    use MpiOptions,only:Nprocs,MpiRank,MPIVerbose,MPIDebug,ioutmpi,MPIStamp
-    use MpiJacobian,only: MPITimeLocalJac
+    use MPIJacSettings,only:Nprocs,MpiRank,MPIVerbose,MPIDebug,ioutmpi,MPIStamp
+    use MPIJacobian,only: MPITimeLocalJac
 
     implicit none
     integer(kind=4)::iproc
@@ -1024,8 +1034,8 @@ end subroutine MPICollectBroadCastTime
 subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
     use Output
     use mpi
-    use MpiOptions,only:Nprocs,MpiRank,mpineq,nnzmxperproc,MPIVerbose,MPIDebug,ioutmpi,MPIStamp
-    use MpiJacobian,only: MPIivmin,MPIivmax
+    use MPIJacSettings,only:Nprocs,MpiRank,mpineq,nnzmxperproc,MPIVerbose,MPIDebug,ioutmpi,MPIStamp
+    use MPIJacobian,only: MPIivmin,MPIivmax
     use Jacobian_csc,only:rcsc,jcsc,icsc
     use LSode,only:neq
     Use Jacobian,only:nnzmx
@@ -1129,7 +1139,7 @@ subroutine MPICollectBroadCastJacobian(iJacRow,iJacCol,rJacElem,nnz)
 end subroutine MPICollectBroadCastJacobian
 !-----------------------------------------------------------------------
 subroutine MPIJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    use MPIOptions,only:MPIDebug,Nprocs,nnzmxperproc,MPIRank,ioutmpi,MPIStamp
+    use MPIJacSettings,only:MPIDebug,Nprocs,nnzmxperproc,MPIRank,ioutmpi,MPIStamp
     use MPIJacobian, only:MPIivmin,MPIivmax
     use Output
     Use Jacobian,only:nnzmx
@@ -1171,12 +1181,13 @@ subroutine jac_calc_hybrid (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use mpi
-    use MPIOptions,only:Nprocs,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
+    use MPIJacSettings,only:Nprocs,nnzmxperproc,MPICheckNaN,MPIWriteJacobian,MPIRank,&
         MPILoadBalance,MPIAutoBalance,MPIBalanceStrength
-    use OMPOptions,only:Nthreads,OMPLoadBalance,OMPAutoBalance,OMPBalanceStrength
+    use OMPSettings,only:Nthreads
+    use OMPJacSettings,only:OMPLoadBalance,OMPAutoBalance,OMPBalanceStrength
     use MPIJacobian,only:MPIivmin,MPIivmax,MPIiJacCol,MPIrJacElem,MPIiJacRow,MPILoadWeight,MPITimeLocalJac
-    use OmpJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,OMPLoadWeight,OMPTimeLocalJac
-    use HybridOptions,only:HybridDebug,HybridVerbose,HybridCheckNaN,Hybridstamp
+    use OMPJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,OMPLoadWeight,OMPTimeLocalJac
+    use HybridSettings,only:HybridDebug,HybridVerbose,HybridCheckNaN,Hybridstamp
     use UEpar, only: svrpkg
     implicit none
     ! ... Input arguments:
@@ -2335,106 +2346,86 @@ end subroutine WriteArrayInteger
       call WriteArrayReal(znot,size(znot),iunit)
       close(iunit)
       end subroutine DebugHelper
-
-
-!subroutine OMPPandfCalc(neq,yl,yldot)
-!    use OmpOptions, only:Nthreads
-!    use OMPPandf,only:OMPPandfivmin,OMPPandfivmax,RhsEval,OMPRhsEval
-!    use Indexes,only:igyl
-!    use Selec,only:xlinc,xrinc,yinc,isjaccorall
-!    integer iv,ith,xc,yc,xrincbkp,yincbkp,xlincbkp
+!
+!    subroutine TestParallelPandf1(neq,time,yl,yldot)
+!    use omp_lib
+!    use OMPPandf1
+!    use OMPPandf1Settings
+!    use OMPJacSettings
+!    use Dim,only:nx
+!    use Selec, only: xlinc,xrinc
+!    integer xlinc_bkp,xrinc_bkp,iv
 !    integer,intent(in)::neq
 !    real,intent(in)::yl(*)
 !    real,intent(out)::yldot(*)
-!    real:: yldotcopy(1:neq+2),ylcopy(1:neq+2),wk(1:neq+2)
-!    real::LoadWeight(1:Nthreads)
+!    real,intent(in)::time
+!    real::yldotcopy(1:neq)
+!    real::TimeStart,TimeEnd
+!    real::walltime
+!    real yldotsave(neq)
+!    !call omp_set_num_threads(int(OMPPandf_Nthreads,kind=4))
 !
-!    yldotcopy(1:neq+2)=0
-!    ylcopy(1:neq+1)=yl(1:neq+1)
+!integer::ith,OMPic(Nthreads),OMPlinc(Nthreads),OMPrinc(Nthreads),OMPivthread(1:neq)
 !
-!    if (OMPPandfivmin(1)==0) then
-!    LoadWeight(1:Nthreads)=1
-!    call OMPSplitIndex(1,neq,Nthreads,OMPPandfivmin,OMPPandfivmax,LoadWeight)
-!    endif
-!! Set xinc,yinc to zero
-!    OMPRhsEval=1
-!    !isjaccorall=0
-!    xlincbkp=xlinc
-!    xrincbkp=xrinc
-!    yincbkp=yinc
-!    xlinc=0
-!    xrinc=0
-!    yinc=0
-!    ylcopy(1+neq)=1
-!    !call convert
-!    !!$omp parallel do default(shared) firstprivate(yldotcopy) firstprivate(xc,yc,iv)
-!    loopthread:do ith=1,Nthreads
-!    loopiv: do iv=OMPPandfivmin(ith),OMPPandfivmax(ith)
-!        ! ... Set spatial-location indices for this dependent variable.
-!        xc = igyl(iv,1)
-!        yc = igyl(iv,2)
-!        call pandf (xc, yc, neq, 0, yl, yldotcopy)
+!    call OMPSplitIndexPandf(0,nx+1,Nthreads,OMPic,OMPlinc,OMPrinc,OMPivthread,neq)
 !
-!     enddo loopiv
-!     !!$omp critical
-!     yldot(OMPPandfivmin(ith):OMPPandfivmax(ith))=yldotcopy(OMPPandfivmin(ith):OMPPandfivmax(ith))
-!     !!$omp end critical
-!     enddo loopthread
-!     !!$omp end parallel do
+!    !if (OMPJacVerbose.gt.0) then
+!        write(iout,*)' *OMPPandf1* nx=',nx
+!        write(iout,*)' *OMPPandf1* Ic(ith),linc(ith),rinc(ith) ***'
+!        do ith=1,Nthreads
+!            write(iout,'(a,I3,a,I7,I7,I7)') '  *    ithread ', ith,':',OMPic(ith),OMPlinc(ith),OMPrinc(ith)
+!        enddo
+!      walltime=omp_get_wtime()
+!!      if (OMPCheckThreadedPandf.gt.0) then
+!!      TimingPandf=0
+!!      TimingParaPandf=1
+!!      TimingParaConvert=1
+!!      endif
+!      call pandf1 (-1, -1, 0, neq, time, yl, yldot)
 !
-!    xlinc=xlincbkp
-!    xrinc=xrincbkp
-!    yinc=yincbkp
-!    OMPRhsEval=0
-!    !isjaccorall=1
-!     !!call AddTimeDerivative(neq,yl,yldot)
-
-
-!end subroutine OMPPandfCalc
+!      TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
+!      write(*,*) "Timing Pandf1 serial",TimeParallelPandf
+!      xlinc_bkp=xlinc
+!      xrinc_bkp=xrinc
+!      do ith=1,Nthreads
+!        xlinc=OMPlinc(ith)
+!        xrinc=OMPrinc(ith)
+!        call pandf1 (ith, -1, 0, neq, time, yl, yldotcopy)
+!    do iv=1,neq
+!      if (OMPivthread(iv)==ith) then
+!       yldotsave(iv)=yldotcopy(iv)
+!      endif
+!      enddo
 !
-    subroutine ParallelPandf1(neq,time,yl,yldot)
-    use omp_lib
-    use OMPPandf
-    use Ompoptions
-    integer,intent(in)::neq
-    real,intent(in)::yl(*)
-    real,intent(out)::yldot(*)
-    real,intent(in)::time
-    real::yldotcopy(1:neq)
-    real::TimeStart,TimeEnd
-    real::walltime
-    real yldotsave(neq)
-    call omp_set_num_threads(int(OMPPandf_Nthreads,kind=4))
-      walltime=omp_get_wtime()
-      if (OMPCheckThreadedPandf.gt.0) then
-      TimingPandf=0
-      TimingParaPandf=1
-      TimingParaConvert=1
-      endif
-      call pandf1 (-1, -1, 0, neq, time, yl, yldot)
-
-      TimeParallelPandf=omp_get_wtime()-walltime+TimeParallelPandf
-      call omp_set_num_threads(int(Nthreads,kind=4))
-
-      if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
-      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
-      OMPParallelPandf=0
-      walltime=omp_get_wtime()
-      TimingPandf=1
-      TimingParaPandf=0
-      TimingParaConvert=0
-      call pandf1 (-1, -1, 0, neq, time, yl, yldotsave)
-      TimingPandf=0
-      TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
-      OMPParallelPandf=1
-      call Compare(yldot,yldotsave,neq)
-
-
-      endif
-
-
-end subroutine ParallelPandf1
-
+!      enddo
+!        xlinc=xlinc_bkp
+!        xrinc=xrinc_bkp
+!
+!
+!
+!      call Compare(yldot,yldotsave,neq)
+!      write(*,*) "yldot and yldotsave are identical"
+!!      call omp_set_num_threads(int(Nthreads,kind=4))
+!!
+!!      if (OMPCheckThreadedPandf.gt.0.and.OMPParallelPandf.gt.0) then
+!!      if (OMPThreadedPandfVerbose.gt.0) write(*,*) 'pandf checked'
+!!      OMPParallelPandf=0
+!!      walltime=omp_get_wtime()
+!!      TimingPandf=1
+!!      TimingParaPandf=0
+!!      TimingParaConvert=0
+!!      call pandf1 (-1, -1, 0, neq, time, yl, yldotsave)
+!!      TimingPandf=0
+!!      TimeSerialPandf=omp_get_wtime()-walltime+TimeSerialPandf
+!!      OMPParallelPandf=1
+!!
+!
+!
+!!      endif
+!
+!
+!end subroutine TestParallelPandf1
+!
 
 subroutine Compare(yldot,yldotsave,neq)
 integer:: iv,neq
@@ -2452,6 +2443,9 @@ real yldot(neq+2),yldotsave(neq+2)
                     !call xerrab('diff in rhsnk')
                 endif
             enddo
+
+
+
 end subroutine Compare
 
 
@@ -2575,7 +2569,7 @@ end subroutine
         end function tock
 
 subroutine PrintTimingPandf()
-    use OMPPandf
+    use TimingPandf
     write(*,*) '----- Timing Pandf in evalrhs mode----'
     write(*,*) 'TimeParallelPandf',TimeParallelPandf
     write(*,*) 'TimeserialPandf',TimeSerialPandf
@@ -2615,3 +2609,1232 @@ write(*,*)'TimeConv3', TimeConv3
 write(*,*)'TimeConv4', TimeConv4
 write(*,*)'TimeConv5', TimeConv5
 end subroutine PrintTimingPandf
+
+subroutine OMPSplitIndexPandf(ieqmin,ieqmax,Nthreads,ic,linc,rinc,ivthread,neq)
+    Use Indexes,only: igyl
+    implicit none
+    integer,intent(in) ::ieqmin,ieqmax,Nthreads,neq
+    integer,intent(out)::ic(Nthreads),linc(Nthreads),rinc(Nthreads),ivthread(1:neq)
+    integer :: ihigh(Nthreads),ilow(Nthreads),ixthread(ieqmin:ieqmax)
+    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,lpad=1,rpad=1
+
+    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
+
+        !        if (OMPLoadWeight.eq.1) then
+
+        !do i=1,Nthreads
+         !   if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
+            !write(*,*) weight(i)
+        !enddo
+
+        ! Normalized weights
+        !weight(1:Nthreads)=weight(1:Nthreads)/sum(weight(1:Nthreads))*real(Nthreads)
+        do i=1,Nthreads
+            !Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads)*weight(i))
+            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads))
+        enddo
+        write(*,*) Nsize
+
+        do i=1,Nthreads
+            if (Nsize(i)<1) call xerrab('Nsize<1')
+            !if (Nsize(i)<2) Nsize(i)=Nsize(i)+1
+        enddo
+
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+            imax=1
+            do i=2,Nthreads
+                if (Nsize(i)>Nsize(i-1)) then
+                    imax=i
+                endif
+            enddo
+            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
+        endif
+        !write(*,*) Nsize,neq,sum(Nsize)
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. ieqmax-ieqmin+1')
+
+        ilow(1)=ieqmin
+        ihigh(1)=ieqmin+Nsize(1)-1
+        do i=2,Nthreads
+            ilow(i)=ihigh(i-1)+1
+            ihigh(i)=ilow(i)+Nsize(i)-1
+        enddo
+        write(*,*) ilow
+        write(*,*) ihigh
+        if (ihigh(Nthreads).ne.ieqmax) call xerrab('ihigh(Nthreads)!=ieqmax')
+
+        ic=ilow+int((ihigh-ilow)/2)
+        linc=ic-ilow+lpad
+        rinc=ihigh-ic+rpad
+        do iv=1,neq
+            do i=1,Nthreads
+                if (igyl(iv,1).le.ihigh(i) .and. igyl(iv,1).ge.ilow(i)) then
+                    ivthread(iv)=i
+                endif
+            enddo
+        enddo
+
+end subroutine OMPSplitIndexPandf
+
+subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
+    Use Indexes,only: igyl
+    use OMPPandf1Settings,only: OMPPandf1Padyinc
+    implicit none
+    integer,intent(in) ::ieqmin,ieqmax,Nthreads,neq
+    integer,intent(out)::ic(Nthreads),inc(Nthreads),ivthread(1:neq)
+    integer :: ihigh(Nthreads),ilow(Nthreads),ixthread(ieqmin:ieqmax)
+    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,incpad=1
+
+    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
+
+        !        if (OMPLoadWeight.eq.1) then
+
+        !do i=1,Nthreads
+         !   if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
+            !write(*,*) weight(i)
+        !enddo
+
+        ! Normalized weights
+        !weight(1:Nthreads)=weight(1:Nthreads)/sum(weight(1:Nthreads))*real(Nthreads)
+        do i=1,Nthreads
+            !Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads)*weight(i))
+            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads))
+        enddo
+
+        do i=1,Nthreads
+            if (Nsize(i)<1) call xerrab('Nsize<1')
+        enddo
+
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+            imax=1
+            do i=2,Nthreads
+                if (Nsize(i)>Nsize(i-1)) then
+                    imax=i
+                endif
+            enddo
+            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
+        endif
+
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. ieqmax-ieqmin+1')
+
+        ilow(1)=ieqmin
+        ihigh(1)=ieqmin+Nsize(1)-1
+        do i=2,Nthreads
+            ilow(i)=ihigh(i-1)+1
+            ihigh(i)=ilow(i)+Nsize(i)-1
+
+        enddo
+
+        if (ihigh(Nthreads).ne.ieqmax) call xerrab('ihigh(Nthreads)!=ieqmax')
+
+        ic=ilow+int((ihigh-ilow)/2)
+        do i=1,Nthreads
+           !write(*,*) max(ihigh(i)-ic(i),ic(i)-ilow(i)),OMPPandf1Padyinc
+           inc(i)=max(ihigh(i)-ic(i),ic(i)-ilow(i))+OMPPandf1Padyinc
+        enddo
+        do iv=1,neq
+            do i=1,Nthreads
+                if (igyl(iv,2).le.ihigh(i) .and. igyl(iv,2).ge.ilow(i)) then
+                    ivthread(iv)=i
+                endif
+            enddo
+        enddo
+
+end subroutine OMPSplitIndexyPandf
+
+!subroutine ParallelPandf1x(neq,time,yl,yldot)
+!    use Output
+!    use omp_lib
+!    use OMPSettings,only: Nthreads
+!    use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPCheckParallelPandf1,&
+!    OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
+!    use OMPPandf1,only:OMPic,OMPlinc,OMPrinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1
+!    use Dim,only:nx
+!    use Selec, only: xlinc,xrinc
+!    integer xlinc_bkp,xrinc_bkp,iv,tid
+!    integer,intent(in)::neq
+!    real,intent(in)::yl(*)
+!    real,intent(out)::yldot(*)
+!    real,intent(in)::time
+!    real::yldotcopy(1:neq)
+!    real yldotsave(1:neq),ylcopy(1:neq+2)
+!     character*80 ::FileName
+!
+!    integer::ith
+!    ylcopy(1:neq+2)=yl(1:neq+2)
+!    NthreadsPandf1=min(Nthreads,nx)
+!    !NthreadsPandf1=nx+2
+!    if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
+!     write(iout,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',NthreadsPandf1,'for nx=',nx
+!     OMPPandf1FlagVerbose=0
+!    endif
+!    call OMPSplitIndexPandf(0,nx+1,NthreadsPandf1,OMPic,OMPlinc,OMPrinc,OMPivthread,neq)
+!    if (OMPPandf1Verbose.gt.0) then
+!        write(iout,'(a,a,I3)') OMPPandf1Stamp,' nx=',nx
+!        write(iout,*)OMPPandf1Stamp, ' ic(ith), linc(ith), rinc(ith)'
+!        do ith=1,NthreadsPandf1
+!            write(iout,'(a,I3,a,I7,I7,I7)') '  *    ithread ', ith,':',OMPic(ith),OMPlinc(ith),OMPrinc(ith)
+!        enddo
+!    endif
+!    xlinc=1
+!    xrinc=1
+!    xlinc_bkp=xlinc
+!    xrinc_bkp=xrinc
+!
+!    OMPTimeParallelPandf1=omp_get_wtime()
+! write (*,*) 'v115'
+! OMPTimeLocalPandf1(1)=omp_get_wtime()
+!    !call convsr_vo (-1, -1, yl)
+!
+!    !call convsr_aux (-1, -1)
+!
+!OMPTimeLocalPandf1(1)=omp_get_wtime()-OMPTimeLocalPandf1(1)
+!write(*,*) ' Time in convert:',OMPTimeLocalPandf1(1)
+!   !!$omp parallel do default(shared)&
+!    !!$omp& firstprivate(yldotcopy,ylcopy)&
+!    !!$omp& private(iv,tid)
+!
+!
+!
+!    loopthread: do ith=1,NthreadsPandf1 !ith from 1 to Nthread, tid from 0 to Nthread-1
+!        tid=omp_get_thread_num()
+!        if (OMPPandf1Debug.gt.0) write(iout,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ith:',ith
+!        ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
+!        !xlinc=OMPlinc(ith)
+!        !xrinc=OMPrinc(ith)
+!        OMPTimeLocalPandf1(ith)=omp_get_wtime()
+!        call pandf1 (OMPic(ith), -1, 0, neq, time, ylcopy, yldotcopy)
+!        OMPTimeLocalPandf1(ith)=omp_get_wtime()-OMPTimeLocalPandf1(ith)
+!        !write(FileName,'(a,I2.2)') "dump_parapandf_",ith
+!        !call DebugHelper(trim(FileName))
+!        OMPTimeCollectPandf1(ith)=omp_get_wtime()
+!        !!!$omp  critical
+!
+!        do iv=1,neq
+!        if (OMPivthread(iv)==ith) then
+!
+!        yldot(iv)=yldotcopy(iv)
+!
+!        endif
+!        !!!$omp  end critical
+!        enddo
+!        OMPTimeCollectPandf1(ith)=omp_get_wtime()-OMPTimeCollectPandf1(ith)
+!
+!    if (OMPPandf1Verbose.gt.1) then
+!            write(*,*) OMPPandf1Stamp,' Time in thread #', tid,':',OMPTimeLocalPandf1(ith),OMPTimeCollectPandf1(ith)
+!    endif
+!    OMPTimeLocalPandf1(ith)=OMPTimeCollectPandf1(ith)+OMPTimeLocalPandf1(ith)
+!    enddo loopthread
+!!!$omp  END PARALLEL DO
+!
+!    xlinc=xlinc_bkp
+!    xrinc=xrinc_bkp
+!
+!      OMPTimeParallelPandf1=omp_get_wtime()-OMPTimeParallelPandf1
+!      if (OMPCheckParallelPandf1.gt.0) then
+!          OMPTimeSerialPandf1=omp_get_wtime()
+!call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
+!!write(FileName,'(a)') "dump_serialpandf"
+!        !call DebugHelper(trim(FileName))
+!          OMPTimeSerialPandf1=omp_get_wtime()-OMPTimeSerialPandf1
+!          write(*,*) "Timing Pandf1 serial:",OMPTimeSerialPandf1,"/parallel:",OMPTimeParallelPandf1
+!          call Compare(yldot,yldotsave,neq)
+!          write(*,*) "serial and parallel pandf are identical"
+!        endif
+!
+!
+!end subroutine ParallelPandf1x
+
+subroutine ParallelPandf1(neq,time,yl,yldot)
+    use Output
+    use omp_lib
+    use OmpCopybbb
+    use OMPSettings,only: Nthreads
+    use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPCheckParallelPandf1,&
+    OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
+    use OMPPandf1,only:OMPic,OMPyinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1
+    use OMPPandf1Settings,only:OMPPandf1RunPara
+    use Dim,only:ny
+    use Selec, only:yinc
+
+    integer yinc_bkp,iv,tid,EffNthreadsPandf1
+    integer,intent(in)::neq
+    real,intent(in)::yl(*)
+    real,intent(out)::yldot(*)
+    real,intent(in)::time
+    real::yldotcopy(1:neq)
+    real yldotsave(1:neq),ylcopy(1:neq+2)
+     character*80 ::FileName
+    real time1
+    integer::ith
+    !write(*,*)' ======================================== '
+
+    ylcopy(1:neq+1)=yl(1:neq+1)
+
+    EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
+
+    if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
+     write(iout,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',EffNthreadsPandf1,'for ny=',ny
+     OMPPandf1FlagVerbose=0
+    endif
+    call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
+    if (OMPPandf1Verbose.gt.1) then
+        write(iout,'(a,a,I3)') OMPPandf1Stamp,' ny=',ny
+        write(iout,*)OMPPandf1Stamp, ' ic(ith), linc(ith)'
+        do ith=1,EffNthreadsPandf1
+            write(iout,'(a,I3,a,I7,I7)') '  *    ithread ', ith,':',OMPic(ith),OMPyinc(ith)
+        enddo
+    endif
+
+    yinc_bkp=yinc
+
+    Time1=omp_get_wtime()
+
+
+    call OmpCopyPointerup
+
+
+    !$omp parallel do default(shared) if(OMPPandf1RunPara.gt.0) &
+    !$omp& firstprivate(yldotcopy,ylcopy)&
+    !$omp& private(iv,tid)
+
+
+
+    loopthread: do ith=1,EffNthreadsPandf1 !ith from 1 to Nthread, tid from 0 to Nthread-1
+        tid=omp_get_thread_num()
+        if (OMPPandf1Debug.gt.0) write(iout,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ith:',ith
+        ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
+        yinc=OMPyinc(ith)
+        OMPTimeLocalPandf1(ith)=omp_get_wtime()
+        call pandf1 (-1,-1, 0, neq, time, ylcopy, yldotcopy)
+        OMPTimeLocalPandf1(ith)=omp_get_wtime()-OMPTimeLocalPandf1(ith)
+        OMPTimeCollectPandf1(ith)=omp_get_wtime()
+        !!!$omp  critical
+
+        do iv=1,neq
+        if (OMPivthread(iv)==ith) then
+
+        yldot(iv)=yldotcopy(iv)
+
+        endif
+        enddo
+        !!$omp  end critical
+
+        OMPTimeCollectPandf1(ith)=omp_get_wtime()-OMPTimeCollectPandf1(ith)
+yinc=yinc_bkp
+    if (OMPPandf1Verbose.gt.1) then
+            write(*,*) OMPPandf1Stamp,' Time in thread #', tid,':',OMPTimeLocalPandf1(ith),OMPTimeCollectPandf1(ith)
+    endif
+    OMPTimeLocalPandf1(ith)=OMPTimeCollectPandf1(ith)+OMPTimeLocalPandf1(ith)
+    enddo loopthread
+!$omp  END PARALLEL DO
+
+
+      OMPTimeParallelPandf1=omp_get_wtime()-Time1+OMPTimeParallelPandf1
+      if (OMPCheckParallelPandf1.gt.0) then
+          Time1=omp_get_wtime()
+         call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
+          OMPTimeSerialPandf1=omp_get_wtime()-Time1+OMPTimeSerialPandf1
+          write(*,*) "Timing Pandf1 serial:",OMPTimeSerialPandf1,"/parallel:",OMPTimeParallelPandf1
+          call Compare(yldot,yldotsave,neq)
+          write(*,*) "serial and parallel pandf are identical"
+        endif
+
+end subroutine ParallelPandf1
+
+subroutine OmpCopyPointerbbb2
+use OmpCopybbb
+!call OmpCopyPointerctaue
+!call OmpCopyPointerctaui
+!call OmpCopyPointercfvcsx
+!call OmpCopyPointercfvcsy
+!call OmpCopyPointercfvgpx
+!call OmpCopyPointercfvgpy
+!call OmpCopyPointeriwalli
+!call OmpCopyPointeriwallo
+!call OmpCopyPointerfngysi
+!call OmpCopyPointerfngyso
+!call OmpCopyPointeryld_carbi
+!call OmpCopyPointeryld_carbo
+!call OmpCopyPointerfqpsatlb
+!call OmpCopyPointerfqpsatrb
+!call OmpCopyPointertotfeexl
+!call OmpCopyPointertotfeexr
+!call OmpCopyPointertotfeixl
+!call OmpCopyPointertotfeixr
+!call OmpCopyPointersputflxlb
+!call OmpCopyPointersputflxrb
+!call OmpCopyPointersputflxw
+!call OmpCopyPointersputflxpf
+call OmpCopyPointerparvis
+call OmpCopyPointertravis
+!call OmpCopyPointerdiffusivwrk
+!call OmpCopyPointercoll_fe
+!call OmpCopyPointercoll_fi
+!call OmpCopyPointerni
+!call OmpCopyPointernm
+!call OmpCopyPointernz2
+!call OmpCopyPointeruu
+!call OmpCopyPointeruup
+
+
+!call OmpCopyPointerup
+!call OmpCopyPointerupi
+!call OmpCopyPointeruz
+!
+!
+!call OmpCopyPointerv2
+!call OmpCopyPointerv2xgp
+!call OmpCopyPointerv2ce
+!call OmpCopyPointerv2cb
+!call OmpCopyPointerve2cb
+!call OmpCopyPointerv2cd
+!call OmpCopyPointerve2cd
+!call OmpCopyPointerq2cd
+!call OmpCopyPointerv2rd
+!call OmpCopyPointerv2dd
+!call OmpCopyPointervy
+!call OmpCopyPointervygp
+!call OmpCopyPointervytan
+!call OmpCopyPointervygtan
+!call OmpCopyPointervyce
+!call OmpCopyPointervycb
+!call OmpCopyPointerveycb
+!call OmpCopyPointervycp
+!call OmpCopyPointerveycp
+!call OmpCopyPointervyrd
+!call OmpCopyPointervydd
+!call OmpCopyPointervyavis
+!call OmpCopyPointervex
+!call OmpCopyPointerupe
+!call OmpCopyPointervey
+!
+!!!!!!!!!!!!!!!!!!!!!!
+!call OmpCopyPointervycf
+!call OmpCopyPointervycr
+!call OmpCopyPointerte
+!call OmpCopyPointerti
+!call OmpCopyPointerng
+!call OmpCopyPointerlng
+!call OmpCopyPointeruug
+!call OmpCopyPointervyg
+!call OmpCopyPointertg
+!call OmpCopyPointertev
+!call OmpCopyPointertiv
+!call OmpCopyPointerniy0
+!call OmpCopyPointerniy1
+!call OmpCopyPointerniy0s
+!call OmpCopyPointerniy1s
+!call OmpCopyPointerney0
+!call OmpCopyPointerney1
+!call OmpCopyPointernity0
+!call OmpCopyPointernity1
+!call OmpCopyPointertey0
+!call OmpCopyPointertey1
+!call OmpCopyPointertiy0
+!call OmpCopyPointertiy1
+!call OmpCopyPointertiy0s
+!call OmpCopyPointertiy1s
+!call OmpCopyPointertgy0
+!
+!!call OmpCopyPointertgy1
+!
+!write(*,*) '#Master::: Calling routine to copy variable ngy0'
+!
+!call OmpCopyPointerngy0
+!
+!write(*,*) '#Master::: Calling routine to copy variable ngy1'
+!
+!call OmpCopyPointerngy1
+!
+!write(*,*) '#Master::: Calling routine to copy variable pgy0'
+!
+!call OmpCopyPointerpgy0
+!
+!write(*,*) '#Master::: Calling routine to copy variable pgy1'
+!
+!call OmpCopyPointerpgy1
+!
+!write(*,*) '#Master::: Calling routine to copy variable pg'
+!
+!call OmpCopyPointerpg
+!
+!write(*,*) '#Master::: Calling routine to copy variable phiy0'
+!
+!call OmpCopyPointerphiy0
+!
+!write(*,*) '#Master::: Calling routine to copy variable phiy1'
+!
+!call OmpCopyPointerphiy1
+!
+!write(*,*) '#Master::: Calling routine to copy variable phiy0s'
+!
+!call OmpCopyPointerphiy0s
+!
+!write(*,*) '#Master::: Calling routine to copy variable phiy1s'
+!
+!call OmpCopyPointerphiy1s
+!
+!write(*,*) '#Master::: Calling routine to copy variable pr'
+!
+!call OmpCopyPointerpr
+!
+!write(*,*) '#Master::: Calling routine to copy variable prev'
+!
+!call OmpCopyPointerprev
+!
+!write(*,*) '#Master::: Calling routine to copy variable prtv'
+!
+!call OmpCopyPointerprtv
+!
+!write(*,*) '#Master::: Calling routine to copy variable pri'
+!
+!call OmpCopyPointerpri
+!
+!write(*,*) '#Master::: Calling routine to copy variable priv'
+!
+!call OmpCopyPointerpriv
+!
+!write(*,*) '#Master::: Calling routine to copy variable priy0'
+!
+!call OmpCopyPointerpriy0
+!
+!write(*,*) '#Master::: Calling routine to copy variable priy1'
+!
+!call OmpCopyPointerpriy1
+!
+!write(*,*) '#Master::: Calling routine to copy variable pre'
+!
+!call OmpCopyPointerpre
+!
+!write(*,*) '#Master::: Calling routine to copy variable ne'
+!
+!call OmpCopyPointerne
+!
+!write(*,*) '#Master::: Calling routine to copy variable nit'
+!
+!call OmpCopyPointernit
+!
+!write(*,*) '#Master::: Calling routine to copy variable phi'
+!
+!call OmpCopyPointerphi
+!
+!write(*,*) '#Master::: Calling routine to copy variable phiv'
+!
+!call OmpCopyPointerphiv
+!
+!write(*,*) '#Master::: Calling routine to copy variable zeff'
+!
+!call OmpCopyPointerzeff
+!
+!write(*,*) '#Master::: Calling routine to copy variable loglambda'
+!
+!call OmpCopyPointerloglambda
+!
+!write(*,*) '#Master::: Calling routine to copy variable netap'
+!
+!call OmpCopyPointernetap
+!call OmpCopyPointerznot
+!call OmpCopyPointerupxpt
+!call OmpCopyPointernixpt
+!call OmpCopyPointervisyxpt
+!call OmpCopyPointervyhxpt
+!call OmpCopyPointervyvxpt
+!call OmpCopyPointerfmihxpt
+!call OmpCopyPointerfmivxpt
+!call OmpCopyPointerrtaux
+!call OmpCopyPointerrtauy
+!call OmpCopyPointerrtau
+!call OmpCopyPointerbetap
+!call OmpCopyPointerfqp
+!call OmpCopyPointerfq2
+!call OmpCopyPointerfqx
+!call OmpCopyPointerfqxb
+!call OmpCopyPointerfdiaxlb
+!call OmpCopyPointerfdiaxrb
+!call OmpCopyPointerfloxebgt
+!call OmpCopyPointerfloxibgt
+!call OmpCopyPointerfqy
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyb'
+!
+!call OmpCopyPointerfqyb
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyn'
+!
+!call OmpCopyPointerfqyn
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqym'
+!
+!call OmpCopyPointerfqym
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqymi'
+!
+!call OmpCopyPointerfqymi
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqya'
+!
+!call OmpCopyPointerfqya
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqydt'
+!
+!call OmpCopyPointerfqydt
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqydti'
+!
+!call OmpCopyPointerfqydti
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyao'
+!
+!call OmpCopyPointerfqyao
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyae'
+!
+!call OmpCopyPointerfqyae
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyai'
+!
+!call OmpCopyPointerfqyai
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqyd'
+!
+!call OmpCopyPointerfqyd
+!
+!write(*,*) '#Master::: Calling routine to copy variable fqygp'
+!
+!call OmpCopyPointerfqygp
+!
+!write(*,*) '#Master::: Calling routine to copy variable fq2d'
+!
+!call OmpCopyPointerfq2d
+!
+!write(*,*) '#Master::: Calling routine to copy variable fnix'
+!
+!call OmpCopyPointerfnix
+!call OmpCopyPointerfnixcb
+!call OmpCopyPointerfniy
+!call OmpCopyPointerfniy4ord
+!call OmpCopyPointerfniycb
+!call OmpCopyPointerfmix
+!call OmpCopyPointerfmiy
+!call OmpCopyPointerfmixy
+!call OmpCopyPointerfmity
+!call OmpCopyPointerfeex
+!call OmpCopyPointerfeey
+!call OmpCopyPointerfeexy
+!call OmpCopyPointerfeey4ord
+!call OmpCopyPointerfeix
+!call OmpCopyPointerfeiy
+!call OmpCopyPointerfegx
+!call OmpCopyPointerfegy
+!call OmpCopyPointerqipar
+!call OmpCopyPointerfniycbo
+!call OmpCopyPointerfeiycbo
+!call OmpCopyPointerfeeycbo
+!call OmpCopyPointerfeixy
+!call OmpCopyPointerfeiy4ord
+!call OmpCopyPointerfngx
+!call OmpCopyPointerfngx4ord
+!call OmpCopyPointerflngx
+!call OmpCopyPointerfngy
+!call OmpCopyPointerfngy4ord
+!call OmpCopyPointerflngy
+!call OmpCopyPointerfngxy
+!call OmpCopyPointerflngxy
+!call OmpCopyPointerbcel
+!call OmpCopyPointerbcer
+!call OmpCopyPointerbcil
+!call OmpCopyPointerbcir
+!call OmpCopyPointerkappal
+!call OmpCopyPointerkappar
+!call OmpCopyPointerdphi_iy1
+!call OmpCopyPointerkincorlb
+!call OmpCopyPointerkincorrb
+!call OmpCopyPointerex
+!call OmpCopyPointerey
+!call OmpCopyPointergpix
+!call OmpCopyPointergpiy
+!call OmpCopyPointergpex
+!call OmpCopyPointergpey
+!call OmpCopyPointergprx
+!call OmpCopyPointergpry
+!call OmpCopyPointergtex
+!call OmpCopyPointergtey
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable gtix'
+!!
+!!call OmpCopyPointergtix
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable gtiy'
+!!
+!!call OmpCopyPointergtiy
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable frice'
+!!
+!!call OmpCopyPointerfrice
+!!call OmpCopyPointerfrici
+!!call OmpCopyPointerfricnrl
+!!call OmpCopyPointeralfe
+!!call OmpCopyPointerbetai
+!!call OmpCopyPointerw
+!!call OmpCopyPointerw0
+!!call OmpCopyPointerw1
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable w2'
+!!
+!!call OmpCopyPointerw2
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable w3'
+!!
+!!call OmpCopyPointerw3
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable wvh'
+!!
+!!call OmpCopyPointerwvh
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable flox'
+!!
+!!call OmpCopyPointerflox
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floy'
+!!
+!!call OmpCopyPointerfloy
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conx'
+!!
+!!call OmpCopyPointerconx
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable cony'
+!!
+!!call OmpCopyPointercony
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floxe'
+!!
+!!call OmpCopyPointerfloxe
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floye'
+!!
+!!call OmpCopyPointerfloye
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floxi'
+!!
+!!call OmpCopyPointerfloxi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floyi'
+!!
+!!call OmpCopyPointerfloyi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floxg'
+!!
+!!call OmpCopyPointerfloxg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floyg'
+!!
+!!call OmpCopyPointerfloyg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conxe'
+!!
+!!call OmpCopyPointerconxe
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conye'
+!!
+!!call OmpCopyPointerconye
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conxi'
+!!
+!!call OmpCopyPointerconxi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conyi'
+!!
+!!call OmpCopyPointerconyi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conxg'
+!!
+!!call OmpCopyPointerconxg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conyg'
+!!
+!!call OmpCopyPointerconyg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floxge'
+!!
+!!call OmpCopyPointerfloxge
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable floyge'
+!!
+!!call OmpCopyPointerfloyge
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conxge'
+!!
+!!call OmpCopyPointerconxge
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable conyge'
+!!
+!!call OmpCopyPointerconyge
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable visx'
+!!
+!!call OmpCopyPointervisx
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable visy'
+!!
+!!call OmpCopyPointervisy
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxe'
+!!
+!!call OmpCopyPointerhcxe
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcye'
+!!
+!!call OmpCopyPointerhcye
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxij'
+!!
+!!call OmpCopyPointerhcxij
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcyij'
+!!
+!!call OmpCopyPointerhcyij
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxg'
+!!
+!!call OmpCopyPointerhcxg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcyg'
+!!
+!!call OmpCopyPointerhcyg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxi'
+!!
+!!call OmpCopyPointerhcxi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxineo'
+!!
+!!call OmpCopyPointerhcxineo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcyi'
+!!
+!!call OmpCopyPointerhcyi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcxn'
+!!
+!!call OmpCopyPointerhcxn
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable hcyn'
+!!
+!!call OmpCopyPointerhcyn
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable kxbohm'
+!!
+!!call OmpCopyPointerkxbohm
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable kybohm'
+!!
+!!call OmpCopyPointerkybohm
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable dif_use'
+!!
+!!call OmpCopyPointerdif_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable difp_use'
+!!
+!!call OmpCopyPointerdifp_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable dif2_use'
+!!
+!!call OmpCopyPointerdif2_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable tray_use'
+!!
+!!call OmpCopyPointertray_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable trax_use'
+!!
+!!call OmpCopyPointertrax_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable kye_use'
+!!
+!!call OmpCopyPointerkye_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable kyi_use'
+!!
+!!call OmpCopyPointerkyi_use
+!!call OmpCopyPointerkxe_use
+!!call OmpCopyPointerkxi_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable dutm_use'
+!!
+!!call OmpCopyPointerdutm_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vy_use'
+!!
+!!call OmpCopyPointervy_use
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vy_cft'
+!!
+!!call OmpCopyPointervy_cft
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vyte_cft'
+!!
+!!call OmpCopyPointervyte_cft
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vyti_cft'
+!!
+!!call OmpCopyPointervyti_cft
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuiz'
+!!
+!!call OmpCopyPointernuiz
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nucx'
+!!
+!!call OmpCopyPointernucx
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nucxi'
+!!
+!!call OmpCopyPointernucxi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nueli'
+!!
+!!call OmpCopyPointernueli
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuelg'
+!!
+!!call OmpCopyPointernuelg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuix'
+!!
+!!call OmpCopyPointernuix
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nurc'
+!!
+!!call OmpCopyPointernurc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuvl'
+!!
+!!call OmpCopyPointernuvl
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable eqp'
+!!
+!!call OmpCopyPointereqp
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable eqpg'
+!!
+!!call OmpCopyPointereqpg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable eeli'
+!!
+!!call OmpCopyPointereeli
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable pradhyd'
+!!
+!!call OmpCopyPointerpradhyd
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable eta1'
+!!
+!!call OmpCopyPointereta1
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable rtaue'
+!!
+!!call OmpCopyPointerrtaue
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable dclass_e'
+!!
+!!call OmpCopyPointerdclass_e
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable dclass_i'
+!!
+!!call OmpCopyPointerdclass_i
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable visxneo'
+!!
+!!call OmpCopyPointervisxneo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable visvol_v'
+!!
+!!call OmpCopyPointervisvol_v
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable visvol_q'
+!!
+!!call OmpCopyPointervisvol_q
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuii'
+!!
+!!call OmpCopyPointernuii
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable nuiistar'
+!!
+!!call OmpCopyPointernuiistar
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable alfneo'
+!!
+!!call OmpCopyPointeralfneo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable k2neo'
+!!
+!!call OmpCopyPointerk2neo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable ktneo'
+!!
+!!call OmpCopyPointerktneo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable snic'
+!!
+!!call OmpCopyPointersnic
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable sniv'
+!!
+!!call OmpCopyPointersniv
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorc'
+!!
+!!call OmpCopyPointerpsorc
+!!call OmpCopyPointerpsor
+!!call OmpCopyPointerpsorxrc
+!!call OmpCopyPointerpsorxr
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psor_tmpov'
+!!
+!!call OmpCopyPointerpsor_tmpov
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorgc'
+!!
+!!call OmpCopyPointerpsorgc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorg'
+!!
+!!call OmpCopyPointerpsorg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorrgc'
+!!
+!!call OmpCopyPointerpsorrgc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorrg'
+!!
+!!call OmpCopyPointerpsorrg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorcxgc'
+!!
+!!call OmpCopyPointerpsorcxgc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorcxg'
+!!
+!!call OmpCopyPointerpsorcxg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psori'
+!!
+!!call OmpCopyPointerpsori
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psordis'
+!!
+!!call OmpCopyPointerpsordis
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorbgg'
+!!
+!!call OmpCopyPointerpsorbgg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorbgz'
+!!
+!!call OmpCopyPointerpsorbgz
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable erliz'
+!!
+!!call OmpCopyPointererliz
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable erlrc'
+!!
+!!call OmpCopyPointererlrc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vsoreec'
+!!
+!!call OmpCopyPointervsoreec
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable vsoree'
+!!
+!!call OmpCopyPointervsoree
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable pwrebkg'
+!!
+!!call OmpCopyPointerpwrebkg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable pwribkg'
+!!
+!!call OmpCopyPointerpwribkg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable wjdote'
+!!
+!!call OmpCopyPointerwjdote
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable smoc'
+!!
+!!call OmpCopyPointersmoc
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable smov'
+!!
+!!call OmpCopyPointersmov
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable msor'
+!!
+!!call OmpCopyPointermsor
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable msorxr'
+!!
+!!call OmpCopyPointermsorxr
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable seec'
+!!
+!!call OmpCopyPointerseec
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable seev'
+!!
+!!call OmpCopyPointerseev
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable seic'
+!!
+!!call OmpCopyPointerseic
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable seiv'
+!!
+!!call OmpCopyPointerseiv
+!!
+!!
+!!
+!!call OmpCopyPointerresco
+!!
+!! to copy variable resng'
+!!
+!!call OmpCopyPointerresng
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable reseg'
+!!
+!!call OmpCopyPointerreseg
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable resmo'
+!!
+!!call OmpCopyPointerresmo
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable resee'
+!!
+!!call OmpCopyPointerresee
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable resei'
+!!
+!!call OmpCopyPointerresei
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable resphi'
+!!
+!!call OmpCopyPointerresphi
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable sng_ue'
+!!
+!!call OmpCopyPointersng_ue
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable seg_ue'
+!!
+!!call OmpCopyPointerseg_ue
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorold'
+!!
+!!call OmpCopyPointerpsorold
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable psorxrold'
+!!
+!!call OmpCopyPointerpsorxrold
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable msorold'
+!!
+!!call OmpCopyPointermsorold
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable msorxrold'
+!!
+!!call OmpCopyPointermsorxrold
+!!
+!!write(*,*) '#Master::: Calling routine to copy variable yldot_pert'
+!!
+!!call OmpCopyPointeryldot_pert
+!!call OmpCopyPointernzloc
+!!call OmpCopyPointerimpradloc
+!!call OmpCopyPointerpwrzec
+!!call OmpCopyPointerpwrze
+!!call OmpCopyPointerpradc
+!!call OmpCopyPointerpradcff
+!!call OmpCopyPointerprad
+!!call OmpCopyPointerpradzc
+!!call OmpCopyPointerpradz
+!!call OmpCopyPointerna
+!!call OmpCopyPointerntau
+!!call OmpCopyPointernratio
+!!call OmpCopyPointertempa
+!!call OmpCopyPointerden
+!!call OmpCopyPointergradp
+!!call OmpCopyPointergradt
+!!call OmpCopyPointerdztot
+end subroutine OmpCopyPointerbbb2
+
+
+subroutine ompCopyConvert
+      use OmpCopybbb
+      implicit none
+      call OmpCopyPointerne
+      call OmpCopyPointernit
+      call OmpCopyPointernm
+      call OmpCopyPointernz2
+      call OmpCopyPointerni
+      call OmpCopyPointerng
+      call OmpCopyPointerlng
+      call OmpCopyPointerte
+      call OmpCopyPointertg
+      call OmpCopyPointerti
+      call OmpCopyPointerphi
+      call OmpCopyPointerup
+      call OmpCopyPointerpr
+      call OmpCopyPointerzeff
+      call OmpCopyPointerpri
+      call OmpCopyPointerpre
+      call OmpCopyPointerznot
+      call OmpCopyPointertg
+      call OmpCopyPointerpg
+      call OmpCopyPointergprx
+      call OmpCopyPointerney0
+      call OmpCopyPointerney1
+      call OmpCopyPointernity0
+      call OmpCopyPointernity1
+      call OmpCopyPointergpry
+      call OmpCopyPointergpix
+      call OmpCopyPointerniy0
+      call OmpCopyPointerniy1
+      call OmpCopyPointerniy0s
+      call OmpCopyPointerniy1s
+      call OmpCopyPointerpriy0
+      call OmpCopyPointerpriy1
+      call OmpCopyPointergpiy
+      call OmpCopyPointertey0
+      call OmpCopyPointertey1
+      call OmpCopyPointertiy0
+      call OmpCopyPointertiy1
+      call OmpCopyPointerphiy0
+      call OmpCopyPointerphiy1
+      call OmpCopyPointertiy0s
+      call OmpCopyPointertiy1s
+      call OmpCopyPointerphiy0s
+      call OmpCopyPointerphiy1s
+      call OmpCopyPointerngy0
+      call OmpCopyPointerngy1
+      call OmpCopyPointertgy0
+      call OmpCopyPointertgy1
+      call OmpCopyPointerpgy0
+      call OmpCopyPointerpgy1
+      call OmpCopyPointergpex
+      call OmpCopyPointergtex
+      call OmpCopyPointergtix
+      call OmpCopyPointerex
+      call OmpCopyPointergpey
+      call OmpCopyPointergtey
+      call OmpCopyPointergtiy
+      call OmpCopyPointerey
+      call OmpCopyPointerphiv
+      call OmpCopyPointertiv
+      call OmpCopyPointertev
+      call OmpCopyPointerprev
+      call OmpCopyPointerprtv
+      call OmpCopyPointerpriv
+      end subroutine ompCopyConvert
