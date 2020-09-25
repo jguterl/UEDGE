@@ -177,7 +177,7 @@ subroutine InitOMP()
     Use OMPJacSettings,only:nnzmxperthread,omplenpfac,OMPJacVerbose,OMPJacStamp
     Use OMPSettings,only:Nthreads,ompneq
     Use ParallelSettings,only: OMPParallelPandf1
-    Use OMPPandf1Settings,only: OMPPandf1FlagVerbose
+    Use OMPPandf1Settings,only: OMPPandf1FlagVerbose,OMPPandf1FirstRun
     Use MPIJacSettings,only:nnzmxperproc,MPIrank
     Use HybridSettings,only: HybridOMPMPI,Hybridstamp
     Use Jacobian,only:nnzmx
@@ -231,6 +231,7 @@ subroutine InitOMP()
     if (OMPParallelPandf1.gt.0) then
       OMPPandf1FlagVerbose=1
       call gchange('OMPPandf1',0)
+      OMPPandf1FirstRun=0
     endif
 
 end subroutine InitOMP
@@ -2682,8 +2683,7 @@ subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
     integer,intent(in) ::ieqmin,ieqmax,Nthreads,neq
     integer,intent(out)::ic(Nthreads),inc(Nthreads),ivthread(1:neq)
     integer :: ihigh(Nthreads),ilow(Nthreads),ixthread(ieqmin:ieqmax)
-    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,incpad=1
-
+    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,imin,iend,istart
     if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
 
         !        if (OMPLoadWeight.eq.1) then
@@ -2704,18 +2704,28 @@ subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
             if (Nsize(i)<1) call xerrab('Nsize<1')
         enddo
 
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
-            imax=1
-            do i=2,Nthreads
-                if (Nsize(i)>Nsize(i-1)) then
-                    imax=i
-                endif
-            enddo
-            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
+        if (Nthreads.ge.4) then
+        istart=2
+        iend=Nthreads-1
+        else
+        istart=1
+        iend=Nthreads
         endif
+imin=istart
 
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. ieqmax-ieqmin+1')
+        do while (ieqmax-ieqmin+1.gt.sum(Nsize))
+                Nsize(imin)=Nsize(imin)+1
+                if (imin.ge.iend) then
+                    imin=istart
+                else
+                    imin=imin+1
+                endif
+        enddo
 
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+           write(*,*) Nsize,sum(Nsize)
+           call xerrab('OMPPandf1:Nsize .ne. ieqmax-ieqmin+1')
+       endif
         ilow(1)=ieqmin
         ihigh(1)=ieqmin+Nsize(1)-1
         do i=2,Nthreads
@@ -2852,7 +2862,7 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPCheckParallelPandf1,&
     OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
     use OMPPandf1,only:OMPic,OMPyinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1
-    use OMPPandf1Settings,only:OMPPandf1RunPara
+    use OMPPandf1Settings,only:OMPPandf1RunPara,OMPPandf1FirstRun
     use Dim,only:ny
     use Selec, only:yinc
 
@@ -2864,10 +2874,9 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     real::yldotcopy(1:neq)
     real yldotsave(1:neq),ylcopy(1:neq+2)
      character*80 ::FileName
-    real time1
+    real time1,time2
     integer::ith
     !write(*,*)' ======================================== '
-
     ylcopy(1:neq+1)=yl(1:neq+1)
 
     EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
@@ -2891,11 +2900,19 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
 
 
     call OmpCopyPointerup
-
-
+    
+    if (OMPPandf1FirstRun.eq.0) then
+      if (OMPPandf1Verbose.gt.1) then
+            write(*,*) OMPPandf1Stamp,"Copying bbb arrays for first run" 
+      endif
+call OmpCopyPointerbbb
+     call OmpCopyScalarbbb
+     OMPPandf1FirstRun=1
+    endif
+    
     !$omp parallel do default(shared) if(OMPPandf1RunPara.gt.0) &
-    !$omp& firstprivate(yldotcopy,ylcopy)&
-    !$omp& private(iv,tid)
+    !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy)
+   
 
 
 
@@ -2905,19 +2922,15 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
         yinc=OMPyinc(ith)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()
-        call pandf1 (-1,-1, 0, neq, time, ylcopy, yldotcopy)
+        call pandf1 (-1,OMPic(ith), 0, neq, time, ylcopy, yldotcopy)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()-OMPTimeLocalPandf1(ith)
         OMPTimeCollectPandf1(ith)=omp_get_wtime()
-        !!!$omp  critical
-
         do iv=1,neq
         if (OMPivthread(iv)==ith) then
-
         yldot(iv)=yldotcopy(iv)
-
         endif
         enddo
-        !!$omp  end critical
+      
 
         OMPTimeCollectPandf1(ith)=omp_get_wtime()-OMPTimeCollectPandf1(ith)
 yinc=yinc_bkp
@@ -2927,14 +2940,20 @@ yinc=yinc_bkp
     OMPTimeLocalPandf1(ith)=OMPTimeCollectPandf1(ith)+OMPTimeLocalPandf1(ith)
     enddo loopthread
 !$omp  END PARALLEL DO
-
-
       OMPTimeParallelPandf1=omp_get_wtime()-Time1+OMPTimeParallelPandf1
+        !do iv=1,neq
+        !yldot(iv)=yldotcopy(iv,OMPivthread(iv))
+        !enddo
+     
+
+
+
       if (OMPCheckParallelPandf1.gt.0) then
-          Time1=omp_get_wtime()
+          Time2=omp_get_wtime()
          call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
-          OMPTimeSerialPandf1=omp_get_wtime()-Time1+OMPTimeSerialPandf1
-          write(*,*) "Timing Pandf1 serial:",OMPTimeSerialPandf1,"/parallel:",OMPTimeParallelPandf1
+         Time2=omp_get_wtime()-Time2
+          OMPTimeSerialPandf1=Time2+OMPTimeSerialPandf1
+          write(*,*) "Timing Pandf1 serial:",OMPTimeSerialPandf1,"(",Time2,")/parallel:",OMPTimeParallelPandf1,'(',Time1,')'
           call Compare(yldot,yldotsave,neq)
           write(*,*) "serial and parallel pandf are identical"
         endif
