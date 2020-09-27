@@ -199,6 +199,7 @@ Use(Dim)              # nxm,nym
 Use(Xpoint_indices)   # ixlb,ixpt1,ixmdp,ixpt2,ixrb,iysptrx1,iysptrx2
       character*(*) fname, runid
       integer nuno,ios
+      real tempa,tempb
       external freeus,remark,xerrab,gallot,rdgrid
 
 c     Read a UEDGE code grid data file
@@ -222,11 +223,15 @@ c     Read a UEDGE code grid data file
          read(nuno,1999) ixlb(2),ixpt1(2),ixmdp(2),ixpt2(2),ixrb(2)
 	 if (geometry=="dnXtarget") nxc = ixmdp(1)
       else
-         read(nuno,1999) nxm,nym,ixpt1(1),ixpt2(1),iysptrx1(1)
+	read(nuno,1999) nxm,nym,ixpt1(1),ixpt2(1),iysptrx1(1),tempa,tempb
+       simagxs = tempa
+       sibdrys = tempb
+        write(*,*) "simagxs,sibdrys==",simagxs,sibdrys
          ixlb(1)=0
          ixrb(1)=nxm
          iysptrx2(1)=iysptrx1(1)
       endif
+
  1999 format(5i4)
       call gallot("RZ_grid_info",0)
       call rdgrid(nuno, runid)

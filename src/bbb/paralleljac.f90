@@ -230,8 +230,7 @@ subroutine InitOMP()
     call gchange('OMPJacobian',0)
     if (OMPParallelPandf1.gt.0) then
       OMPPandf1FlagVerbose=1
-      call gchange('OMPPandf1',0)
-      OMPPandf1FirstRun=0
+      OMPPandf1FirstRun=1
     endif
 
 end subroutine InitOMP
@@ -2859,7 +2858,7 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     use omp_lib
     use OmpCopybbb
     use OMPSettings,only: Nthreads
-    use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPCheckParallelPandf1,&
+    use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPPandf1Check,&
     OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
     use OMPPandf1,only:OMPic,OMPyinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1
     use OMPPandf1Settings,only:OMPPandf1RunPara,OMPPandf1FirstRun
@@ -2879,12 +2878,17 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     !write(*,*)' ======================================== '
     ylcopy(1:neq+1)=yl(1:neq+1)
 
-    EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
-
-    if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
-     write(iout,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',EffNthreadsPandf1,'for ny=',ny
-     OMPPandf1FlagVerbose=0
-    endif
+    
+    
+    
+    
+    
+     if (OMPPandf1FirstRun.eq.1) then
+     
+     EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
+     call gchange('OMPPandf1',0)
+     call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
+     
     call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
     if (OMPPandf1Verbose.gt.1) then
         write(iout,'(a,a,I3)') OMPPandf1Stamp,' ny=',ny
@@ -2893,23 +2897,21 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
             write(iout,'(a,I3,a,I7,I7)') '  *    ithread ', ith,':',OMPic(ith),OMPyinc(ith)
         enddo
     endif
-
-    yinc_bkp=yinc
-
-    Time1=omp_get_wtime()
-
-
-    call OmpCopyPointerup
     
-    if (OMPPandf1FirstRun.eq.0) then
-      if (OMPPandf1Verbose.gt.1) then
-            write(*,*) OMPPandf1Stamp,"Copying bbb arrays for first run" 
-      endif
-call OmpCopyPointerbbb
-     call OmpCopyScalarbbb
-     OMPPandf1FirstRun=1
+    
+     OMPPandf1FirstRun=0
     endif
-    
+    if (EffNthreadsPandf1.ne.min(Nthreads,min(NthreadsPandf1,ny))) then
+    EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
+    call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
+    endif
+    if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
+     write(iout,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',EffNthreadsPandf1,'for ny=',ny
+     OMPPandf1FlagVerbose=0
+    endif
+    yinc_bkp=yinc
+    Time1=omp_get_wtime()
+    call OmpCopyPointerup
     !$omp parallel do default(shared) if(OMPPandf1RunPara.gt.0) &
     !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy)
    
@@ -2940,7 +2942,9 @@ yinc=yinc_bkp
     OMPTimeLocalPandf1(ith)=OMPTimeCollectPandf1(ith)+OMPTimeLocalPandf1(ith)
     enddo loopthread
 !$omp  END PARALLEL DO
-      OMPTimeParallelPandf1=omp_get_wtime()-Time1+OMPTimeParallelPandf1
+Time1=omp_get_wtime()-Time1
+
+      OMPTimeParallelPandf1=Time1+OMPTimeParallelPandf1
         !do iv=1,neq
         !yldot(iv)=yldotcopy(iv,OMPivthread(iv))
         !enddo
@@ -2948,7 +2952,7 @@ yinc=yinc_bkp
 
 
 
-      if (OMPCheckParallelPandf1.gt.0) then
+      if (OMPPandf1Check.gt.0) then
           Time2=omp_get_wtime()
          call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
          Time2=omp_get_wtime()-Time2
