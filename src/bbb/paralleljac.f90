@@ -2682,7 +2682,7 @@ subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
     integer,intent(in) ::ieqmin,ieqmax,Nthreads,neq
     integer,intent(out)::ic(Nthreads),inc(Nthreads),ivthread(1:neq)
     integer :: ihigh(Nthreads),ilow(Nthreads),ixthread(ieqmin:ieqmax)
-    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,incpad=1
+    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,incpad=1,imin
 
     if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
 
@@ -2704,15 +2704,23 @@ subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
             if (Nsize(i)<1) call xerrab('Nsize<1')
         enddo
 
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
-            imax=1
-            do i=2,Nthreads
-                if (Nsize(i)>Nsize(i-1)) then
-                    imax=i
-                endif
-            enddo
-            Nsize(imax) = Nsize(imax) + ((ieqmax-ieqmin+1)-sum(Nsize))
+
+        if (Nthreads.gt.4) then
+        istart=2
+        iend=Nthreads-1
+        else
+        istart=1
+        iend=Nthreads
         endif
+        imin=istart
+        do while (ieqmax-ieqmin+1.lt.sum(Nsize))
+                Nsize(imin)=Nsize(imin)+1
+                if (imin.ge.iend) then
+                    imin=istart
+                else
+                    imin=imin+1
+                endif
+        enddo
 
         if (ieqmax-ieqmin+1.ne.sum(Nsize)) call xerrab('Nsize .ne. ieqmax-ieqmin+1')
 
@@ -2723,7 +2731,6 @@ subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
             ihigh(i)=ilow(i)+Nsize(i)-1
 
         enddo
-
         if (ihigh(Nthreads).ne.ieqmax) call xerrab('ihigh(Nthreads)!=ieqmax')
 
         ic=ilow+int((ihigh-ilow)/2)
@@ -2905,7 +2912,7 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
         yinc=OMPyinc(ith)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()
-        call pandf1 (-1,-1, 0, neq, time, ylcopy, yldotcopy)
+        call pandf1 (-1,OMPic(ith), 0, neq, time, ylcopy, yldotcopy)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()-OMPTimeLocalPandf1(ith)
         OMPTimeCollectPandf1(ith)=omp_get_wtime()
         !!!$omp  critical
