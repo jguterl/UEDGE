@@ -95,22 +95,21 @@ OMPPandf1Stamp character*20 /"*OMPPandf1* "/ # Stamp for hybrid output (not an u
 OMPPandf1Debug integer /0/
 OMPPandf1Verbose integer /0/
 OMPPandf1FlagVerbose integer /0/
-OMPCheckParallelPandf1 integer /1/
-NthreadsPandf1 integer /64/ # Nthreads for threaded pandf1.
+OMPPandf1Check integer /1/
+NthreadsPandf1 integer /8/ # Nthreads for threaded pandf1.
 OMPPandf1yinc integer /3/
-OMPPandf1padyinc integer /3/
+OMPPandf1padyinc integer /2/
 OMPTimeParallelPandf1 real /0.0/
 OMPTimeSerialPandf1 real /0.0/
 OMPPandf1RunPara integer /1/
-
+OMPPandf1FirstRun integer /1/
+  
 **** OMPPandf1:
 OMPic(1:Nthreads) _integer
 OMPyinc(1:Nthreads) _integer
 OMPivthread(1:OMPneq) _integer
 OMPTimeLocalPandf1(1:Nthreads) _real #
 OMPTimeCollectPandf1(1:Nthreads) _real #
-
-
 
 **** TimingPandf:
 TimePandf real /0.0/

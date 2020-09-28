@@ -6,3 +6,4 @@ build/
 .DS_Store
 *~
 pyscripts/__version__.py
+a.out

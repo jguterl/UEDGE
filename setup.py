@@ -114,7 +114,7 @@ print('>>>> Compiler name:{} ; Compiler executable:{}'.format(fcompiler.fcompnam
 # Compiler flags for pyUEDGE 
 #Note: the -g flag does not affect the runtime. It is not equivalent to -Og. See gcc documentation.
 ## Default Fortran compiler flags
-fargs=['-g -fmax-errors=15 -DHAS_READLINE -DFORTHON -cpp -Wconversion -fimplicit-none' ]
+fargs=['-g -fmax-errors=15 -DHAS_READLINE -DFORTHON -cpp -Wconversion -fimplicit-none -lblas -llapack' ]
 ## Debug flag for Fortran compiler
 fargsdebug=[' -fbacktrace -ffree-line-length-0 -fcheck=all -ffpe-trap=invalid,overflow,underflow -finit-real=snan -Og']
 ## Optmization/debugging flag for Fortran compiler
@@ -263,8 +263,8 @@ if petsc:
     libraries = ['petsc'] + fcompiler.libs
 
 if parallel:
-    #library_dirs = fcompiler.libdirs + ['/usr/lpp/ppe.poe/lib']
-    libraries = fcompiler.libs
+    library_dirs = fcompiler.libdirs
+    libraries = fcompiler.libs + ['blas','lapack']
     # uedgeobjects = uedgeobjects + ['/usr/local/mpi/ifc_farg.o']
 
 with open('pyscripts/__version__.py','w') as ff:
