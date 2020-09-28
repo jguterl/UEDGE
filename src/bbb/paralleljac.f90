@@ -355,10 +355,10 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
     if (OMPJacVerbose.gt.0) then
         write(iout,*)' *OMPJac* neq=',neq,neqmx
-        write(iout,*)' *OMPJac* Ivmin(ith),Ivmax(ith), OMPLoadWeight(ith),OMPTimeLocalJac(ith) ***'
+        write(iout,*)' *OMPJac* Ivmin(ith),Ivmax(ith), OMPLoadWeight(ith) : OMPTimeLocalJac(ith) ***'
         do ith=1,Nthreads
-            write(iout,'(a,I3,a,I7,I7,f5.1,f5.2)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith)&
-            ,OMPTimeLocalJac(ith)
+            write(iout,'(a,I3,a,I7,I7,f5.1,a,f5.2)') '  *    ithread ', ith,':',OMPivmin(ith),OMPivmax(ith),OMPLoadWeight(ith)&
+            ,' : 'OMPTimeLocalJac(ith)
         enddo
     endif
 
@@ -487,9 +487,9 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     real :: rJacElemCopy(nnzmxperthread),TimeJacRowcopy(neq)
     integer:: ith,tid,nnzlocal,ithcopy
     DOUBLE PRECISION :: TimeThread
-
+    
     if (OMPJacDebug.gt.0)write(iout,*) OMPJacStamp,' Copying data....'
-
+    call pandf1 (-1, -1, 0, neq, 0, yl, ylcopy) 
     if (OMPCopyArray.gt.0) then
         if (OMPJacDebug.gt.0)write(iout,*) OMPJacStamp,' Copying array....'
         call OmpCopyPointerbbb
@@ -2864,6 +2864,7 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     use OMPPandf1Settings,only:OMPPandf1RunPara,OMPPandf1FirstRun
     use Dim,only:ny
     use Selec, only:yinc
+Use Grid,only:ijactot
 
     integer yinc_bkp,iv,tid,EffNthreadsPandf1
     integer,intent(in)::neq
@@ -2877,21 +2878,22 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     integer::ith
     !write(*,*)' ======================================== '
     ylcopy(1:neq+1)=yl(1:neq+1)
-
     
     
     
     
-    
+    if (ijactot.gt.0) then
+  
      if (OMPPandf1FirstRun.eq.1) then
      
      EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
      call gchange('OMPPandf1',0)
-     call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
      
     call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
+    if (OMPPandf1Verbose.gt.0) then
+    write(iout,'(a,a,I3,a,I3)') OMPPandf1Stamp,'EffNthreadsPandf1',EffNthreadsPandf1 ,' ny=',ny
+endif
     if (OMPPandf1Verbose.gt.1) then
-        write(iout,'(a,a,I3)') OMPPandf1Stamp,' ny=',ny
         write(iout,*)OMPPandf1Stamp, ' ic(ith), linc(ith)'
         do ith=1,EffNthreadsPandf1
             write(iout,'(a,I3,a,I7,I7)') '  *    ithread ', ith,':',OMPic(ith),OMPyinc(ith)
@@ -2901,6 +2903,7 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     
      OMPPandf1FirstRun=0
     endif
+
     if (EffNthreadsPandf1.ne.min(Nthreads,min(NthreadsPandf1,ny))) then
     EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
     call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
@@ -2914,17 +2917,15 @@ subroutine ParallelPandf1(neq,time,yl,yldot)
     call OmpCopyPointerup
     !$omp parallel do default(shared) if(OMPPandf1RunPara.gt.0) &
     !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy)
-   
-
-
-
     loopthread: do ith=1,EffNthreadsPandf1 !ith from 1 to Nthread, tid from 0 to Nthread-1
         tid=omp_get_thread_num()
         if (OMPPandf1Debug.gt.0) write(iout,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ith:',ith
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
         yinc=OMPyinc(ith)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()
+
         call pandf1 (-1,OMPic(ith), 0, neq, time, ylcopy, yldotcopy)
+
         OMPTimeLocalPandf1(ith)=omp_get_wtime()-OMPTimeLocalPandf1(ith)
         OMPTimeCollectPandf1(ith)=omp_get_wtime()
         do iv=1,neq
@@ -2958,10 +2959,13 @@ Time1=omp_get_wtime()-Time1
          Time2=omp_get_wtime()-Time2
           OMPTimeSerialPandf1=Time2+OMPTimeSerialPandf1
           write(*,*) "Timing Pandf1 serial:",OMPTimeSerialPandf1,"(",Time2,")/parallel:",OMPTimeParallelPandf1,'(',Time1,')'
+          write(*,*) 'ijactot ',ijactot
           call Compare(yldot,yldotsave,neq)
           write(*,*) "serial and parallel pandf are identical"
         endif
-
+  else
+       call pandf1 (-1,-1, 0, neq, time, yl, yldot)
+endif
 end subroutine ParallelPandf1
 
 subroutine OmpCopyPointerbbb2
