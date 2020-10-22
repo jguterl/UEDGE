@@ -1,4 +1,4 @@
-bbb
+loglambb
 {
 nispmx = 31	# maximum number of ion species
 ngspmx = 6	# maximum number of gas species; also must set in com.v
@@ -9,6 +9,7 @@ ndcsmx = nispmx*nxptmx	# data dimension for csfaclb and csfacrb
 nispmxngspmx = nispmx*ngspmx # tot numb ion*gas species
 nstramx = 10 # maximum number of strata for MC neutrals code
 }
+
 
 ***** Math_problem_size:
 neqmx		integer		# number of math. eqns to be solved/integrated
