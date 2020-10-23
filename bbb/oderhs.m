@@ -9445,7 +9445,8 @@ c ... Calculate right-hand sides at unperturbed values of variables.
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
+      #Working array wk in place of sf in the call to jac_calc (J.Guterl) 
+      call jac_calc_interface (neq, tp, yl, yldot0, lbw, ubw, wk,
      .               nnzmx, jac, jacj, jaci)
 
       yl(neq+1) = -1.      # Turn-off Jacobian flag for pandf
