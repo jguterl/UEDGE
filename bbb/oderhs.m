@@ -1283,10 +1283,10 @@ cc              endif
 
               vydd(ix,iy,ifld) = vydd(ix,iy,ifld) 
      .           -1. * difnimix * (
-     .            2*(1-isvylog)*(niy1(ix,iy,ifld) - niy0(ix,iy,ifld)) *
-     .              gyf(ix,iy) / (niy1(ix,iy,ifld) + niy0(ix,iy,ifld))+
+     .            2*(1-isvylog)*( (niy1(ix,iy,ifld) - niy0(ix,iy,ifld)) /
+     .              dynog(ix,iy) ) / (niy1(ix,iy,ifld)+niy0(ix,iy,ifld))+
      .              isvylog*(log(niy1(ix,iy,ifld)) - 
-     .                             log(niy0(ix,iy,ifld))) *gyf(ix,iy) )
+     .                            log(niy0(ix,iy,ifld))) /dynog(ix,iy) )
 
 c ... Compute total radial velocity.
               vy(ix,iy,ifld) = cfydd *bfacyrozh(ix,iy) *
@@ -1420,7 +1420,7 @@ c     .                    fy0 (ix,iy,0)/ni(ix ,iy ,ifld) +
 c     .                    fyp (ix,iy,0)/ni(ix ,iy2,ifld) + 
 c     .                    fymx(ix,iy,0)/ni(ix4,iy1,ifld) +
 c     .                    fypx(ix,iy,0)/ni(ix6,iy2,ifld) ) )
-c     .                                                 * gxfn(ix,iy)
+c     .                                                 / dxnog(ix,iy)
 cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
 cc     .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
 cc     .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
@@ -1430,8 +1430,8 @@ cc     .               -exp( fym (ix,iy,0)*log(ni(ix ,iy1,ifld)) +
 cc     .                     fy0 (ix,iy,0)*log(ni(ix ,iy ,ifld)) +
 cc     .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
 cc     .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
-cc     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
-cc     .                                                      gxfn(ix,iy)
+cc     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) /
+cc     .                                                    dxnog(ix,iy)
             grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
      .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
      .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
@@ -1441,8 +1441,8 @@ cc     .                                                      gxfn(ix,iy)
      .                     fy0 (ix,iy,0)*log(ni(ix ,iy ,ifld)) +
      .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
      .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
-     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
-     .                                                      gxfn(ix,iy)
+     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) /
+     .                                                      dxnog(ix,iy)
             vytan(ix,iy,ifld)=(fcdif*difni(ifld) + dif_use(ix,iy,ifld)) *
      .                                      (grdnv/cos(angfx(ix,iy)) - 
      .                       (log(ni(ix2,iy,ifld)) - log(ni(ix,iy,ifld)))
@@ -2658,22 +2658,22 @@ c
      .                 (1./(1.+epstmp**(-1.5)/nuiistar(ix,iy,ifld)))*
      .                               (1./(1.+1./nuiistar(ix,iy,ifld)))
                rt2nus = 1.414*nuiistar(ix,iy,ifld)
-               ktneo(ix,iy,ifld) = (-0.17 + 1.05*rt2nus**.5 +
+               ktneo(ix,iy,ifld) = (-0.17 + 1.05*rt2nus**.5 + 
      .                     2.7*rt2nus**2*epstmp**3) / ( 1.+
      .                0.7*rt2nus**.5 + rt2nus**2*epstmp**3 )
                alfneo(ix,iy,ifld) = (8./15.)*(ktneo(ix,iy,ifld) - 1.)*
      .                 (1./(1.+epstmp**(-1.5)/nuiistar(ix,iy,ifld)))*
      .                            ( 1./(1.+1./nuiistar(ix,iy,ifld)) )
-               k2neo(ix,iy,ifld) =(.66 + 1.88*epstmp**.5 - 1.54*epstmp)/
+               k2neo(ix,iy,ifld) =(.66 + 1.88*epstmp**.5 - 1.54*epstmp)/ 
      .                            (1. + 1.03*rt2nus**.5 + 0.31*rt2nus) +
      .             1.17*epstmp**3*rt2nus/(1. + 0.74*epstmp**1.5*rt2nus)
-c...  flux limit the viscosity; beware of using visx(0,iy) and
+c...  flux limit the viscosity; beware of using visx(0,iy) and 
 c...  visx(nx+1,iy) as they are meaningless when flux limited
                ix1 = ixm1(ix,iy)
                t0 = max (ti(ix,iy), temin*ev)
                vtn = sqrt(t0/mi(ifld))
                mfl = flalfv * nm(ix,iy,ifld) * rr(ix,iy) *
-     .               vol(ix,iy) * gx(ix,iy) * (t0/mi(ifld))
+     .               vol(ix,iy) * gx(ix,iy) * (t0/mi(ifld)) 
 ccc  Distance between veloc. cell centers:
                if (isgxvon .eq. 0) then     # dx(ix)=1/gx(ix)
                  csh = visx(ix,iy,ifld) * vol(ix,iy) * gx(ix,iy)
@@ -2958,7 +2958,7 @@ c          Now for the radial flux limit - good for nonorthog grid too
                lmfpn = 1./(sigcx * (niavey + rnn2cx*noavey))
                cshy = lmfpn*sqrt(tgavey/mi(iigsp))*noavey * 
      .                         lgtmax(iigsp)/(lmfpn + lgtmax(iigsp))
-               qshy = cshy * (tgy0(ix,iy1,1)-tgy1(ix,iy1,1)) * gyf(ix,iy)
+               qshy = cshy * (tgy0(ix,iy1,1)-tgy1(ix,iy1,1))/dynog(ix,iy)
                hcyn(ix,iy) = cshy / 
      .                      (1 + (abs(qshy/qfly))**flgamtg)**(1./flgamtg)
                hcyi(ix,iy) = hcyi(ix,iy) + cfneut*cfneutsor_ei*hcyn(ix,iy)
@@ -3045,8 +3045,9 @@ c..   Now radial direction
      .                 naavey*kelhmhg
             qfly = flalftmy*sqrt(tgavey/mg(igsp))*noavey*tgavey
             cshy = cftgcond*noavey*tgavey/(mg(igsp)*nuelmoly)  #assume Kel_s not fcn Tg
-            qshy = cshy*(tgy0(ix,iy1,igsp)-tgy1(ix,iy1,igsp))*gyf(ix,iy)
-           hcyg(ix,iy,igsp) = cshy /
+            qshy = cshy*(tgy0(ix,iy1,igsp)-tgy1(ix,iy1,igsp))/
+     .                                                  dynog(ix,iy)
+            hcyg(ix,iy,igsp) = cshy / 
      .                     (1 + (abs(qshy/qfly))**flgamtg)**(1./flgamtg)
             hcyg(ix,iy,igsp)=(1-cfhcygc(igsp))*hcyg(ix,iy,igsp)+
      .                     cfhcygc(igsp)*noavey*kyg_use(ix,iy,igsp)
@@ -3456,9 +3457,9 @@ c     The density-stencil dxnog has to be averaged as well.
      .                  fy0v (ix,iy,0)*up(ix1,iy  ,ifld)-
      .                  fypv (ix,iy,0)*up(ix5,iy+1,ifld)-
      .                  fymxv(ix,iy,0)*up(ix ,iy1 ,ifld)-
-     .                  fypxv(ix,iy,0)*up(ix ,iy+1,ifld) ) *
-     .                     (2*gxfn(ix,iy)*gxfn(ix1,iy) /
-     .                      (gxfn(ix,iy)+gxfn(ix1,iy)))
+     .                  fypxv(ix,iy,0)*up(ix ,iy+1,ifld) ) /
+     .                     ( 2*dxnog(ix,iy)*dxnog(ix1,iy) /
+     .                       (dxnog(ix,iy)+dxnog(ix1,iy)) )
                if (isgxvon .eq. 0) then
                   fmixy(ix,iy,ifld) = cfvisxy(ifld)*visy(ix,iy,ifld) *
      .              ( grdnv/cos(0.5*(angfx(ix1,iy)+angfx(ix,iy))) - 
@@ -3468,8 +3469,8 @@ c     The density-stencil dxnog has to be averaged as well.
                   fmixy(ix,iy,ifld) = cfvisxy(ifld)*visy(ix,iy,ifld) *
      .              ( grdnv/cos(0.5*(angfx(ix1,iy)+angfx(ix,iy))) - 
      .               (up(ix,iy,ifld) - up(ix1,iy,ifld))*
-     .                     (2*gxfn(ix,iy)*gxfn(ix1,iy) /
-     .                      (gxfn(ix,iy)+gxfn(ix1,iy))) ) *
+     .                     ( 2*gxf(ix,iy)*gxf(ix1,iy) /
+     .                        (gxf(ix,iy)+gxf(ix1,iy)) ) ) *
      .                     0.5*(sx(ix1,iy)+sx(ix,iy))
                endif
 c...  Now flux limit with flalfvgxy if ifld=2
@@ -3854,8 +3855,8 @@ c.... Now do the ions (hcxi is flux-limited previously when it is built)
 
       do 123 iy = j1, j5
          do 122 ix = i4, i8
-            conye(ix,iy) = sy(ix,iy) * hcye(ix,iy) * gyf(ix,iy)
-            conyi(ix,iy) = sy(ix,iy) * hcyi(ix,iy) * gyf(ix,iy)
+            conye(ix,iy) = sy(ix,iy) * hcye(ix,iy) / dynog(ix,iy)
+            conyi(ix,iy) = sy(ix,iy) * hcyi(ix,iy) / dynog(ix,iy)
   122    continue
   123 continue
 
@@ -4192,8 +4193,8 @@ c...  First do the Te equation
      .                        fy0 (ix,iy,0)*log(te(ix ,iy  )) +
      .                        fyp (ix,iy,0)*log(te(ix ,iy+1)) +
      .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +  
-     .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) *
-     .                                                   gxfn(ix,iy)
+     .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) / 
+     .                                                   dxnog(ix,iy)  
                feexy(ix,iy) = exp( 0.5*
      .                         (log(te(ix2,iy)) + log(te(ix,iy))) )* 
      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
@@ -4220,8 +4221,8 @@ c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
      .                         fy0 (ix,iy,0)*log(ti(ix ,iy  )) +
      .                         fyp (ix,iy,0)*log(ti(ix ,iy+1)) +
      .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +  
-     .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) *
-     .                                                   gxfn(ix,iy)
+     .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) / 
+     .                                                   dxnog(ix,iy)  
                feixy(ix,iy) = exp( 0.5*
      .                       (log(ti(ix2,iy)) + log(ti(ix,iy))) )*
      .                           ( (fcdif*kyi+kyi_use(ix,iy))*0.5*
@@ -4894,7 +4895,7 @@ c ... Output arguments:
 
 c ... Local variables:
       integer misa, ifld, jz
-
+	  
 c ... Loop over ion species, looking for change to a new isotope, and
 c     finding maximum charge state.
       natomic(1) = 1   # electrons are "isotope 1"
@@ -5470,8 +5471,8 @@ c.... First the flux in the x-direction
      .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
      .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) + 
      .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
-     .                                                      gxfn(ix,iy)
+     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )/ 
+     .                                                      dxnog(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
      .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
      .                      ( cngfx(igsp) / (mg(igsp)*0.5*(nu1+nu2)) ) *
@@ -5535,7 +5536,7 @@ c.... Now the flux in the y-direction
      .                              ( ngy0(ix,iy,igsp)*gy(ix,iy) + 
      .                                ngy1(ix,iy,igsp)*gy(ix,iy+1) ) / 
      .                                     (8*(gy(ix,iy)+gy(ix,iy+1)))
-             csh = (1-isgasdc) * cdifg(igsp) *sy(ix,iy) * gyf(ix,iy) *
+             csh = (1-isgasdc) * cdifg(igsp) *sy(ix,iy)/(dynog(ix,iy)) *
      .                                  ave(vtn**2/nu1, vtnp**2/nu2) +
      .            isgasdc * sy(ix,iy) * gyf(ix,iy) * difcng +
      .                      rld2dyg(igsp)**2*sy(ix,iy)*(1/gyf(ix,iy))*
@@ -5640,8 +5641,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
      .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )* 
-     .                                                  gxfn(ix,iy)
+     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )/ 
+     .                                                  dxnog(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) + 
      .                     fy0 (ix,iy,1)/ng(ix2,iy  ,igsp) +
@@ -5652,8 +5653,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
      .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
-     .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                else                   # linear interpolation
                grdnv =( (fym (ix,iy,1)*ng(ix2,iy1 ,igsp) + 
      .                   fy0 (ix,iy,1)*ng(ix2,iy  ,igsp) +
@@ -5664,8 +5665,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
      .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
-     .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                endif
                difgx2 = ave( tg(ix ,iy,igsp)/nu1,
      .                       tg(ix2,iy,igsp)/nu2 )/mg(igsp)
@@ -5965,8 +5966,8 @@ c ..Timing;initialize
      .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
      .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) + 
      .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
-     .                                                      gxfn(ix,iy)
+     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )/ 
+     .                                                      dxnog(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
      .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
      .                      ( alftng / (mg(igsp)*0.5*(nu1+nu2)) ) *
@@ -6053,10 +6054,10 @@ c ..Timing; initiate time for y-direction calc
               qfl = flalfgy_adj * sy(ix,iy) * (vtn + vtnp)*rt8opi*
      .              (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp)) / 8.
             endif
-            csh = (1-isgasdc) * cdifg(igsp) *sy(ix,iy) * gyf(ix,iy) *
+            csh = (1-isgasdc) * (cdifg(igsp) *sy(ix,iy)/dynog(ix,iy)) *
      .                          (1/mg(igsp))* ave(1./nu1, 1./nu2) +
-     .            isgasdc * sy(ix,iy) * gyf(ix,iy) * difcng /tgf +
-     .                      rld2dyg(igsp)**2*sy(ix,iy)*(1/gyf(ix,iy))*
+     .            isgasdc * sy(ix,iy) * difcng /(dynog(ix,iy)*tgf) +
+     .                      rld2dyg(igsp)**2*sy(ix,iy)*dynog(ix,iy)*
      .                     0.5*(nuiz(ix,iy,igsp)+nuiz(ix,iy+1,igsp))/tgf
 
             qtgf = alftng * fgtdy(iy) * sy(ix,iy) * 
@@ -6175,8 +6176,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                      fy0 (ix,iy,0)*log(pg(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(pg(ix ,iy+1,igsp)) +
      .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) + 
-     .                      fypx(ix,iy,0)*log(pg(ix6,iy+1,igsp)) ) )*
-     .                                                  gxfn(ix,iy)
+     .                      fypx(ix,iy,0)*log(pg(ix6,iy+1,igsp)) ) )/ 
+     .                                                  dxnog(ix,iy)
                elseif (methgx .eq. 7) then # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/pg(ix2,iy1 ,igsp) + 
      .                     fy0 (ix,iy,1)/pg(ix2,iy  ,igsp) +
@@ -6187,8 +6188,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                     fy0 (ix,iy,0)/pg(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/pg(ix ,iy+1,igsp) +
      .                     fymx(ix,iy,0)/pg(ix4,iy1 ,igsp) + 
-     .                     fypx(ix,iy,0)/pg(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                     fypx(ix,iy,0)/pg(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                else                   # linear interpolation
                grdnv =( (fym (ix,iy,1)*pg(ix2,iy1 ,igsp) + 
      .                   fy0 (ix,iy,1)*pg(ix2,iy  ,igsp) +
@@ -6199,8 +6200,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                   fy0 (ix,iy,0)*pg(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*pg(ix ,iy+1,igsp) +
      .                   fymx(ix,iy,0)*pg(ix4,iy1 ,igsp) + 
-     .                   fypx(ix,iy,0)*pg(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                   fypx(ix,iy,0)*pg(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                endif
                difgx2 = ave( 1./nu1,
      .                       1./nu2 )/mg(igsp)
@@ -6531,8 +6532,8 @@ c.... First the flux in the x-direction
      .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
      .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) + 
      .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
-     .                                                      gxfn(ix,iy)
+     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )/ 
+     .                                                      dxnog(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
      .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
      .                                  ( cngfx(igsp) / (mg(igsp)*0.5*
@@ -6587,11 +6588,11 @@ c.... Now the flux in the y-direction
             vtn = sqrt( t0/mg(igsp) )
             vtnp = sqrt( t1/mg(igsp) )
             qfl = flalfgya(iy,igsp) * sy(ix,iy) * (vtn + vtnp)*rt8opi/8
-            csh = (1-isgasdc) * cdifg(igsp) *sy(ix,iy) * gyf(ix,iy) *
+            csh = (1-isgasdc) * (cdifg(igsp) *sy(ix,iy)/dynog(ix,iy)) *
      .                            ave( vtn**2/nuix(ix,iy,igsp) ,
      .                                 vtnp**2/nuix(ix,iy+1,igsp) ) +
-     .            isgasdc * sy(ix,iy) * gyf(ix,iy) * difcng +
-     .                      rld2dyg(igsp)**2*sy(ix,iy)*(1/gyf(ix,iy))*
+     .            isgasdc * sy(ix,iy) * difcng / dynog(ix,iy) +
+     .                      rld2dyg(igsp)**2*sy(ix,iy)*dynog(ix,iy)*
      .                       0.5*(nuiz(ix,iy,igsp)+nuiz(ix,iy+1,igsp))
 c               csh = sy(ix,iy) * gyf(ix,iy) * ( (vtn**2+vtnp**2)/
 c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
@@ -6675,24 +6676,24 @@ c...  Addition for nonorthogonal mesh
                ix3 = ixm1(ix,iy1)
                ix4 = ixp1(ix,iy1)
                ix5 = ixm1(ix,iy+1)
-               ix6 = ixp1(ix,iy+1)
+               ix6 = ixp1(ix,iy+1) 
 ccc            MER: Set flag to apply xy flux limit except at target plates
                isxyfl = .true.
                do jx = 1, nxpt
                   if ( (ix==ixlb(jx).and.ixmnbcl==1) .or.
      .                 (ix==ixrb(jx).and.ixmxbcl==1) )isxyfl = .false.
                enddo
-               grdnv =( (fym (ix,iy,1)*lng(ix2,iy1 ,igsp) +
+               grdnv =( (fym (ix,iy,1)*lng(ix2,iy1 ,igsp) + 
      .                   fy0 (ix,iy,1)*lng(ix2,iy  ,igsp) +
-     .                   fyp (ix,iy,1)*lng(ix2,iy+1,igsp) +
+     .                   fyp (ix,iy,1)*lng(ix2,iy+1,igsp) + 
      .                   fymx(ix,iy,1)*lng(ix ,iy1 ,igsp) +
      .                   fypx(ix,iy,1)*lng(ix, iy+1,igsp))
      .                - (fym (ix,iy,0)*lng(ix ,iy1 ,igsp) +
      .                   fy0 (ix,iy,0)*lng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*lng(ix ,iy+1,igsp) +
      .                   fymx(ix,iy,0)*lng(ix4,iy1 ,igsp) + 
-     .                   fypx(ix,iy,0)*lng(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                   fypx(ix,iy,0)*lng(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
 
                difgx2 = ave( tg(ix ,iy,igsp)/nuix(ix ,iy,igsp),
      .                       tg(ix2,iy,igsp)/nuix(ix2,iy,igsp) )/mg(igsp)
@@ -6931,7 +6932,7 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
      .                     fy0 (ix,iy,0)*tg(ix ,iy ,igsp) -
      .                     fyp (ix,iy,0)*tg(ix ,iy2,igsp) - 
      .                     fymx(ix,iy,0)*tg(ix4,iy1,igsp) -
-     .                     fypx(ix,iy,0)*tg(ix6,iy2,igsp) )*gxfn(ix,iy)
+     .                     fypx(ix,iy,0)*tg(ix6,iy2,igsp) )/dxnog(ix,iy)
                elseif (isintlog .eq. 1) then
                   grdnv =( exp( fym (ix,iy,1)*log(tg(ix2,iy1,igsp)) +
      .                          fy0 (ix,iy,1)*log(tg(ix2,iy ,igsp)) +
@@ -6942,8 +6943,8 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
      .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
      .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) + 
      .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
-     .                                                      gxfn(ix,iy)
+     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )/ 
+     .                                                      dxnog(ix,iy)
                endif
                vygtan(ix,iy,igsp) = ( cngfx(igsp) / (mg(igsp)*0.5*
      .                         (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))) ) *
@@ -7002,13 +7003,13 @@ c.... Now the flux in the y-direction
      .                              ( ngy0(ix,iy,igsp)*gy(ix,iy) + 
      .                                ngy1(ix,iy,igsp)*gy(ix,iy+1) ) / 
      .                                     (8*(gy(ix,iy)+gy(ix,iy+1)))
-            csh = (1-isgasdc) * cdifg(igsp) *sy(ix,iy) * gyf(ix,iy) *
+            csh = (1-isgasdc) * (cdifg(igsp) *sy(ix,iy) /dynog(ix,iy)) *
      .                            ave( vtn**2/nuix(ix,iy,igsp) ,
      .                                 vtnp**2/nuix(ix,iy+1,igsp) ) +
-     .            isgasdc * sy(ix,iy) * gyf(ix,iy) * difcng +
-     .                      rld2dyg(igsp)**2*sy(ix,iy)*(1/gyf(ix,iy))*
+     .            isgasdc * sy(ix,iy) * difcng / dynog(ix,iy) +
+     .                      rld2dyg(igsp)**2*sy(ix,iy)*dynog(ix,iy)*
      .                       0.5*(nuiz(ix,iy,igsp)+nuiz(ix,iy+1,igsp))
-c               csh = sy(ix,iy) * gyf(ix,iy) * ( (vtn**2+vtnp**2)/
+c               csh = sy(ix,iy) * ( ((vtn**2+vtnp**2)/ dynog(ix,iy)) /
 c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
             qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) * 
      .                     ave( gy(ix,iy)/nuix(ix,iy,igsp) ,
@@ -7134,8 +7135,8 @@ c...  Addition for nonorthogonal mesh
      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
      .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) *
-     .                                                  gxfn(ix,iy)
+     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) / 
+     .                                                  dxnog(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) + 
      .                     fy0 (ix,iy,1)/ng(ix2,iy  ,igsp) +
@@ -7146,8 +7147,8 @@ c...  Addition for nonorthogonal mesh
      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
      .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
-     .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                else                   # linear interpolation
                grdnv =( (fym (ix,iy,1)*ng(ix2,iy1 ,igsp) + 
      .                   fy0 (ix,iy,1)*ng(ix2,iy  ,igsp) +
@@ -7158,8 +7159,8 @@ c...  Addition for nonorthogonal mesh
      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
      .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
-     .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
-     .                                                  gxfn(ix,iy)
+     .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) / 
+     .                                                  dxnog(ix,iy)
                endif
                difgx2 = ave( tg(ix ,iy,igsp)/nuix(ix ,iy,igsp),
      .                       tg(ix2,iy,igsp)/nuix(ix2,iy,igsp) )/mg(igsp)
@@ -7254,7 +7255,7 @@ c...  Special coding for the 1-D gas-box model
 	    lmfp = sqrt(2*tg(ix,1,1)/(mi(1)*nuiz(ix,1,1)*nucx(ix,1,1)))
             tnuiz = tnuiz + exp(-pcolwid/lmfp + agdc*(ix-ixgb))*
      .                                          nuiz(ix,1,1)/gx(ix,1)
-         enddo
+         enddo        
          do ix = ixgb, nx+1
 	    lmfp = sqrt(2*tg(ix,1,1)/(mi(1)*nuiz(ix,1,1)*nucx(ix,1,1)))
             tnuiz = tnuiz + exp(-pcolwid/lmfp)*nuiz(ix,1,1)/gx(ix,1)
@@ -7372,7 +7373,7 @@ c... flux-limit occurs in building hcxg - do not flux-limit 2nd time
       do igsp = 1, ngsp
         do iy = j1, j5
           do ix = i4, i8
-            conyge(ix,iy,igsp) = sy(ix,iy)*hcyg(ix,iy,igsp)*gyf(ix,iy)
+            conyge(ix,iy,igsp) = sy(ix,iy)*hcyg(ix,iy,igsp)/dynog(ix,iy)
           enddo
         enddo
       enddo
@@ -7429,7 +7430,7 @@ c... flux-limit occurs in building hcxg - do not flux-limit 2nd time
           enddo
         enddo
       enddo
-
+ 
 *  -- Combine conduction/convection to compute thermal energy flow --
       do igsp = 1,ngsp
         if(istgon(igsp) == 1) then
@@ -9444,8 +9445,7 @@ c ... Calculate right-hand sides at unperturbed values of variables.
 
 c ... Calculate Jacobian matrix.
       tp = 0.
-      #Working array wk in place of sf in the call to jac_calc (J.Guterl) 
-      call jac_calc_interface (neq, tp, yl, yldot0, lbw, ubw, wk,
+      call jac_calc (neq, tp, yl, yldot0, lbw, ubw, sf,
      .               nnzmx, jac, jacj, jaci)
 
       yl(neq+1) = -1.      # Turn-off Jacobian flag for pandf
@@ -10538,7 +10538,7 @@ Use(Compla)		# ni,uu,up,v2,vy,te,ti,ne
 Use(Linkbbb)		# 
 
 c     Local variables --
-      integer ix,iy,nunit				 
+      integer ix,iy,nunit
       real uuc,upc,vyc,v2c
 
 c     Compute data for output to wdf package
@@ -11904,7 +11904,6 @@ c ... Output arguments:
        real tick,tock
        external tick tock
        TimeJac=tick()
-	    
       if (ParallelJac.eq.1) then
       call jac_calc_parallel (neq, t, yl, yldot00, ml, mu, wk,
      .               nnzmx, jac, ja, ia)
