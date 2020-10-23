@@ -3457,9 +3457,8 @@ c     The density-stencil dxnog has to be averaged as well.
      .                  fy0v (ix,iy,0)*up(ix1,iy  ,ifld)-
      .                  fypv (ix,iy,0)*up(ix5,iy+1,ifld)-
      .                  fymxv(ix,iy,0)*up(ix ,iy1 ,ifld)-
-     .                  fypxv(ix,iy,0)*up(ix ,iy+1,ifld) ) /
-     .                     ( 2*dxnog(ix,iy)*dxnog(ix1,iy) /
-     .                       (dxnog(ix,iy)+dxnog(ix1,iy)) )
+     .                  fypxv(ix,iy,0)*up(ix ,iy+1,ifld) )*2/
+     .                     (dxnog(ix,iy)*dxnog(ix1,iy))
                if (isgxvon .eq. 0) then
                   fmixy(ix,iy,ifld) = cfvisxy(ifld)*visy(ix,iy,ifld) *
      .              ( grdnv/cos(0.5*(angfx(ix1,iy)+angfx(ix,iy))) - 
