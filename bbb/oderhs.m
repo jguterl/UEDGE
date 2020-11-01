@@ -577,7 +577,6 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
      .     niz_floor, hflux, zflux, psorv, kionz0, pscx0, pxri, kcxrzig,
      .     nizm_floor, argx, massfac, ae, geyym, geyy0, geyyp, dgeyy0,
      .     dgeyy1, te_diss, wallfac, z1fac, bpolmin, rt2nus, epstmp, tv2
-      real erliztmp
       real awoll,awll
       integer izch, ihyd, iimp, jg, jz, nsm1, ifld_fcs, ifld_lcs
       real uuv, ne_sgvi, nbarx, argth, fac_rad, ffyi, ffyo
@@ -4369,12 +4368,11 @@ c...  Electron radiation loss -- ionization and recombination
                      erliz(ix,iy)=chradi*radz(0)*vol(ix,iy)
                      if (isrecmon .ne. 0) erlrc(ix,iy)=chradr*radz(1)*vol(ix,iy)
                   else                       # compute from other data files
-		     erliztmp=chradi *erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))*vol(ix,iy)
-		     erlizbg(ix,iy) = erliztmp*ngbackg(1)*
-     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb)	       
-                     erliz(ix,iy) = erliztmp* ng(ix,iy,1)*
-     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(1)/ng(ix,iy,1)))
-     .					       -erlizbg(ix,iy)
+                     erliz(ix,iy) = chradi *
+     .                           erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))
+     .                                  * (ng(ix,iy,1)-ngbackg(1)*
+     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb) ) *
+     .                                                       vol(ix,iy)
                      if (isrecmon .ne. 0) erlrc(ix,iy) = chradr *
      .                               erl2(te(ix,iy),ne_sgvi,rtau(ix,iy))
      .                             * fac2sp*ni(ix,iy,1) * vol(ix,iy)
