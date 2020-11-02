@@ -2253,8 +2253,7 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
      .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))-niz_floor) * kionz )
 			psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*niz_floor*kionz
                         msor(ix,iy,ifld) = nevol *
-     .                                  ( ni(ix,iy,ifld-1)*
-     .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld-1)/ni(ix,iy,ifld-1)))* kionm *
+     .                                  ( ni(ix,iy,ifld-1)* kionm *
      .                                   mi(ifld-1) * up(ix,iy,ifld-1) -
      .                            (ni(ix,iy,ifld)*
      .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))) * kionz *
@@ -2264,8 +2263,7 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
      .                                    (ni(ix,iy,ifld-1)*
      .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld-1)/ni(ix,iy,ifld-1)))-nizm_floor) +
      .                                   (nevol*krecz + ngvol*kcxrz) *
-     .                                                   ni(ix,iy,ifld)*
-     .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))
+     .                                                   ni(ix,iy,ifld)
 			psorbgz(ix,iy) = psorbgz(ix,iy) + z1fac*
      .                                   (nevol*krecm + ngvol*kcxrm) *
      .                                   nizm_floor
@@ -2275,7 +2273,6 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
      .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld-1)/ni(ix,iy,ifld-1)))) *
      .                                      mi(ifld-1)*up(ix,iy,ifld-1) +
      .                        (nevol*krecz + ngvol*kcxrz)*ni(ix,iy,ifld)*
-     .	  (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))*
      .                                            mi(ifld)*up(ix,iy,ifld)
                         psorxr(ix,iy,1) = psorxr(ix,iy,1) + ngvol*
      .                                               ni(ix,iy,ifld)*kcxrz
