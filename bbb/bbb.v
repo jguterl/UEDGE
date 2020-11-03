@@ -84,7 +84,7 @@ temin     real [eV]      /0.03/   #min value of te allow; if less, reset to
 temin2    real [eV]      /0.03/   #soft floor with te=sqrt[te**2+(temin2*ev)**2]
 pwrbkg_c  real [W/m**3]  /1.e3/   #const background factor in pwrebkg express
 pwribkg_c real [W/m**3]  /1.e3/   #const background factor in pwribkg express
-cfwjdotelim real         /1./     #factor scaling reduction of wjdote if te<tebg
+cfwjdotelim real         /0./     #factor scaling reduction of wjdote if te<tebg
 nlimix(nispmx) real  /nispmx*0./  #factor to prevent ion density pump out in x
 nlimiy(nispmx) real  /nispmx*0./  #factor to prevent ion density pump out in y
 nlimgx	  real            /0./    #factor to prevent ion density pump out in x
