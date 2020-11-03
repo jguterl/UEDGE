@@ -4188,12 +4188,14 @@ c  -- Add rad flux of 4th order diff operator; damp grid-scale oscillations
      .             seec(ix,iy) + seev(ix,iy) * te(ix,iy)
      .           + pwrsore(ix,iy)
      .           + cmneut * cmneutsor_ee * uesor_te(ix,iy)
-     .           - nuvl(ix,iy,1)*vol(ix,iy)*bcee*ne(ix,iy)*te(ix,iy)
+     .           - nuvl(ix,iy,1)*vol(ix,iy)*bcee*ne(ix,iy)*te(ix,iy)*
+     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ix,iy)))
             resei(ix,iy) =
      .             seic(ix,iy) + seiv(ix,iy) * ti(ix,iy)
      .           + pwrsori(ix,iy)
      .           + cmneut * cmneutsor_ei * uesor_ti(ix,iy)
-     .           - nuvl(ix,iy,1)*vol(ix,iy)*bcei*ne(ix,iy)*ti(ix,iy)
+     .           - nuvl(ix,iy,1)*vol(ix,iy)*bcei*ne(ix,iy)*ti(ix,iy)*
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
   149    continue
   150 continue
 
@@ -4399,17 +4401,26 @@ c...  Electron radiation loss -- ionization and recombination
  315           continue
  316        continue
 
+	     
       do iy = iys1, iyf6  #j2, j5
         do ix = ixs1, ixf6  #i2, i5
           vsoreec(ix,iy) =
      .          - cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorc(ix,iy,1)
-     .          + cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
      .          - cfneut*cfneutsor_ee*cnsor*erliz(ix,iy)
      .          - cfneut*cfneutsor_ee*cnsor*erlrc(ix,iy)
      .          - cfneut*cfneutsor_ee*cnsor*ediss*ev*(0.5*psordis(ix,iy))
         enddo
       enddo
+      vsoreec(ixs1:ixf6,iys1:iyf6)=vsoreec( ixs1:ixf6,iys1:iyf6)*
+     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ixs1:ixf6,iys1:iyf6)))
 
+            do iy = iys1, iyf6  #j2, j5
+        do ix = ixs1, ixf6  #i2, i5
+          vsoreec(ix,iy) =vsoreec(ix,iy)+
+     . cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
+        enddo
+      enddo
+	     
 ccc         if (ishosor.eq.1) then  #full RHS eval
 ccc
 ccc           if (svrpkg.eq."cvode") then    # cannot access yl(neq+1)
@@ -4473,6 +4484,13 @@ c*************************************************************
          do 151 ix = i2, i5
             ix1 = ixm1(ix,iy)
             w0(ix,iy) = vol(ix,iy) * eqp(ix,iy) * (te(ix,iy)-ti(ix,iy))
+	      if (w0(ix,iy)>0) then
+                w0(ix,iy)=w0(ix,iy)*
+     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ix,iy)))
+		else
+               w0(ix,iy)=w0(ix,iy)*
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
+		  endif  
             resee(ix,iy) = resee(ix,iy) - w0(ix,iy) + vsoree(ix,iy)
             if (isupgon(1).eq.1) then
 c These terms include electron-ion equipartition as well as terms due
@@ -4504,7 +4522,8 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
         do iy = j2, j5
           do ix = i2, i5
             resei(ix,iy) = resei(ix,iy) - vol(ix,iy)*eqpg(ix,iy,2)*
-     .                                     (ti(ix,iy)-tg(ix,iy,2))
+     .                                     (ti(ix,iy)-tg(ix,iy,2))*
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
           enddo
         enddo
       endif
@@ -4516,7 +4535,8 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
             do ix = i2, i5
               resei(ix,iy) =resei(ix,iy) -cftiimpg*1.5*ni(ix,iy,ifld)*
      .                      (nucxi(ix,iy,ifld)+nueli(ix,iy,ifld))*
-     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)
+     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)*
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
             enddo
           enddo
         enddo
@@ -4590,7 +4610,11 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                endif
  532        continue
  533     continue
-
+					 
+				
+	pwrzec(ixs1:ixf6,iys1:iyf6)=pwrzec(ixs1:ixf6,iys1:iyf6)*
+     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ixs1:ixf6,iys1:iyf6)))     
+	 
 c*************************************************************
 c   Perform 5pt average of source terms as volume integral
 c*************************************************************
@@ -7508,7 +7532,8 @@ c... flux-limit occurs in building hcxg - do not flux-limit 2nd time
             do ix = i2, i5
               resei(ix,iy) =resei(ix,iy) -cftiimpg*1.5*ni(ix,iy,ifld)*
      .                      (nucxi(ix,iy,ifld)+nueli(ix,iy,ifld))*
-     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)
+     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)*
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
             enddo
           enddo
         enddo
