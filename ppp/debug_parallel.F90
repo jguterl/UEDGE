@@ -593,8 +593,6 @@ end subroutine WriteArrayInteger
       call WriteArrayReal(psorg,size(psorg),iunit)
       write(iunit,*) "psorgc"
       call WriteArrayReal(psorgc,size(psorgc),iunit)
-      write(iunit,*) "psori"
-      call WriteArrayReal(psori,size(psori),iunit)
       write(iunit,*) "psorold"
       call WriteArrayReal(psorold,size(psorold),iunit)
       write(iunit,*) "psorrg"

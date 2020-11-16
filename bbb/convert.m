@@ -199,6 +199,7 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
                                 #typebdy,typecn,iv_totbdy
       Use(Indices_domain_dcg)   #isddcon
       Use(Npes_mpi)             #mype
+      Use(CapFloor)
 
       integer ifake  #forces Forthon scripts to put implicit none above here
 
@@ -248,6 +249,8 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
             do 30 ix = is, ie  # was nx+1
 	       if(isnionxy(ix,iy,ifld).eq.1) then
                  ni(ix,iy,ifld) =  yl(idxn(ix,iy,ifld))*n0(ifld)
+                 nicap(ix,iy,ifld) = ni(ix,iy,ifld) *
+     .	     (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))
                  if (ni(ix,iy,ifld) < 0) then
 		   inegni = 1
 		   ixneg = ix
@@ -261,6 +264,8 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                ne(ix,iy) = ne(ix,iy) + zi(ifld)*ni(ix,iy,ifld)
                if (isupgon(1).eq.1 .and. zi(ifld).eq.0) then
                   ng(ix,iy,1) = ni(ix,iy,ifld)
+                  ngcap(ix,iy,1)=ni(ix,iy,ifld)*
+     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(1)/ng(ix,iy,1)))
                   if (ineudif .eq. 3) lng(ix,iy,1)=log(ng(ix,iy,1))
                else
                   nit(ix,iy) = nit(ix,iy) + ni(ix,iy,ifld)
@@ -285,6 +290,8 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 	       if(isngonxy(ix,iy,igsp) .eq. 1) then
                  if(ineudif .ne. 3) then
                    ng(ix,iy,igsp) = yl(idxg(ix,iy,igsp))*n0g(igsp)
+                   ngcap(ix,iy,igsp)=ng(ix,iy,igsp)*
+     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(igsp)/ng(ix,iy,igsp)))
                    if (ng(ix,iy,igsp) < 0) then
 		     inegng = 1
   		     ixneg = ix
@@ -763,7 +770,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
       do 30 iy = max(js-1,0), min(ny,je)
          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
 	 do 29 ix = ixm1(is,js), min(nx,ie), inc
-            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
      .                     ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
             gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
             gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
@@ -771,7 +778,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
             gpry(ix,iy) = gpry(ix,iy) + gpey(ix,iy)
    29    continue
          ix = ixp1(ie,iy)
-         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
      .                  ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
          gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
          gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
