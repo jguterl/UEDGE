@@ -2226,7 +2226,7 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
                            nizm_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
      .                         (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
                            psor(ix,iy,ifld_fcs) = psor(ix,iy,ifld_fcs)-
-     .                            nevol*(ni(ix,iy,ifld_fcs)-nizm_floor)*
+     .                            nevol*(nicap(ix,iy,ifld_fcs)-nizm_floor)*
      .                                                            kionm
 			   psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*nizm_floor*
      .                                                            kionm
