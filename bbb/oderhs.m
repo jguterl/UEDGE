@@ -577,7 +577,6 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
      .     niz_floor, hflux, zflux, psorv, kionz0, pscx0, pxri, kcxrzig,
      .     nizm_floor, argx, massfac, ae, geyym, geyy0, geyyp, dgeyy0,
      .     dgeyy1, te_diss, wallfac, z1fac, bpolmin, rt2nus, epstmp, tv2
-      real erliztmp
       real awoll,awll
       integer izch, ihyd, iimp, jg, jz, nsm1, ifld_fcs, ifld_lcs
       real uuv, ne_sgvi, nbarx, argth, fac_rad, ffyi, ffyo
@@ -1288,7 +1287,7 @@ cc              endif
      .           -1. * difnimix * (
      .            2*(1-isvylog)*(niy1(ix,iy,ifld) - niy0(ix,iy,ifld)) *
      .              gyf(ix,iy) / (niy1(ix,iy,ifld) + niy0(ix,iy,ifld))+
-     .              isvylog*(log(niy1(ix,iy,ifld)) -
+     .              isvylog*(log(niy1(ix,iy,ifld)) - 
      .                             log(niy0(ix,iy,ifld))) *gyf(ix,iy) )
 
 c ... Compute total radial velocity.
@@ -1424,7 +1423,7 @@ c     .                    fyp (ix,iy,0)/ni(ix ,iy2,ifld) +
 c     .                    fymx(ix,iy,0)/ni(ix4,iy1,ifld) +
 c     .                    fypx(ix,iy,0)/ni(ix6,iy2,ifld) ) )
 c     .                                                 * gxfn(ix,iy)
-cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
+cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
 cc     .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
 cc     .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
 cc     .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
@@ -1435,7 +1434,7 @@ cc     .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
 cc     .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
 cc     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
 cc     .                                                      gxfn(ix,iy)
-            grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
+            grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
      .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
      .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
      .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
@@ -2042,6 +2041,7 @@ c*****************************************************************
              enddo
 
            elseif (ispsorave > 0.) # use 5pt ave; first divide by vol
+
              if (xc < 0) then  #full RHS eval
                j2pwr = j2
                j5pwr = j5
@@ -2226,9 +2226,10 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
                            nizm_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
      .                         (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
                            psor(ix,iy,ifld_fcs) = psor(ix,iy,ifld_fcs)-
-     .                            nevol*(nicap(ix,iy,ifld_fcs)-nizm_floor)*
+     .                            nevol*(ni(ix,iy,ifld_fcs)-nizm_floor)*
      .                                                            kionm
-			   psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*nizm_floor*kionm
+			   psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*nizm_floor*
+     .                                                            kionm
 	                   msor(ix,iy,ifld_fcs) = msor(ix,iy,ifld_fcs)-
      .                            nevol*nicap(ix,iy,ifld_fcs)*
      .                            kionm*mi(ifld_fcs)*up(ix,iy,ifld_fcs)
@@ -2965,7 +2966,7 @@ c          Now for the radial flux limit - good for nonorthog grid too
                cshy = lmfpn*sqrt(tgavey/mi(iigsp))*noavey *
      .                         lgtmax(iigsp)/(lmfpn + lgtmax(iigsp))
                qshy = cshy * (tgy0(ix,iy1,1)-tgy1(ix,iy1,1)) * gyf(ix,iy)
-               hcyn(ix,iy) = cshy /
+               hcyn(ix,iy) = cshy / 
      .                      (1 + (abs(qshy/qfly))**flgamtg)**(1./flgamtg)
                hcyi(ix,iy) = hcyi(ix,iy) + cfneut*cfneutsor_ei*hcyn(ix,iy)
 c
@@ -3901,13 +3902,13 @@ c.... Now do the ions (hcxi is flux-limited previously when it is built)
          floxe(nx+1,iy) = 0.0e0
   126 continue
 
-c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energy to add
+c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energy to add 
       do 729 ifld = 1, nfsp
          if ((isupgon(1) .eq. 1) .and. (ifld .eq. iigsp)) then  #neutrals
             do 726 iy = j4, j8
                do 725 ix = i1, i5
                   floxi(ix,iy) = floxi(ix,iy) +
-     .                           cfcvti*2.5*cfneut*cfneutsor_ei*fnix(ix,iy,ifld)
+     .                           cfcvti*2.5*cfneut*cfneutsor_ei*fnix(ix,iy,ifld) 
  725           continue   # next correct for incoming neut pwr = 0
                do jx = 1, nxpt  #if at plate, sub (1-cfloxiplt)*neut-contrib
                  if(ixmnbcl==1) then  #real plate-need for parallel UEDGE
@@ -4205,15 +4206,15 @@ c...  First do the Te equation
      .                     -( fym (ix,iy,0)*log(te(ix ,iy1 )) +
      .                        fy0 (ix,iy,0)*log(te(ix ,iy  )) +
      .                        fyp (ix,iy,0)*log(te(ix ,iy+1)) +
-     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +
+     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +  
      .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) *
      .                                                   gxfn(ix,iy)
                feexy(ix,iy) = exp( 0.5*
      .                         (log(te(ix2,iy)) + log(te(ix,iy))) )*
      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
      .                                       (ne(ix2,iy)+ne(ix,iy))*
-     .                                     (grdnv/cos(angfx(ix,iy)) -
-     .                         (log(te(ix2,iy)) - log(te(ix,iy)))*
+     .                                     (grdnv/cos(angfx(ix,iy)) - 
+     .                         (log(te(ix2,iy)) - log(te(ix,iy)))* 
      .                                         gxf(ix,iy))*sx(ix,iy)
 
 c...  Now do the Ti equation.
@@ -4233,7 +4234,7 @@ c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
      .                      -( fym (ix,iy,0)*log(ti(ix ,iy1 )) +
      .                         fy0 (ix,iy,0)*log(ti(ix ,iy  )) +
      .                         fyp (ix,iy,0)*log(ti(ix ,iy+1)) +
-     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +
+     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +  
      .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) *
      .                                                   gxfn(ix,iy)
                feixy(ix,iy) = exp( 0.5*
@@ -4363,10 +4364,11 @@ c...  Electron radiation loss -- ionization and recombination
                      erliz(ix,iy)=chradi*radz(0)*vol(ix,iy)
                      if (isrecmon .ne. 0) erlrc(ix,iy)=chradr*radz(1)*vol(ix,iy)
                   else                       # compute from other data files
-		     erliztmp=chradi *erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))*vol(ix,iy)
-                     erliz(ix,iy) = erliztmp* ngcap(ix,iy,1)*
-     .					       - erliztmp*ngbackg(1)*
-     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb)
+                     erliz(ix,iy) = chradi *
+     .                           erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))
+     .                                  * (ng(ix,iy,1)-ngbackg(1)*
+     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb) ) *
+     .                                                       vol(ix,iy)
                      if (isrecmon .ne. 0) erlrc(ix,iy) = chradr *
      .                               erl2(te(ix,iy),ne_sgvi,rtau(ix,iy))
      .                             * fac2sp*ni(ix,iy,1) * vol(ix,iy)
@@ -4381,21 +4383,14 @@ c...  Electron radiation loss -- ionization and recombination
  315           continue
  316        continue
 
-
       do iy = iys1, iyf6  #j2, j5
         do ix = ixs1, ixf6  #i2, i5
           vsoreec(ix,iy) =
      .          - cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorc(ix,iy,1)
+     .          + cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
      .          - cfneut*cfneutsor_ee*cnsor*erliz(ix,iy)
      .          - cfneut*cfneutsor_ee*cnsor*erlrc(ix,iy)
      .          - cfneut*cfneutsor_ee*cnsor*ediss*ev*(0.5*psordis(ix,iy))
-        enddo
-      enddo
-
-            do iy = iys1, iyf6  #j2, j5
-        do ix = ixs1, ixf6  #i2, i5
-          vsoreec(ix,iy) =vsoreec(ix,iy)+
-     . cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
         enddo
       enddo
 
@@ -5671,8 +5666,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                   -( fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )*
+     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
+     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )* 
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
@@ -5683,7 +5678,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                - 1/(fym (ix,iy,0)/ng(ix ,iy1 ,igsp) +
      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
-     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) +
+     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
      .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                else                   # linear interpolation
@@ -5695,7 +5690,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                - (fym (ix,iy,0)*ng(ix ,iy1 ,igsp) +
      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
-     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) +
+     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
      .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                endif
@@ -6206,7 +6201,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                   -( fym (ix,iy,0)*log(pg(ix ,iy1 ,igsp)) +
      .                      fy0 (ix,iy,0)*log(pg(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(pg(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) +
+     .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) + 
      .                      fypx(ix,iy,0)*log(pg(ix6,iy+1,igsp)) ) )*
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then # inverse interpolation
@@ -6218,7 +6213,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                - 1/(fym (ix,iy,0)/pg(ix ,iy1 ,igsp) +
      .                     fy0 (ix,iy,0)/pg(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/pg(ix ,iy+1,igsp) +
-     .                     fymx(ix,iy,0)/pg(ix4,iy1 ,igsp) +
+     .                     fymx(ix,iy,0)/pg(ix4,iy1 ,igsp) + 
      .                     fypx(ix,iy,0)/pg(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                else                   # linear interpolation
@@ -6230,7 +6225,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                - (fym (ix,iy,0)*pg(ix ,iy1 ,igsp) +
      .                   fy0 (ix,iy,0)*pg(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*pg(ix ,iy+1,igsp) +
-     .                   fymx(ix,iy,0)*pg(ix4,iy1 ,igsp) +
+     .                   fymx(ix,iy,0)*pg(ix4,iy1 ,igsp) + 
      .                   fypx(ix,iy,0)*pg(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                endif
@@ -6722,7 +6717,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                - (fym (ix,iy,0)*lng(ix ,iy1 ,igsp) +
      .                   fy0 (ix,iy,0)*lng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*lng(ix ,iy+1,igsp) +
-     .                   fymx(ix,iy,0)*lng(ix4,iy1 ,igsp) +
+     .                   fymx(ix,iy,0)*lng(ix4,iy1 ,igsp) + 
      .                   fypx(ix,iy,0)*lng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
 
@@ -6961,7 +6956,7 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
      .                     fypx(ix,iy,1)*tg(ix, iy2,igsp) -
      .                     fym (ix,iy,0)*tg(ix ,iy1,igsp) -
      .                     fy0 (ix,iy,0)*tg(ix ,iy ,igsp) -
-     .                     fyp (ix,iy,0)*tg(ix ,iy2,igsp) -
+     .                     fyp (ix,iy,0)*tg(ix ,iy2,igsp) - 
      .                     fymx(ix,iy,0)*tg(ix4,iy1,igsp) -
      .                     fypx(ix,iy,0)*tg(ix6,iy2,igsp) )*gxfn(ix,iy)
                elseif (isintlog .eq. 1) then
@@ -7048,35 +7043,35 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
      .                    * (vtn**2 - vtnp**2)
             if (isnonog.eq.1 .and. iy.le.ny) then
               if (isintlog .eq. 0) then
-                ty0 = fxm (ix,iy,0)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
+                ty0 = fxm (ix,iy,0)*tg(ixm1(ix,iy)  ,iy  ,igsp) + 
      .                fx0 (ix,iy,0)*tg(ix           ,iy  ,igsp) +
      .                fxp (ix,iy,0)*tg(ixp1(ix,iy)  ,iy  ,igsp) +
      .                fxmy(ix,iy,0)*tg(ixm1(ix,iy+1),iy+1,igsp) +
      .                fxpy(ix,iy,0)*tg(ixp1(ix,iy+1),iy+1,igsp)
-                ty1 = fxm (ix,iy,1)*tg(ixm1(ix,iy+1),iy+1,igsp) +
+                ty1 = fxm (ix,iy,1)*tg(ixm1(ix,iy+1),iy+1,igsp) + 
      .                fx0 (ix,iy,1)*tg(ix           ,iy+1,igsp) +
      .                fxp (ix,iy,1)*tg(ixp1(ix,iy+1),iy+1,igsp) +
      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
               elseif (isintlog .eq. 1) then
-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
+                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) + 
      .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
      .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
      .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
      .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
+                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) + 
      .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
      .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
      .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
      .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) )
               endif
-              qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) *
+              qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) * 
      .                      ave( gy(ix,iy)/nuix(ix,iy,igsp) ,
      .                           gy(ix,iy+1)/nuix(ix,iy+1,igsp) ) *
      .                                            (ty0 - ty1)/mg(igsp)
             endif       # Better interpolation of nuix could be done here
             nconv = 2.0*(ngy0(ix,iy,igsp)*ngy1(ix,iy,igsp)) /
-     .                  (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp))
+     .                  (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp)) 
 c...   Use upwind for "convective" grad T term if methgy .ne. 2
             if(methgy.ne.2) nconv =
      .                         ngy0(ix,iy,igsp)*0.5*(1+sign(1.,qtgf)) +
@@ -7165,7 +7160,7 @@ c...  Addition for nonorthogonal mesh
      .                - exp(fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
+     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
      .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) *
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
@@ -7177,7 +7172,7 @@ c...  Addition for nonorthogonal mesh
      .                - 1/(fym (ix,iy,0)/ng(ix ,iy1 ,igsp) +
      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
-     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) +
+     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
      .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                else                   # linear interpolation
@@ -7189,7 +7184,7 @@ c...  Addition for nonorthogonal mesh
      .                - (fym (ix,iy,0)*ng(ix ,iy1 ,igsp) +
      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
-     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) +
+     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
      .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                endif

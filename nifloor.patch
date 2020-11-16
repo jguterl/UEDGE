@@ -1,0 +1,630 @@
+diff --git a/a.out b/a.out
+new file mode 100755
+index 0000000..127a446
+Binary files /dev/null and b/a.out differ
+diff --git a/bbb/bbb.v b/bbb/bbb.v
+index cc6a785..0055ecf 100644
+--- a/bbb/bbb.v
++++ b/bbb/bbb.v
+@@ -84,7 +84,7 @@ temin     real [eV]      /0.03/   #min value of te allow; if less, reset to
+ temin2    real [eV]      /0.03/   #soft floor with te=sqrt[te**2+(temin2*ev)**2]
+ pwrbkg_c  real [W/m**3]  /1.e3/   #const background factor in pwrebkg express
+ pwribkg_c real [W/m**3]  /1.e3/   #const background factor in pwribkg express
+-cfwjdotelim real         /0./     #factor scaling reduction of wjdote if te<tebg
++cfwjdotelim real         /1./     #factor scaling reduction of wjdote if te<tebg
+ nlimix(nispmx) real  /nispmx*0./  #factor to prevent ion density pump out in x
+ nlimiy(nispmx) real  /nispmx*0./  #factor to prevent ion density pump out in y
+ nlimgx	  real            /0./    #factor to prevent ion density pump out in x
+@@ -243,7 +243,6 @@ isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
+ is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
+ z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
+ 
+-
+ ***** Model_choice restart:
+ #Flags for choosing one or another calculation of a part of the model
+ iondenseqn	character*8	/"llnl"/	# ion continuity equation
+@@ -2060,6 +2059,7 @@ psorrgc(0:nx+1,0:ny+1,1:ngsp) _real  [part/s]   +threadprivate # cell ctr recomb
+ psorrg(0:nx+1,0:ny+1,1:ngsp)  _real  [part/s]   +threadprivate # cell ave recomb. source for neutrals
+ psorcxgc(0:nx+1,0:ny+1,1:ngsp) _real [part/s]   +threadprivate # cell ctr cx source for neutrals
+ psorcxg(0:nx+1,0:ny+1,1:ngsp) _real  [part/s]   +threadprivate # cell ave cx source for neutrals
++psori(0:nx+1,0:ny+1,1:nisp)   _real  [part/s]   +threadprivate # impurity gas source
+ psordis(0:nx+1,0:ny+1)        _real  [part/s]   +threadprivate # diss. source of hydrogen
+ psorbgg(0:nx+1,0:ny+1,1:ngsp) _real  [part/s]   +threadprivate # diag artific neut backg source
+ psorbgz(0:nx+1,0:ny+1)        _real  [part/s]   +threadprivate # diag artific impur backg source
+@@ -3872,8 +3872,6 @@ TimeConvert0 real /0.0/
+ TotTimeConvert0 real /0.0/
+ TimeConvert1 real /0.0/
+ TotTimeConvert1 real /0.0/
+-TimeSource real /0.0/
+-TotTimeSource real /0.0/
+ TimeNeudif real /0.0/
+ TotTimeNeudif real /0.0/
+ Timefd2tra real /0.0/
+@@ -3892,19 +3890,8 @@ TimeJac real /0.0/
+ TotTimeJac real /0.0/
+ Timenksol real /0.0/
+ TotTimenksol real /0.0/
+-Saveold integer /0/
++
+ 
+ PrintTimingPandf() subroutine
+ PrintTimingExmain() subroutine
+ 
+-**** CapFloor: # added by J.Guterl
+-ngcap(0:nx+1,0:ny+1,1:ngsp)   _real  [m^-3]   +threadprivate #gas density in primary cell (ix,iy) capped to prevent ng->0
+-nicap(0:nx+1,0:ny+1,1:nisp)   _real  [m^-3]   +threadprivate #ion density in primary cell (ix,iy) capped to prevent ni->0
+-angbg                     real    /0./
+-bngbg                     real    /10./
+-anzbg                     real    /0./
+-bnzbg                     real    /10./
+-atebg                     real     /0./
+-btebg   		          real     /10./
+-atibg                     real     /0./
+-btibg   		          real     /10./
+diff --git a/bbb/convert.m b/bbb/convert.m
+index 0d0cb13..155dd59 100644
+--- a/bbb/convert.m
++++ b/bbb/convert.m
+@@ -199,7 +199,6 @@ c_mpi      Use(MpiVars)  #module defined in com/mpivarsmod.F.in
+                                 #typebdy,typecn,iv_totbdy
+       Use(Indices_domain_dcg)   #isddcon
+       Use(Npes_mpi)             #mype
+-      Use(CapFloor)
+ 
+       integer ifake  #forces Forthon scripts to put implicit none above here
+ 
+@@ -249,8 +248,6 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
+             do 30 ix = is, ie  # was nx+1
+ 	       if(isnionxy(ix,iy,ifld).eq.1) then
+                  ni(ix,iy,ifld) =  yl(idxn(ix,iy,ifld))*n0(ifld)
+-                 nicap(ix,iy,ifld) = ni(ix,iy,ifld) *
+-     .	     (1-anzbg+anzbg*exp(-bnzbg*nzbackg(ifld)/ni(ix,iy,ifld)))
+                  if (ni(ix,iy,ifld) < 0) then
+ 		   inegni = 1
+ 		   ixneg = ix
+@@ -264,8 +261,6 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
+                ne(ix,iy) = ne(ix,iy) + zi(ifld)*ni(ix,iy,ifld)
+                if (isupgon(1).eq.1 .and. zi(ifld).eq.0) then
+                   ng(ix,iy,1) = ni(ix,iy,ifld)
+-                  ngcap(ix,iy,1)=ni(ix,iy,ifld)*
+-     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(1)/ng(ix,iy,1)))
+                   if (ineudif .eq. 3) lng(ix,iy,1)=log(ng(ix,iy,1))
+                else
+                   nit(ix,iy) = nit(ix,iy) + ni(ix,iy,ifld)
+@@ -290,8 +285,6 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
+ 	       if(isngonxy(ix,iy,igsp) .eq. 1) then
+                  if(ineudif .ne. 3) then
+                    ng(ix,iy,igsp) = yl(idxg(ix,iy,igsp))*n0g(igsp)
+-                   ngcap(ix,iy,igsp)=ng(ix,iy,igsp)*
+-     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(igsp)/ng(ix,iy,igsp)))
+                    if (ng(ix,iy,igsp) < 0) then
+ 		     inegng = 1
+   		     ixneg = ix
+@@ -770,7 +763,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
+       do 30 iy = max(js-1,0), min(ny,je)
+          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
+ 	 do 29 ix = ixm1(is,js), min(nx,ie), inc
+-            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
++            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+      .                     ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
+             gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
+             gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
+@@ -778,7 +771,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
+             gpry(ix,iy) = gpry(ix,iy) + gpey(ix,iy)
+    29    continue
+          ix = ixp1(ie,iy)
+-         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
++         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+      .                  ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
+          gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
+          gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
+diff --git a/bbb/oderhs.m b/bbb/oderhs.m
+index adf3a85..a0c0b15 100755
+--- a/bbb/oderhs.m
++++ b/bbb/oderhs.m
+@@ -577,7 +577,6 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
+      .     niz_floor, hflux, zflux, psorv, kionz0, pscx0, pxri, kcxrzig,
+      .     nizm_floor, argx, massfac, ae, geyym, geyy0, geyyp, dgeyy0,
+      .     dgeyy1, te_diss, wallfac, z1fac, bpolmin, rt2nus, epstmp, tv2
+-      real erliztmp
+       real awoll,awll
+       integer izch, ihyd, iimp, jg, jz, nsm1, ifld_fcs, ifld_lcs
+       real uuv, ne_sgvi, nbarx, argth, fac_rad, ffyi, ffyo
+@@ -677,7 +676,6 @@ cnxg      data igs/1/
+       Use(Npes_mpi)              # mype
+       Use(RZ_grid_info)  		 # bpol
+       Use(Interp)				 # ngs, tgs
+-      Use(CapFloor)
+       use ParallelEval,only: ParallelJac,ParallelPandf1
+       use PandfTiming
+ 
+@@ -1288,7 +1286,7 @@ cc              endif
+      .           -1. * difnimix * (
+      .            2*(1-isvylog)*(niy1(ix,iy,ifld) - niy0(ix,iy,ifld)) *
+      .              gyf(ix,iy) / (niy1(ix,iy,ifld) + niy0(ix,iy,ifld))+
+-     .              isvylog*(log(niy1(ix,iy,ifld)) -
++     .              isvylog*(log(niy1(ix,iy,ifld)) - 
+      .                             log(niy0(ix,iy,ifld))) *gyf(ix,iy) )
+ 
+ c ... Compute total radial velocity.
+@@ -1424,7 +1422,7 @@ c     .                    fyp (ix,iy,0)/ni(ix ,iy2,ifld) +
+ c     .                    fymx(ix,iy,0)/ni(ix4,iy1,ifld) +
+ c     .                    fypx(ix,iy,0)/ni(ix6,iy2,ifld) ) )
+ c     .                                                 * gxfn(ix,iy)
+-cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
++cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
+ cc     .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
+ cc     .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
+ cc     .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
+@@ -1435,7 +1433,7 @@ cc     .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
+ cc     .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
+ cc     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
+ cc     .                                                      gxfn(ix,iy)
+-            grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
++            grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) + 
+      .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
+      .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
+      .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
+@@ -1821,7 +1819,7 @@ c ... If isybdrywd = 1, make vey diffusive, just like vy
+           if (matwallo(ix) > 0) vey(ix,ny) = vydd(ix,ny,1)
+         enddo
+       endif
+-       if (TimingPandfOn.gt.0) TimeSource=tick()
++
+ ************************************************************************
+ *   We Calculate the source terms now.
+ ************************************************************************
+@@ -1834,6 +1832,7 @@ c ... If isybdrywd = 1, make vey diffusive, just like vy
+             do ifld = 1, nfsp
+                snic(ix,iy,ifld) = 0.0
+                sniv(ix,iy,ifld) = 0.0
++               psori(ix,iy,ifld) = 0.0
+             enddo
+             do ifld = 1, nusp
+                smoc(ix,iy,ifld) = 0.0
+@@ -1919,7 +1918,7 @@ c ... get optical-depth to outer (iy=ny+1) bdry; selection of min rtau
+ *  -- recalculate particle source psor if ifixpsor=0 --
+ 
+ c...  Initialize save-variables if this is a Jacobian (xc,yc > -1)
+-         if (xc .ge. 0 .and. yc .ge. 0..and.Saveold.gt.0) then
++         if (xc .ge. 0 .and. yc .ge. 0) then
+             psordisold = psordis(xc,yc)
+ cc            write(*,*) 'Just after psordisold; xc,yc=',xc,yc
+             do ifld = 1, nfsp
+@@ -1979,11 +1978,11 @@ c     Ionization of neutral hydrogen by electrons and recombination--
+                psorbgg(ix,iy,igsp) = ngbackg(igsp)*( (0.9 + 0.1*
+      .                            (ngbackg(igsp)/ng(ix,iy,igsp))**ingb) ) *
+      .                             nuiz(ix,iy,igsp) * vol(ix,iy)
+-               psorgc(ix,iy,igsp) = -ngcap(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy) +
++               psorgc(ix,iy,igsp) = -ng(ix,iy,igsp)*nuiz(ix,iy,igsp)*vol(ix,iy) +
+      .                              psorbgg(ix,iy,igsp)
+                psorc(ix,iy,ifld) = - psorgc(ix,iy,igsp)
+                psordis(ix,iy) = psorc(ix,iy,1)  # changed below if ishymol=1
+-               psorxrc(ix,iy,ifld) = -nicap(ix,iy,ifld)*nurc(ix,iy,igsp)*vol(ix,iy)
++               psorxrc(ix,iy,ifld) = -ni(ix,iy,ifld)*nurc(ix,iy,igsp)*vol(ix,iy)
+                psorrgc(ix,iy,igsp) = -psorxrc(ix,iy,ifld)
+                msor(ix,iy,ifld) = 0.
+                msorxr(ix,iy,ifld) = 0.
+@@ -2042,6 +2041,7 @@ c*****************************************************************
+              enddo
+ 
+            elseif (ispsorave > 0.) # use 5pt ave; first divide by vol
++
+              if (xc < 0) then  #full RHS eval
+                j2pwr = j2
+                j5pwr = j5
+@@ -2106,7 +2106,7 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
+ 
+                   if (istimingon .eq. 1) tsimp = gettime(sec4)
+                   nevol = ne(ix,iy) * vol(ix,iy)
+-                  ngvol = ngcap(ix,iy,1) * vol(ix,iy)
++                  ngvol = ng(ix,iy,1) * vol(ix,iy)
+ 
+                   jg = nhgsp
+                   ifld_lcs = nhsp
+@@ -2129,7 +2129,7 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
+ 			 psorbgg(ix,iy,jg)= ngbackg(jg)*
+      .                     (0.9+0.1*(ngbackg(jg)/ng(ix,iy,jg))**ingb) *
+      .                                                      nevol*kionz0
+-                         psorg(ix,iy,jg) = -ngcap(ix,iy,jg)*nevol*kionz0 +
++                         psorg(ix,iy,jg) = -ng(ix,iy,jg)*nevol*kionz0 +
+      .                                      psorbgg(ix,iy,jg)
+                          psor(ix,iy,ifld_fcs) = - psorg(ix,iy,jg)
+                          msor(ix,iy,ifld_fcs)= 0.  # zero gas mom. assumed
+@@ -2147,12 +2147,12 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
+                          kcxrzig = rcxighg(jg)*kcxrz  # K_cx of ng(jg)+ni(1)->
+                          niz_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
+      .                          (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
+-                         pscx0 = ngvol*(nicap(ix,iy,ifld_fcs)-niz_floor)*kcxrz -
+-     .                           ngcap(ix,iy,jg)*nicap(ix,iy,1)*vol(ix,iy)*
++                         pscx0 = ngvol*(ni(ix,iy,ifld_fcs)-niz_floor)*kcxrz -
++     .                           ng(ix,iy,jg)*ni(ix,iy,1)*vol(ix,iy)*
+      .                                                        kcxrzig
+                          psorcxg(ix,iy,jg) = pscx0
+                          psorcxg(ix,iy,1) = -pscx0
+-                         psorrg(ix,iy,jg) = nevol*(nicap(ix,iy,ifld_fcs)-
++                         psorrg(ix,iy,jg) = nevol*(ni(ix,iy,ifld_fcs)-
+      .                                                   niz_floor)*krecz
+                          psorxr(ix,iy,ifld_fcs)= -psorrg(ix,iy,jg) - pscx0
+                          psorxr(ix,iy,1) = psorxr(ix,iy,1) + pscx0
+@@ -2226,11 +2226,12 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
+                            nizm_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
+      .                         (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
+                            psor(ix,iy,ifld_fcs) = psor(ix,iy,ifld_fcs)-
+-     .                            nevol*(nicap(ix,iy,ifld_fcs)-nizm_floor)*
++     .                            nevol*(ni(ix,iy,ifld_fcs)-nizm_floor)*
++     .                                                            kionm
++			   psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*nizm_floor*
+      .                                                            kionm
+-			   psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*nizm_floor*kionm
+ 	                   msor(ix,iy,ifld_fcs) = msor(ix,iy,ifld_fcs)-
+-     .                            nevol*nicap(ix,iy,ifld_fcs)*
++     .                            nevol*(ni(ix,iy,ifld_fcs))*
+      .                            kionm*mi(ifld_fcs)*up(ix,iy,ifld_fcs)
+                            pxri = psorxr(ix,iy,ifld_fcs) #set in Z=1 loop
+                            z1fac = 0.
+@@ -2239,32 +2240,32 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
+                         niz_floor = nzbackg(ifld) * (0.9 + 0.1*
+      .                            (nzbackg(ifld)/ni(ix,iy,ifld))**inzb)
+                         psor(ix,iy,ifld) = nevol *
+-     .                                     ( nicap(ix,iy,ifld-1)* kionm -
+-     .                             (nicap(ix,iy,ifld)-niz_floor) * kionz )
++     .                                     ( ni(ix,iy,ifld-1) * kionm -
++     .                             (ni(ix,iy,ifld)-niz_floor) * kionz )
+ 			psorbgz(ix,iy) = psorbgz(ix,iy)-nevol*niz_floor*kionz
+                         msor(ix,iy,ifld) = nevol *
+-     .                                  ( nicap(ix,iy,ifld-1)* kionm *
++     .                                  ( ni(ix,iy,ifld-1) * kionm *
+      .                                   mi(ifld-1) * up(ix,iy,ifld-1) -
+-     .                            (nicap(ix,iy,ifld)) * kionz *
++     .                            (ni(ix,iy,ifld)) * kionz *
+      .                                     mi(ifld) * up(ix,iy,ifld) )
+                         psorxr(ix,iy,ifld-1) = pxri-z1fac*(nevol*krecm +
+      .                                                     ngvol*kcxrm) *
+-     .                                    (nicap(ix,iy,ifld-1)-nizm_floor) +
++     .                                    (ni(ix,iy,ifld-1)-nizm_floor) +
+      .                                   (nevol*krecz + ngvol*kcxrz) *
+-     .                                                   nicap(ix,iy,ifld)
++     .                                                   ni(ix,iy,ifld)
+ 			psorbgz(ix,iy) = psorbgz(ix,iy) + z1fac*
+      .                                   (nevol*krecm + ngvol*kcxrm) *
+      .                                   nizm_floor
+                         msorxr(ix,iy,ifld-1) = 0. - (nevol*krecm +
+      .                                               ngvol*kcxrm) *
+-     .                                    nicap(ix,iy,ifld-1)*
++     .                                    (ni(ix,iy,ifld-1)) *
+      .                                      mi(ifld-1)*up(ix,iy,ifld-1) +
+-     .                        (nevol*krecz + ngvol*kcxrz)*nicap(ix,iy,ifld)*
++     .                        (nevol*krecz + ngvol*kcxrz)*ni(ix,iy,ifld)*
+      .                                            mi(ifld)*up(ix,iy,ifld)
+                         psorxr(ix,iy,1) = psorxr(ix,iy,1) + ngvol*
+-     .                                               nicap(ix,iy,ifld)*kcxrz
++     .                                               ni(ix,iy,ifld)*kcxrz
+                         psorcxg(ix,iy,1) = psorcxg(ix,iy,1) - ngvol*
+-     .                                               nicap(ix,iy,ifld)*kcxrz
++     .                                               ni(ix,iy,ifld)*kcxrz
+                         nucxi(ix,iy,ifld) = sigcxms(ifld,jg)*
+      .                              sqrt(ti(ix,iy)/mi(ifld))*ng(ix,iy,jg)
+                         nucx(ix,iy,jg) = nucx(ix,iy,jg) + sigcxms(ifld,jg)*
+@@ -2283,12 +2284,12 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
+                         if (ifld .eq. ifld_lcs) then  # last charge-state
+                           psorxr(ix,iy,ifld) = -(nevol * krecz +
+      .                                           ngvol * kcxrz) *
+-     .                                          (nicap(ix,iy,ifld)-niz_floor)
++     .                                          (ni(ix,iy,ifld)-niz_floor)
+ 			  psorbgz(ix,iy) = psorbgz(ix,iy) + niz_floor *
+      .                                      (nevol*krecz + ngvol*kcxrz)
+                           msorxr(ix,iy,ifld) = -(nevol * krecz +
+      .                                           ngvol * kcxrz) *
+-     .                                          (nicap(ix,iy,ifld))*
++     .                                          (ni(ix,iy,ifld))*
+      .                                             mi(ifld)*up(ix,iy,ifld)
+                           nuix(ix,iy,jg) = nuix(ix,iy,jg) + nucx(ix,iy,jg) +
+      .                                     nuelg(ix,iy,jg)
+@@ -2348,7 +2349,7 @@ c ...  molecule-molecule collisions would enter viscosity, not nuix
+            psorbgg(ix,iy,2) = ngbackg(2)*
+      .                     (0.9+0.1*(ngbackg(2)/ng(ix,iy,2))**ingb ) *
+      .                                        nuiz(ix,iy,2) * vol(ix,iy)
+-           psorgc(ix,iy,2) = - ngcap(ix,iy,2)*nuiz(ix,iy,2)*vol(ix,iy)+
++           psorgc(ix,iy,2) = - ng(ix,iy,2)*nuiz(ix,iy,2)*vol(ix,iy) +
+      .                        psorbgg(ix,iy,2)
+            psorg(ix,iy,2) = psorgc(ix,iy,2)  # no mol sor averaging
+            psordis(ix,iy) = -2*psorgc(ix,iy,2)  # 2 atoms per molecule
+@@ -2416,7 +2417,7 @@ c *** Now do the gas
+  920     continue
+       endif
+ 
+-      if (TimingPandfOn.gt.0) TotTimeSource=TotTimeSource+tock(TimeSource)
++
+ 
+ *****************************************************************
+ c In the case of neutral parallel mom, call neudif to get
+@@ -2965,7 +2966,7 @@ c          Now for the radial flux limit - good for nonorthog grid too
+                cshy = lmfpn*sqrt(tgavey/mi(iigsp))*noavey *
+      .                         lgtmax(iigsp)/(lmfpn + lgtmax(iigsp))
+                qshy = cshy * (tgy0(ix,iy1,1)-tgy1(ix,iy1,1)) * gyf(ix,iy)
+-               hcyn(ix,iy) = cshy /
++               hcyn(ix,iy) = cshy / 
+      .                      (1 + (abs(qshy/qfly))**flgamtg)**(1./flgamtg)
+                hcyi(ix,iy) = hcyi(ix,iy) + cfneut*cfneutsor_ei*hcyn(ix,iy)
+ c
+@@ -3279,8 +3280,9 @@ c----------------------------------------------------------------------c
+      .           snic(ix,iy,ifld)+sniv(ix,iy,ifld)*ni(ix,iy,ifld) +
+      .           volpsor(ix,iy,ifld) +
+      .           cfneut * cfneutsor_ni * cnsor * psor(ix,iy,ifld) +
+-     .           cfneut * cfneutsor_ni * cnsor * psorxr(ix,iy,ifld)
+-     .           -nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
++     .           cfneut * cfneutsor_ni * cnsor * psorxr(ix,iy,ifld) +
++     .           cfneut * cfneutsor_ni * cnsor * psori(ix,iy,ifld) -
++     .           nuvl(ix,iy,ifld)*vol(ix,iy)*ni(ix,iy,ifld) +
+      .           voljcsor(ix,iy)/qe
+            endif
+ c           if (ifld .ne. iigsp) then
+@@ -3901,13 +3903,13 @@ c.... Now do the ions (hcxi is flux-limited previously when it is built)
+          floxe(nx+1,iy) = 0.0e0
+   126 continue
+ 
+-c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energy to add
++c IJ 2016/10/10	add cfneutsor_ei multiplier to control fraction of neutral energy to add 
+       do 729 ifld = 1, nfsp
+          if ((isupgon(1) .eq. 1) .and. (ifld .eq. iigsp)) then  #neutrals
+             do 726 iy = j4, j8
+                do 725 ix = i1, i5
+                   floxi(ix,iy) = floxi(ix,iy) +
+-     .                           cfcvti*2.5*cfneut*cfneutsor_ei*fnix(ix,iy,ifld)
++     .                           cfcvti*2.5*cfneut*cfneutsor_ei*fnix(ix,iy,ifld) 
+  725           continue   # next correct for incoming neut pwr = 0
+                do jx = 1, nxpt  #if at plate, sub (1-cfloxiplt)*neut-contrib
+                  if(ixmnbcl==1) then  #real plate-need for parallel UEDGE
+@@ -4205,15 +4207,15 @@ c...  First do the Te equation
+      .                     -( fym (ix,iy,0)*log(te(ix ,iy1 )) +
+      .                        fy0 (ix,iy,0)*log(te(ix ,iy  )) +
+      .                        fyp (ix,iy,0)*log(te(ix ,iy+1)) +
+-     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +
++     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +  
+      .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) *
+      .                                                   gxfn(ix,iy)
+                feexy(ix,iy) = exp( 0.5*
+      .                         (log(te(ix2,iy)) + log(te(ix,iy))) )*
+      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
+      .                                       (ne(ix2,iy)+ne(ix,iy))*
+-     .                                     (grdnv/cos(angfx(ix,iy)) -
+-     .                         (log(te(ix2,iy)) - log(te(ix,iy)))*
++     .                                     (grdnv/cos(angfx(ix,iy)) - 
++     .                         (log(te(ix2,iy)) - log(te(ix,iy)))* 
+      .                                         gxf(ix,iy))*sx(ix,iy)
+ 
+ c...  Now do the Ti equation.
+@@ -4233,7 +4235,7 @@ c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
+      .                      -( fym (ix,iy,0)*log(ti(ix ,iy1 )) +
+      .                         fy0 (ix,iy,0)*log(ti(ix ,iy  )) +
+      .                         fyp (ix,iy,0)*log(ti(ix ,iy+1)) +
+-     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +
++     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +  
+      .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) *
+      .                                                   gxfn(ix,iy)
+                feixy(ix,iy) = exp( 0.5*
+@@ -4363,10 +4365,11 @@ c...  Electron radiation loss -- ionization and recombination
+                      erliz(ix,iy)=chradi*radz(0)*vol(ix,iy)
+                      if (isrecmon .ne. 0) erlrc(ix,iy)=chradr*radz(1)*vol(ix,iy)
+                   else                       # compute from other data files
+-		     erliztmp=chradi *erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))*vol(ix,iy)
+-                     erliz(ix,iy) = erliztmp* ngcap(ix,iy,1)*
+-     .					       - erliztmp*ngbackg(1)*
+-     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb)
++                     erliz(ix,iy) = chradi *
++     .                           erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))
++     .                                  * (ng(ix,iy,1)-ngbackg(1)*
++     .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb) ) *
++     .                                                       vol(ix,iy)
+                      if (isrecmon .ne. 0) erlrc(ix,iy) = chradr *
+      .                               erl2(te(ix,iy),ne_sgvi,rtau(ix,iy))
+      .                             * fac2sp*ni(ix,iy,1) * vol(ix,iy)
+@@ -4381,24 +4384,17 @@ c...  Electron radiation loss -- ionization and recombination
+  315           continue
+  316        continue
+ 
+-
+       do iy = iys1, iyf6  #j2, j5
+         do ix = ixs1, ixf6  #i2, i5
+           vsoreec(ix,iy) =
+      .          - cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorc(ix,iy,1)
++     .          + cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
+      .          - cfneut*cfneutsor_ee*cnsor*erliz(ix,iy)
+      .          - cfneut*cfneutsor_ee*cnsor*erlrc(ix,iy)
+      .          - cfneut*cfneutsor_ee*cnsor*ediss*ev*(0.5*psordis(ix,iy))
+         enddo
+       enddo
+ 
+-            do iy = iys1, iyf6  #j2, j5
+-        do ix = ixs1, ixf6  #i2, i5
+-          vsoreec(ix,iy) =vsoreec(ix,iy)+
+-     . cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
+-        enddo
+-      enddo
+-
+ ccc         if (ishosor.eq.1) then  #full RHS eval
+ ccc
+ ccc           if (svrpkg.eq."cvode") then    # cannot access yl(neq+1)
+@@ -4698,7 +4694,7 @@ c******************************************************************
+      .                          + 0.5*fqygp(ix,iy-1)*
+      .                                (phi(ix,iy)+phi(ix,iy-1))
+                resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy) / ( 1. +
+-     .                             cfwjdotelim*(tebg*ev/te(ix,iy))**iteb )
++     .                             cfwjdotelim*(te(ix,iy)/tebg)**iteb )
+              enddo
+            enddo
+          else  # for jhswitch > 1
+@@ -4844,7 +4840,7 @@ c  the perturbed variables are reset below to get Jacobian correct
+       call bouncon (neq, yl, yldot)
+ 
+ c...  Finally, reset some source terms if this is a Jacobian evaluation
+-         if (xc .ge. 0 .and. yc .ge. 0.and.SaveOld.gt.0) then
++         if (xc .ge. 0 .and. yc .ge. 0) then
+             ix1 = ixm1(xc,yc)
+             if(isimpon.gt.0) pwrzec(xc,yc) = pradold
+             pwrebkg(xc,yc) = pwrebkgold
+@@ -5671,8 +5667,8 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                   -( fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
+      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
+      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
+-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
+-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )*
++     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
++     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )* 
+      .                                                  gxfn(ix,iy)
+                elseif (methgx .eq. 7) then  # inverse interpolation
+                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
+@@ -5683,7 +5679,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                - 1/(fym (ix,iy,0)/ng(ix ,iy1 ,igsp) +
+      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
+      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
+-     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) +
++     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
+      .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                else                   # linear interpolation
+@@ -5695,7 +5691,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                - (fym (ix,iy,0)*ng(ix ,iy1 ,igsp) +
+      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
+      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
+-     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) +
++     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
+      .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                endif
+@@ -6206,7 +6202,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                   -( fym (ix,iy,0)*log(pg(ix ,iy1 ,igsp)) +
+      .                      fy0 (ix,iy,0)*log(pg(ix ,iy  ,igsp)) +
+      .                      fyp (ix,iy,0)*log(pg(ix ,iy+1,igsp)) +
+-     .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) +
++     .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) + 
+      .                      fypx(ix,iy,0)*log(pg(ix6,iy+1,igsp)) ) )*
+      .                                                  gxfn(ix,iy)
+                elseif (methgx .eq. 7) then # inverse interpolation
+@@ -6218,7 +6214,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                - 1/(fym (ix,iy,0)/pg(ix ,iy1 ,igsp) +
+      .                     fy0 (ix,iy,0)/pg(ix ,iy  ,igsp) +
+      .                     fyp (ix,iy,0)/pg(ix ,iy+1,igsp) +
+-     .                     fymx(ix,iy,0)/pg(ix4,iy1 ,igsp) +
++     .                     fymx(ix,iy,0)/pg(ix4,iy1 ,igsp) + 
+      .                     fypx(ix,iy,0)/pg(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                else                   # linear interpolation
+@@ -6230,7 +6226,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                - (fym (ix,iy,0)*pg(ix ,iy1 ,igsp) +
+      .                   fy0 (ix,iy,0)*pg(ix ,iy  ,igsp) +
+      .                   fyp (ix,iy,0)*pg(ix ,iy+1,igsp) +
+-     .                   fymx(ix,iy,0)*pg(ix4,iy1 ,igsp) +
++     .                   fymx(ix,iy,0)*pg(ix4,iy1 ,igsp) + 
+      .                   fypx(ix,iy,0)*pg(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                endif
+@@ -6722,7 +6718,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
+      .                - (fym (ix,iy,0)*lng(ix ,iy1 ,igsp) +
+      .                   fy0 (ix,iy,0)*lng(ix ,iy  ,igsp) +
+      .                   fyp (ix,iy,0)*lng(ix ,iy+1,igsp) +
+-     .                   fymx(ix,iy,0)*lng(ix4,iy1 ,igsp) +
++     .                   fymx(ix,iy,0)*lng(ix4,iy1 ,igsp) + 
+      .                   fypx(ix,iy,0)*lng(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+ 
+@@ -6961,7 +6957,7 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
+      .                     fypx(ix,iy,1)*tg(ix, iy2,igsp) -
+      .                     fym (ix,iy,0)*tg(ix ,iy1,igsp) -
+      .                     fy0 (ix,iy,0)*tg(ix ,iy ,igsp) -
+-     .                     fyp (ix,iy,0)*tg(ix ,iy2,igsp) -
++     .                     fyp (ix,iy,0)*tg(ix ,iy2,igsp) - 
+      .                     fymx(ix,iy,0)*tg(ix4,iy1,igsp) -
+      .                     fypx(ix,iy,0)*tg(ix6,iy2,igsp) )*gxfn(ix,iy)
+                elseif (isintlog .eq. 1) then
+@@ -7048,35 +7044,35 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
+      .                    * (vtn**2 - vtnp**2)
+             if (isnonog.eq.1 .and. iy.le.ny) then
+               if (isintlog .eq. 0) then
+-                ty0 = fxm (ix,iy,0)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
++                ty0 = fxm (ix,iy,0)*tg(ixm1(ix,iy)  ,iy  ,igsp) + 
+      .                fx0 (ix,iy,0)*tg(ix           ,iy  ,igsp) +
+      .                fxp (ix,iy,0)*tg(ixp1(ix,iy)  ,iy  ,igsp) +
+      .                fxmy(ix,iy,0)*tg(ixm1(ix,iy+1),iy+1,igsp) +
+      .                fxpy(ix,iy,0)*tg(ixp1(ix,iy+1),iy+1,igsp)
+-                ty1 = fxm (ix,iy,1)*tg(ixm1(ix,iy+1),iy+1,igsp) +
++                ty1 = fxm (ix,iy,1)*tg(ixm1(ix,iy+1),iy+1,igsp) + 
+      .                fx0 (ix,iy,1)*tg(ix           ,iy+1,igsp) +
+      .                fxp (ix,iy,1)*tg(ixp1(ix,iy+1),iy+1,igsp) +
+      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
+      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
+               elseif (isintlog .eq. 1) then
+-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
++                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) + 
+      .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
+      .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
+      .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
+      .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
+-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
++                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) + 
+      .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
+      .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
+      .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
+      .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) )
+               endif
+-              qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) *
++              qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) * 
+      .                      ave( gy(ix,iy)/nuix(ix,iy,igsp) ,
+      .                           gy(ix,iy+1)/nuix(ix,iy+1,igsp) ) *
+      .                                            (ty0 - ty1)/mg(igsp)
+             endif       # Better interpolation of nuix could be done here
+             nconv = 2.0*(ngy0(ix,iy,igsp)*ngy1(ix,iy,igsp)) /
+-     .                  (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp))
++     .                  (ngy0(ix,iy,igsp)+ngy1(ix,iy,igsp)) 
+ c...   Use upwind for "convective" grad T term if methgy .ne. 2
+             if(methgy.ne.2) nconv =
+      .                         ngy0(ix,iy,igsp)*0.5*(1+sign(1.,qtgf)) +
+@@ -7165,7 +7161,7 @@ c...  Addition for nonorthogonal mesh
+      .                - exp(fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
+      .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
+      .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
+-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
++     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) + 
+      .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) *
+      .                                                  gxfn(ix,iy)
+                elseif (methgx .eq. 7) then  # inverse interpolation
+@@ -7177,7 +7173,7 @@ c...  Addition for nonorthogonal mesh
+      .                - 1/(fym (ix,iy,0)/ng(ix ,iy1 ,igsp) +
+      .                     fy0 (ix,iy,0)/ng(ix ,iy  ,igsp) +
+      .                     fyp (ix,iy,0)/ng(ix ,iy+1,igsp) +
+-     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) +
++     .                     fymx(ix,iy,0)/ng(ix4,iy1 ,igsp) + 
+      .                     fypx(ix,iy,0)/ng(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                else                   # linear interpolation
+@@ -7189,7 +7185,7 @@ c...  Addition for nonorthogonal mesh
+      .                - (fym (ix,iy,0)*ng(ix ,iy1 ,igsp) +
+      .                   fy0 (ix,iy,0)*ng(ix ,iy  ,igsp) +
+      .                   fyp (ix,iy,0)*ng(ix ,iy+1,igsp) +
+-     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) +
++     .                   fymx(ix,iy,0)*ng(ix4,iy1 ,igsp) + 
+      .                   fypx(ix,iy,0)*ng(ix6,iy+1,igsp)) ) *
+      .                                                  gxfn(ix,iy)
+                endif
+@@ -11980,7 +11976,6 @@ c ... Interface for pandf1 rhs calculation for nksol only (added by. J.Guterl)
+             write(*,*) ' - Neudif:', TotTimeNeudif,TotTimeNeudif/TotTimePandf
+             write(*,*) ' - fd2tra:', TotTimefd2tra,TotTimefd2tra/TotTimePandf
+             write(*,*) ' - TotTimeMombalni:', TotTimeMombalni,TotTimeMombalni/TotTimePandf
+-            write(*,*) ' - TotTimeSource:', TotTimeSource,TotTimeSource/TotTimePandf
+             write(*,*) ' - TotTimeElecVel1:', TotTimeElecVel1
+             write(*,*) '-----------------------------------'
+             endif
+diff --git a/ppp/debug_parallel.F90 b/ppp/debug_parallel.F90
+index 300c5da..e465f44 100644
+--- a/ppp/debug_parallel.F90
++++ b/ppp/debug_parallel.F90
+@@ -593,6 +593,8 @@ end subroutine WriteArrayInteger
+       call WriteArrayReal(psorg,size(psorg),iunit)
+       write(iunit,*) "psorgc"
+       call WriteArrayReal(psorgc,size(psorgc),iunit)
++      write(iunit,*) "psori"
++      call WriteArrayReal(psori,size(psori),iunit)
+       write(iunit,*) "psorold"
+       call WriteArrayReal(psorold,size(psorold),iunit)
+       write(iunit,*) "psorrg"

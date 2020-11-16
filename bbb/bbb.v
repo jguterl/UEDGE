@@ -243,7 +243,6 @@ isphicore0		  integer /0/  #=1 sets phi=0 in core if isphion=1
 is_z0_imp_const           integer /0/  #=0 use hydr Keilhacker;=1 z0_imp_const
 z0_imp_const              real    /1./ #z0 in therm force if is_z0_imp_const=1
 
-
 ***** Model_choice restart:
 #Flags for choosing one or another calculation of a part of the model
 iondenseqn	character*8	/"llnl"/	# ion continuity equation
@@ -3872,8 +3871,6 @@ TimeConvert0 real /0.0/
 TotTimeConvert0 real /0.0/
 TimeConvert1 real /0.0/
 TotTimeConvert1 real /0.0/
-TimeSource real /0.0/
-TotTimeSource real /0.0/
 TimeNeudif real /0.0/
 TotTimeNeudif real /0.0/
 Timefd2tra real /0.0/

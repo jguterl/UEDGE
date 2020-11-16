@@ -770,7 +770,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
       do 30 iy = max(js-1,0), min(ny,je)
          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
 	 do 29 ix = ixm1(is,js), min(nx,ie), inc
-            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
+            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
      .                     ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
             gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
             gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
@@ -778,7 +778,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
             gpry(ix,iy) = gpry(ix,iy) + gpey(ix,iy)
    29    continue
          ix = ixp1(ie,iy)
-         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
+         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
      .                  ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
          gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
          gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
