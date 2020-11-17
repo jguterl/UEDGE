@@ -3903,7 +3903,7 @@ angbg                     real    /0./
 bngbg                     real    /10./
 anzbg                     real    /0./
 bnzbg                     real    /10./
-atebg                     real     /0./
-btebg   		          real     /10./
-atibg                     real     /0./
-btibg   		          real     /10./
+#atebg                     real     /0./
+#btebg   		          real     /10./
+#atibg                     real     /0./
+#btibg   		          real     /10./
