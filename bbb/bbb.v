@@ -947,6 +947,7 @@ iyf6        integer +threadprivate
 xlinc       integer         /2/
 xrinc       integer         /1/
 yinc        integer         /2/ +threadprivate
+xinc        integer         /2/ +threadprivate
 isjaccorall integer         /1/ #if=1 uses all ix cells for iy=0 Jac
 ixm1(0:nx+1,0:ny+1)       _integer
 ixp1(0:nx+1,0:ny+1)       _integer
@@ -3883,6 +3884,10 @@ TimeElecVel1 real /0.0/
 TotTimeElecVel1 real /0.0/
 Timemombalni real /0.0/
 TotTimemombalni real /0.0/
+TimeMomBal real /0.0/
+TotTimeMomBal real /0.0/
+TimeEngBal real /0.0/
+TotTimeEngBal real /0.0/
 TimeExmain real /0.0/
 TotTimeExmain real /0.0/
 TimePandf1rhs real /0.0/
