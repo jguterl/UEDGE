@@ -324,13 +324,16 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 
       if (inegni .gt. 0 .and. itrap_negni.eq.1) then
          call remark("***  ni is negative - calculation stopped")
+         
 	  write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
+	  write(*,*) 'ni=',ni(ixneg,iyneg,ifldneg)
 	  iterm=-100
          call xerrab("")
       endif
       if (inegng .gt. 0 .and. itrap_negng.eq.1) then
          call remark("***  ng is negative - calculation stopped")
 	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' igsp =', igspneg
+	 write(*,*) 'ng=',ng(ixneg,iyneg,igspneg)
 	  iterm=-100
          call xerrab("")
       endif
