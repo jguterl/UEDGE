@@ -533,8 +533,7 @@ c..   note: dim(a,b) = max((a-b),0)
       end
 c**  End of subroutine fd2tra ******************
 c-----------------------------------------------------------------------
-
-     subroutine pandf (xc, yc, neq, time, yl, yldot)
+      subroutine pandf (xc, yc, neq, time, yl, yldot)
 
 c... Calculates matrix A and the right-hand side depending on the values
 c... of xc, yc.

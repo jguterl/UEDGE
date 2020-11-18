@@ -595,6 +595,7 @@ endif
         if (OMPPandf1Debug.gt.0) write(*,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ith:',ith
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
         yinc=OMPyinc(ith)
+        xinc=OMPxinc(ith)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()
 
         call pandf1 (-1,OMPic(ith), 0, neq, time, ylcopy, yldotcopy)
