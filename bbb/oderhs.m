@@ -573,7 +573,7 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
      .     naavex,naavey,nuelmolx,nuelmoly
       real fqpo, fqpom, friceo, friceom, upeo, upeom, fricio(100),
      .     friciom(100), upio(100), upiom(100), uupo(100), uupom(100)
-      real nevol, ngvol, kionz, krecz, kcxrz, kionm, krecm, kcxrm, nzbg,
+      real nevol, ngvol, ngvolcap, kionz, krecz, kcxrz, kionm, krecm, kcxrm, nzbg,
      .     niz_floor, hflux, zflux, psorv, kionz0, pscx0, pxri, kcxrzig,
      .     nizm_floor, argx, massfac, ae, geyym, geyy0, geyyp, dgeyy0,
      .     dgeyy1, te_diss, wallfac, z1fac, bpolmin, rt2nus, epstmp, tv2
@@ -2106,8 +2106,8 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
 
                   if (istimingon .eq. 1) tsimp = gettime(sec4)
                   nevol = ne(ix,iy) * vol(ix,iy)
-                  ngvol = ngcap(ix,iy,1) * vol(ix,iy)
-
+                  ngvol = ng(ix,iy,1) * vol(ix,iy)
+                  ngvolcap = ngcap(ix,iy,1) * vol(ix,iy)
                   jg = nhgsp
                   ifld_lcs = nhsp
                   do jz = 1, ngspmx-1           # for all impurity isotopes
@@ -2148,7 +2148,7 @@ c              +n_(z+1)[ne K^r_(z+1)+ng K^cx_(z+1)]  # cx/r gain to z from z+1
                          niz_floor = nzbackg(ifld_fcs) * (0.9 + 0.1*
      .                          (nzbackg(ifld_fcs)/ni(ix,iy,ifld_fcs))**inzb)
                          pscx0 = ngvol*(nicap(ix,iy,ifld_fcs)-niz_floor)*kcxrz -
-     .                           ngcap(ix,iy,jg)*nicap(ix,iy,1)*vol(ix,iy)*
+     .                           ngcap(ix,iy,jg)*ni(ix,iy,1)*vol(ix,iy)*
      .                                                        kcxrzig
                          psorcxg(ix,iy,jg) = pscx0
                          psorcxg(ix,iy,1) = -pscx0
@@ -2262,10 +2262,10 @@ cc                    Note: summed over ion/neutrals here backgrd source=0
      .                                      mi(ifld-1)*up(ix,iy,ifld-1) +
      .                        (nevol*krecz + ngvol*kcxrz)*nicap(ix,iy,ifld)*
      .                                            mi(ifld)*up(ix,iy,ifld)
-                        psorxr(ix,iy,1) = psorxr(ix,iy,1) + ngvol*
-     .                                               nicap(ix,iy,ifld)*kcxrz
-                        psorcxg(ix,iy,1) = psorcxg(ix,iy,1) - ngvol*
-     .                                               nicap(ix,iy,ifld)*kcxrz
+                        psorxr(ix,iy,1) = psorxr(ix,iy,1) + ngvolcap*
+     .                                               ni(ix,iy,ifld)*kcxrz
+                        psorcxg(ix,iy,1) = psorcxg(ix,iy,1) - ngvolcap*
+     .                                               ni(ix,iy,ifld)*kcxrz
                         nucxi(ix,iy,ifld) = sigcxms(ifld,jg)*
      .                              sqrt(ti(ix,iy)/mi(ifld))*ng(ix,iy,jg)
                         nucx(ix,iy,jg) = nucx(ix,iy,jg) + sigcxms(ifld,jg)*

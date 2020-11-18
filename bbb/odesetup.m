@@ -460,6 +460,7 @@ cc      call gallot("Rccoef",0)
       call gchange("Outpwall",0)
       call gchange("Timary",0)
       call gchange("Compla",0)
+      call gchange("CapFloor",0)			   
       call gchange("Interprettrans",0)
       call gchange("Comflo",0)
       call gchange("Cfric",0)
@@ -6626,6 +6627,7 @@ c ... Resize arrays and copy data to appropriate arrays
       nym = ny
       call gallot("RZ_grid_info",0)
       call gchange("Compla",0)
+      call gchange("CapFloor",0)
       call gchange("Imprad",0)
       call gchange("Comgeo",0)
       nxold = nxg
@@ -6733,6 +6735,7 @@ c ... Resize arrays and copy data to appropriate arrays
       nym = ny
       call gallot("RZ_grid_info",0)
       call gchange("Compla",0)
+      call gchange("CapFloor",0)		 
       call gchange("Imprad",0)
       call gchange("Comgeo",0)
       nxold = nx
