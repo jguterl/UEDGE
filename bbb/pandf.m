@@ -499,6 +499,7 @@ c... First, we convert from the 1-D vector yl to the plasma variables.
          call convsr_aux (xc, yc)
          if (TimingPandfOn.gt.0) TotTimeConvert1=TotTimeConvert1+tock(TimeConvert1)
 
+        if (TimingPandfOn.gt.0) TimeVel=tick()
 c ... Set variable controlling upper limit of species loops that
 c     involve ion-density sources, fluxes, and/or velocities.
 
@@ -1136,12 +1137,15 @@ c     to those from parallel flow.
                ix1 = ixm1(ix,iy)
                uu(ix1,iy,ifld) = uup(ix1,iy,ifld) +
      .                           0.5 * (rbfbt(ix,iy) + rbfbt(ix1,iy)) *
-     .                           v2(ix1,iy,ifld) - vytan(ix1,iy,ifld) -
+     .                           v2(ix1,iy,ifld) - vytan(ix1,iy,ifld)
+               if (difax(ifld).ne.0.0) then
+                  uu(ix1,iy,ifld) = uu(ix1,iy,ifld) -
      .                         difax(ifld) * 0.5 * ( ( 0.5*(
      .                         ni(ix1,iy,ifld)/ni(ix,iy,ifld) +
      .                         ni(ix,iy,ifld)/ni(ix1,iy,ifld)) -1)**2 ) *
      .                        (ni(ix,iy,ifld)-ni(ix1,iy,ifld))*gxf(ix1,iy)
      .                       /(ni(ix,iy,ifld)+ni(ix1,iy,ifld))
+               endif
                uz(ix1,iy,ifld) = -uup(ix1,iy,ifld)/rrv(ix1,iy)*
      .          0.5*(rbfbt(ix,iy) + rbfbt(ix1,iy)) + sign(1.,b02d(ix,iy))*
      .               (cftef*v2ce(ix1,iy,ifld)+cftdd*v2cd(ix1,iy,ifld))*
@@ -1151,12 +1155,15 @@ c     to those from parallel flow.
                ix2 = ixp1(ix,iy)
                uu(ix,iy,ifld) = uup(ix,iy,ifld) +
      .                          0.5 * (rbfbt(ix,iy) + rbfbt(ix2,iy)) *
-     .                          v2(ix,iy,ifld) - vytan(ix,iy,ifld) -
+     .                          v2(ix,iy,ifld) - vytan(ix,iy,ifld)
+               if (difax(ifld).ne.0.0) then
+               uu(ix,iy,ifld) = uu(ix,iy,ifld) -
      .                         difax(ifld) * 0.5 * ( ( 0.5*(
      .                         ni(ix,iy,ifld)/ni(ix2,iy,ifld) +
      .                         ni(ix2,iy,ifld)/ni(ix,iy,ifld)) -1)**2 ) *
      .                        (ni(ix2,iy,ifld)-ni(ix,iy,ifld))*gxf(ix,iy)
      .                       /(ni(ix2,iy,ifld)+ni(ix,iy,ifld))
+               endif
                uz(ix,iy,ifld) = -uup(ix,iy,ifld)/rrv(ix,iy)*
      .          0.5*(rbfbt(ix,iy) + rbfbt(ix2,iy)) + sign(1.,b02d(ix,iy))*
      .               (cftef*v2ce(ix,iy,ifld)+cftdd*v2cd(ix,iy,ifld))*
@@ -1291,6 +1298,7 @@ c ... If isybdrywd = 1, make vey diffusive, just like vy
           if (matwallo(ix) > 0) vey(ix,ny) = vydd(ix,ny,1)
         enddo
       endif
+      if (TimingPandfOn.gt.0) TotTimeVel=TotTimeVel+tock(TimeVel)
        if (TimingPandfOn.gt.0) TimeSource=tick()
 ************************************************************************
 *   We Calculate the source terms now.
@@ -2607,11 +2615,13 @@ c ... Call routine to evaluate gas energy fluxes
                endif
 
                fnix(ix,iy,ifld) = cnfx*uu(ix,iy,ifld) * sx(ix,iy) * t2
-               fnixcb(ix,iy,ifld)=cnfx*sx(ix,iy) * t2 * 0.5*
-     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
+c               fnixcb(ix,iy,ifld)=cnfx*sx(ix,iy) * t2 * 0.5*
+c     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
+            if (nlimix(ifld).gt.0.0) then
                   fnix(ix,iy,ifld) = fnix(ix,iy,ifld)/sqrt( 1 +
      .              (nlimix(ifld)*ni(ix ,iy,ifld)/ni(ix2,iy,ifld))**2 +
      .              (nlimix(ifld)*ni(ix2,iy,ifld)/ni(ix ,iy,ifld))**2 )
+            endif
               endif
    80      continue
            if ((isudsym==1.or.geometry.eq.'dnXtarget') .and. nxc > 1) then
@@ -2671,8 +2681,8 @@ c ... Call routine to evaluate gas energy fluxes
                   endif
 
                   fniy(ix,iy,ifld) = cnfy*vy(ix,iy,ifld)*sy(ix,iy)*t2
-                  fniycb(ix,iy,ifld) = cnfy*vycb(ix,iy,ifld)*sy(ix,iy)*t2
-                  if (vy(ix,iy,ifld)*(ni(ix,iy,ifld)-ni(ix,iy+1,ifld))
+c                  fniycb(ix,iy,ifld) = cnfy*vycb(ix,iy,ifld)*sy(ix,iy)*t2
+                  if (nlimiy(ifld).gt.0 .and. vy(ix,iy,ifld)*(ni(ix,iy,ifld)-ni(ix,iy+1,ifld))
      .                                                      .lt. 0.) then
                      fniy(ix,iy,ifld) = fniy(ix,iy,ifld)/( 1 +
      .                               (nlimiy(ifld)/ni(ix,iy+1,ifld))**2 +
@@ -2793,7 +2803,7 @@ c                   if (ix .eq. 1 .and. iy .eq. 1) write(*,*) 'sng_ue', ifld, jf
  302   continue
        enddo       # end of ifld loop
 
-if (TimingPandfOn.gt.0) TimeMomBal=tick()
+       if (TimingPandfOn.gt.0) TimeMomBal=tick()
 *********************************************************************
 c  Here we do the neutral gas diffusion model
 c  The diffusion is flux limited using the thermal flux
@@ -3247,8 +3257,8 @@ c  -- it is included in frici from mombal or mombalni
         endif   # if test on isofric.eq.1
 
  105  continue
-if (TimingPandfOn.gt.0) TotTimeMomBal=TotTimeMomBal+tock(TimeMomBal)
-if (TimingPandfOn.gt.0) TimeEngBal=tick()
+        if (TimingPandfOn.gt.0) TotTimeMomBal=TotTimeMomBal+tock(TimeMomBal)
+        if (TimingPandfOn.gt.0) TimeEngBal=tick()
 *****************************************************************
 *****************************************************************
 *  Here starts the old ENEBAL
@@ -4251,7 +4261,7 @@ c******************************************************************
           resei(ix,iy) = resei(ix,iy) + pwribkg(ix,iy)*vol(ix,iy)
         enddo
       enddo
-if (TimingPandfOn.gt.0) TotTimeEngBal=TotTimeEngBal+tock(TimeEngBal)
+        if (TimingPandfOn.gt.0) TotTimeEngBal=TotTimeEngBal+tock(TimeEngBal)
 
 **********************************************************************
 *  --  Equations to be solved --

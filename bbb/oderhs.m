@@ -7426,16 +7426,18 @@ c ... Interface for pandf1 rhs calculation for nksol only (added by. J.Guterl)
             write(*,*) '----- Timing Pandf as eval rhs ----'
             write(*,*) ' - TimePandf:',TotTimePandf
             if (TotTimePandf.gt.0) then
-            write(*,*) ' - Convert0:', TotTimeConvert0,TotTimeConvert0/TotTimePandf
-            write(*,*) ' - Convert1:', TotTimeConvert1,TotTimeConvert1/TotTimePandf
-            write(*,*) ' - Neudif:', TotTimeNeudif,TotTimeNeudif/TotTimePandf
-            write(*,*) ' - fd2tra:', TotTimefd2tra,TotTimefd2tra/TotTimePandf
-            write(*,*) ' - TotTimeMombalni:', TotTimeMombalni,TotTimeMombalni/TotTimePandf
+            write(*,*) ' - Convert0       :', TotTimeConvert0,TotTimeConvert0/TotTimePandf
+            write(*,*) ' - Convert1       :', TotTimeConvert1,TotTimeConvert1/TotTimePandf
+            write(*,*) ' - TotTimeVel     :', TotTimeVel,TotTimeVel/TotTimePandf
             write(*,*) ' - TotTimeSource  :', TotTimeSource,TotTimeSource/TotTimePandf
+            write(*,*) ' - TotTitmeNeudif :', TotTimeNeudif,TotTimeNeudif/TotTimePandf
+            write(*,*) ' - TotTimeMombalni:', TotTimeMombalni,TotTimeMombalni/TotTimePandf
             write(*,*) ' - TotTimeMomBal  :', TotTimeMomBal,TotTimeMomBal/TotTimePandf
             write(*,*) ' - TotTimeEngBal  :', TotTimeEngBal,TotTimeEngBal/TotTimePandf
-            write(*,*) ' - TotTimeElecVel1:', TotTimeElecVel1
             write(*,*) '-----------------------------------'
+             write(*,*) ' - fd2tra:', TotTimefd2tra,TotTimefd2tra/TotTimePandf
+            write(*,*) ' - TotTimeElecVel1:', TotTimeElecVel1
+
             endif
         end subroutine PrintTimingPandf
 

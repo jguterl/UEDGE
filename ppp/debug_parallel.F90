@@ -247,14 +247,14 @@ end subroutine WriteArrayInteger
       call WriteArrayReal(fngyso,size(fngyso),iunit)
       write(iunit,*) "fnix"
       call WriteArrayReal(fnix,size(fnix),iunit)
-      write(iunit,*) "fnixcb"
-      call WriteArrayReal(fnixcb,size(fnixcb),iunit)
+!      write(iunit,*) "fnixcb"
+!      call WriteArrayReal(fnixcb,size(fnixcb),iunit)
       write(iunit,*) "fniy"
       call WriteArrayReal(fniy,size(fniy),iunit)
       write(iunit,*) "fniy4ord"
       call WriteArrayReal(fniy4ord,size(fniy4ord),iunit)
-      write(iunit,*) "fniycb"
-      call WriteArrayReal(fniycb,size(fniycb),iunit)
+!      write(iunit,*) "fniycb"
+!      call WriteArrayReal(fniycb,size(fniycb),iunit)
       write(iunit,*) "fniycbo"
       call WriteArrayReal(fniycbo,size(fniycbo),iunit)
       write(iunit,*) "fq2"

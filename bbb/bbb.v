@@ -1757,10 +1757,10 @@ fq2pneo(0:nx+1,0:ny+1)     _real [Amp]  #2-cur from neo particle flux
 fqyqneo(0:nx+1,0:ny+1)     _real [Amp]  #rad-cur from neo heat flux
 fq2qneo(0:nx+1,0:ny+1)     _real [Amp]  #2-cur from neo heat flux
 fnix(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion poloidal current, east face
-fnixcb(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion grad-B pol. current, east face
+#fnixcb(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion grad-B pol. current, east face
 fniy(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion radial current, north face
 fniy4ord(0:nx+1,0:ny+1,1:nisp) _real [1/s]  +threadprivate #4th ord ion radial current, north face
-fniycb(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion  grad-B rad. current, north face
+#fniycb(0:nx+1,0:ny+1,1:nisp) _real [1/s]   +threadprivate #ion  grad-B rad. current, north face
 flnix(0:nx+1,0:ny+1,1:nisp) _real [1/s] #ion poloidal log-current, east face
 flniy(0:nx+1,0:ny+1,1:nisp) _real [1/s] #ion radial log-current, north face
 fmix(0:nx+1,0:ny+1,1:nusp) _real [Nwt]   +threadprivate #ion poloidal momentum current,east face
@@ -3878,6 +3878,8 @@ TimeNeudif real /0.0/
 TotTimeNeudif real /0.0/
 Timefd2tra real /0.0/
 TotTimefd2tra real /0.0/
+TimeVel real /0.0/
+TotTimeVel real /0.0/
 TimeElecVel0 real /0.0/
 TotTimeElecVel0 real /0.0/
 TimeElecVel1 real /0.0/

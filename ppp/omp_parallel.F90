@@ -536,7 +536,7 @@ subroutine OMPPandf1Rhs(neq,time,yl,yldot)
     use OMPPandf1,only:OMPic,OMPyinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1
     use OMPPandf1Settings,only:OMPPandf1RunPara,OMPPandf1FirstRun
     use Dim,only:ny
-    use Selec, only:yinc
+    use Selec, only:yinc,xinc
 Use Grid,only:ijactot
 
     integer yinc_bkp,iv,tid,EffNthreadsPandf1
@@ -595,7 +595,7 @@ endif
         if (OMPPandf1Debug.gt.0) write(*,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ith:',ith
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal with private/shared attributes
         yinc=OMPyinc(ith)
-        xinc=OMPxinc(ith)
+        !xinc=OMPxinc(ith)
         OMPTimeLocalPandf1(ith)=omp_get_wtime()
 
         call pandf1 (-1,OMPic(ith), 0, neq, time, ylcopy, yldotcopy)
