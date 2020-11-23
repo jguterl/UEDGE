@@ -3914,3 +3914,6 @@ bnzbg                     real    /10./
 #btebg   		          real     /10./
 #atibg                     real     /0./
 #btibg   		          real     /10./
+
+**** FixNum
+FixUpwindfniy integer /0/

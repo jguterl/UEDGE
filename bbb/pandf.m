@@ -150,6 +150,7 @@ cnxg      data igs/1/
       Use(CapFloor)
       use ParallelEval,only: ParallelJac,ParallelPandf1
       use PandfTiming
+      use FixNum
 
 *  -- procedures for atomic and molecular rates --
       integer zmax,znuc
@@ -2652,12 +2653,20 @@ c     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
                      t2 = ( niy0(ix,iy,ifld) + niy1(ix,iy,ifld) ) / 2
 
                   elseif (methny .eq. 3) then   # upwind differencing
-
+                     if (FixUpwindfniy.gt.0) then
+                     if( vy(ix,iy,ifld) .ge. 0.) then
+                        t2 = ni(ix,iy,ifld)
+                     else
+                        t2 = ni(ix,iy+1,ifld)
+                     endif
+                     else
                      if( vy(ix,iy,ifld) .ge. 0.) then
                         t2 = niy0(ix,iy,ifld)
                      else
                         t2 = niy1(ix,iy,ifld)
                      endif
+                     endif
+
 
                   elseif (methny .eq. 6) then   # log central differencing
                      t2 = exp( 0.5*
