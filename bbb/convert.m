@@ -286,7 +286,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                te(ix,iy)=yl(idxte(ix,iy))*ennorm/(1.5*ntemp)
                #te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
                pwrecapfac(ix,iy)=
-     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ix,iy)))
+     .	     (1-atebg+atebg*exp(-btebg*tebg*ev/te(ix,iy)))
             if (te(ix,iy) < temin*ev) then
 		     inegt = 1
   		     ixneg = ix
@@ -324,7 +324,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                ti(ix,iy)=yl(idxti(ix,iy))*ennorm/(1.5*ntemp)
                #ti(ix,iy) = max(ti(ix,iy), temin*ev)
                pwricapfac(ix,iy)=
-     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
+     .	     (1-atibg+atibg*exp(-btibg*tibg*ev/ti(ix,iy)))
              if (ti(ix,iy) < temin*ev) then
 		     inegt = 1
   		     ixneg = ix
