@@ -338,9 +338,13 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
          call xerrab("")
       endif
 cc Since Te and Ti have temin eV floors, this not used
-cc      if (inegt .gt. 0 .and. itrap_negt.eq.1) then
-cc         call xerrab("***  Te or Ti is negative - calculation stopped")
-cc      endif
+      if (inegt .gt. 0 .and. itrap_negt.eq.1) then
+         call remark("***  Te or Ti is negative - calculation stopped")
+	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg
+	 write(*,*) 'te=',te(ixneg,iyneg)
+	  iterm=-100
+         call xerrab("")					
+      endif
 
 C the message passing is done twice here to get nm for up - very inefficient
 c *** Mpi message passing if this is a parallel calculation - only need for
