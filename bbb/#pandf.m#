@@ -77,7 +77,6 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real tv,t0,t1,t2,a
       real length
-      real capfac
 cnxg      data igs/1/
 
       Use(Dim)      # nx,ny,nhsp,nusp,nzspt,nzsp,nisp,ngsp,nxpt
@@ -2590,9 +2589,9 @@ c ... Call routine to evaluate gas energy fluxes
                elseif (methnx .eq. 3) then   # upwind differencing
 
                   if( uu(ix,iy,ifld) .ge. 0.) then
-                     t2 = ni(ix,iy,ifld)
+                     t2 = nicap(ix,iy,ifld)
                   else
-                     t2 = ni(ix2,iy,ifld)
+                     t2 = nicap(ix2,iy,ifld)
                   endif
 
                elseif (methnx .eq. 6) then   # log central differencing
@@ -2662,10 +2661,9 @@ c     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
                      endif
                      else
                      if( vy(ix,iy,ifld) .ge. 0.) then
-                        t2 = niy0(ix,iy,ifld)
+                        t2 = nicap(ix,iy,ifld)
                      else
-                        t2 = niy1(ix,iy,ifld)
-                     endif
+                       
                      endif
 
 
@@ -3797,52 +3795,6 @@ c ... Demand that net feex cannot be out of the plates
         enddo
       endif
 
-      if (capfeex.gt.0) then
-      do  iy = j2, j5
-      do  ix = i2, i5
-      ix1 = ixm1(ix,iy)
-      if (feex(ix,iy).gt.0) then
-      feex(ix,iy)=feex(ix,iy)*pwrecapfac(ix,iy)
-      endif
-      if (feex(ix1,iy).lt.0) then
-      feex(ix1,iy)=feex(ix1,iy)*pwrecapfac(ix,iy)
-      endif
-      if (feey(ix,iy).gt.0) then
-      feey(ix,iy)=feey(ix,iy)*pwrecapfac(ix,iy)
-      endif
-      if (feex(ix,iy-1).lt.0) then
-      feey(ix,iy-1)=feey(ix,iy-1)*pwrecapfac(ix,iy)
-      endif
-
-
-
-      enddo
-      enddo
-      endif
-
-      if (capfeix.gt.0) then
-      do  iy = j2, j5
-      do  ix = i2, i5
-      ix1 = ixm1(ix,iy)
-      if (feix(ix,iy).gt.0) then
-      feix(ix,iy)=feix(ix,iy)*pwricapfac(ix,iy)
-      endif
-      if (feix(ix1,iy).lt.0) then
-      feix(ix1,iy)=feix(ix1,iy)*pwricapfac(ix,iy)
-      endif
-      if (feiy(ix,iy).gt.0) then
-      feiy(ix,iy)=feiy(ix,iy)*pwricapfac(ix,iy)
-      endif
-      if (feix(ix,iy-1).lt.0) then
-      feiy(ix,iy-1)=feiy(ix,iy-1)*pwricapfac(ix,iy)
-      endif
-
-
-
-      enddo
-      enddo
-      endif
-
       do 310 iy = j2, j5
 	    if((isudsym==1.or.geometry.eq.'dnXtarget') .and. nxc > 1) then
             feex(nxc-1,iy) = 0.
@@ -3904,12 +3856,12 @@ c...  Electron radiation loss -- ionization and recombination
                   else                       # compute from other data files
                      erliz(ix,iy) = chradi *
      .                           erl1(te(ix,iy),ne_sgvi,rtau(ix,iy))
-     .                                  * (ngcap(ix,iy,1)-ngbackg(1)*
+     .                                  * (ng(ix,iy,1)-ngbackg(1)*
      .                    (0.9+0.1*(ngbackg(1)/ng(ix,iy,1))**ingb) ) *
      .                                                       vol(ix,iy)
                      if (isrecmon .ne. 0) erlrc(ix,iy) = chradr *
      .                               erl2(te(ix,iy),ne_sgvi,rtau(ix,iy))
-     .                             * fac2sp*nicap(ix,iy,1) * vol(ix,iy)
+     .                             * fac2sp*ni(ix,iy,1) * vol(ix,iy)
                   endif
                   eeliold = eeli(ix,iy)
                   if (icnuiz.le.1 .and. psor(ix,iy,1).ne.0.)
@@ -3924,11 +3876,11 @@ c...  Electron radiation loss -- ionization and recombination
       do iy = iys1, iyf6  #j2, j5
         do ix = ixs1, ixf6  #i2, i5
           vsoreec(ix,iy) =
-     .          - cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorc(ix,iy,1)*pwrecapfac(ix,iy)
+     .          - cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorc(ix,iy,1)
      .          + cfneut*cfneutsor_ee*cnsor*13.6*ev*fac2sp*psorrgc(ix,iy,1)
-     .          - cfneut*cfneutsor_ee*cnsor*erliz(ix,iy)*pwrecapfac(ix,iy)
-     .          - cfneut*cfneutsor_ee*cnsor*erlrc(ix,iy)*pwrecapfac(ix,iy)
-     .          - cfneut*cfneutsor_ee*cnsor*ediss*ev*(0.5*psordis(ix,iy))*pwrecapfac(ix,iy)
+     .          - cfneut*cfneutsor_ee*cnsor*erliz(ix,iy)
+     .          - cfneut*cfneutsor_ee*cnsor*erlrc(ix,iy)
+     .          - cfneut*cfneutsor_ee*cnsor*ediss*ev*(0.5*psordis(ix,iy))
         enddo
       enddo
 
@@ -3995,11 +3947,6 @@ c*************************************************************
          do 151 ix = i2, i5
             ix1 = ixm1(ix,iy)
             w0(ix,iy) = vol(ix,iy) * eqp(ix,iy) * (te(ix,iy)-ti(ix,iy))
-            if (w0(ix,iy).gt.0) then
-             w0(ix,iy)=w0(ix,iy)*pwrecapfac(ix,iy)
-            else
-             w0(ix,iy)=w0(ix,iy)*pwricapfac(ix,iy)
-            endif
             resee(ix,iy) = resee(ix,iy) - w0(ix,iy) + vsoree(ix,iy)
             if (isupgon(1).eq.1) then
 c These terms include electron-ion equipartition as well as terms due
@@ -4030,13 +3977,8 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
       if(ishymol == 1) then
         do iy = j2, j5
           do ix = i2, i5
-          if (ti(ix,iy).gt.tg(ix,iy,2)) then
-           capfac=pwricapfac(ix,iy)
-          else
-          capfac=1
-          endif
             resei(ix,iy) = resei(ix,iy) - vol(ix,iy)*eqpg(ix,iy,2)*
-     .                                     (ti(ix,iy)-tg(ix,iy,2))*capfac
+     .                                     (ti(ix,iy)-tg(ix,iy,2))
           enddo
         enddo
       endif
@@ -4046,14 +3988,9 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
         do ifld = nhsp+1, nisp
           do iy = j2, j5    # iys,iyf limits dont seem to work(?)
             do ix = i2, i5
-            if (ti(ix,iy).gt.tg(ix,iy,2)) then
-           capfac=pwricapfac(ix,iy)
-          else
-          capfac=1
-          endif
               resei(ix,iy) =resei(ix,iy) -cftiimpg*1.5*ni(ix,iy,ifld)*
      .                      (nucxi(ix,iy,ifld)+nueli(ix,iy,ifld))*
-     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)*capfac
+     .                      (ti(ix,iy) - tg(ix,iy,2))*vol(ix,iy)
             enddo
           enddo
         enddo
@@ -4125,8 +4062,6 @@ c ... If molecules are present as gas species 2, add ion/atom cooling
                   endif
 
                endif
-
-        pwrzec(ix,iy)=pwrzec(ix,iy)*pwrecapfac(ix,iy)
  532        continue
  533     continue
 
@@ -4247,7 +4182,7 @@ c******************************************************************
      .                                (phi(ix,iy+1)+phi(ix,iy))
      .                          + 0.5*fqygp(ix,iy-1)*
      .                                (phi(ix,iy)+phi(ix,iy-1))
-               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy)*pwrecapfac(ix,iy) / ( 1. +
+               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy) / ( 1. +
      .                             cfwjdotelim*(tebg*ev/te(ix,iy))**iteb )
              enddo
            enddo
@@ -4261,7 +4196,7 @@ c******************************************************************
      .                             ex(ix, iy) *fqx(ix, iy) )/gx(ix,iy)
      .                     + 0.5*( ey(ix, iy) *fqy(ix, iy) +
      .                             ey(ix,iy-1)*fqy(ix,iy-1) )/gy(ix,iy)
-               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy)*pwrecapfac(ix,iy)
+               resee(ix,iy) = resee(ix,iy) + wjdote(ix,iy)
              enddo
            enddo
          endif
@@ -4313,12 +4248,7 @@ c******************************************************************
 	       wvh(ix,iy,ifld) = wvh(ix,iy,ifld) -
      .                             sin(thetacc)*cfvcsy(ifld)*cfvisy*
      .                                   visy(ix,iy,ifld)*dupdx*dupdy
-            if (wvh(ix,iy,ifld).lt.0) then
-           capfac=pwricapfac(ix,iy)
-          else
-          capfac=1
-          endif
-            resei(ix,iy) = resei(ix,iy) + wvh(ix,iy,ifld)*vol(ix,iy)*capfac
+            resei(ix,iy) = resei(ix,iy) + wvh(ix,iy,ifld)*vol(ix,iy)
   155       continue   # loop over up species ifld
   156    continue
  157  continue
@@ -4339,7 +4269,6 @@ c******************************************************************
           resei(ix,iy) = resei(ix,iy) + pwribkg(ix,iy)*vol(ix,iy)
         enddo
       enddo
-
         if (TimingPandfOn.gt.0) TotTimeEngBal=TotTimeEngBal+tock(TimeEngBal)
 
 **********************************************************************

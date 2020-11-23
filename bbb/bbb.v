@@ -3906,14 +3906,18 @@ PrintTimingExmain() subroutine
 **** CapFloor: # added by J.Guterl
 ngcap(0:nx+1,0:ny+1,1:ngsp)   _real  [m^-3]   +threadprivate #gas density in primary cell (ix,iy) capped to prevent ng->0
 nicap(0:nx+1,0:ny+1,1:nisp)   _real  [m^-3]   +threadprivate #ion density in primary cell (ix,iy) capped to prevent ni->0
+pwrecapfac(0:nx+1,0:ny+1)   _real  [m^-3]   +threadprivate #factor in primary cell (ix,iy) to prevent te->0
+pwricapfac(0:nx+1,0:ny+1)   _real  [m^-3]   +threadprivate #factor in primary cell (ix,iy) to prevent ti->0
 angbg                     real    /0./
 bngbg                     real    /10./
 anzbg                     real    /0./
 bnzbg                     real    /10./
-#atebg                     real     /0./
-#btebg   		          real     /10./
-#atibg                     real     /0./
-#btibg   		          real     /10./
+capfeix                    integer /0/
+capfeex                    integer /0/
+atebg                     real     /0./
+btebg   		          real     /10./
+atibg                     real     /0./
+btibg   		          real     /10./
 
-**** FixNum
+**** FixNum:
 FixUpwindfniy integer /1/

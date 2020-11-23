@@ -284,7 +284,14 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
             if(isflxvar .eq. 0) ntemp = nnorm
 	    if(isteonxy(ix,iy) .eq. 1) then
                te(ix,iy)=yl(idxte(ix,iy))*ennorm/(1.5*ntemp)
-               te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
+               #te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
+               pwrecapfac(ix,iy)=
+     .	     (1-atebg+atebg*exp(-btebg*tebg/te(ix,iy)))
+            if (te(ix,iy) < temin*ev) then
+		     inegt = 1
+  		     ixneg = ix
+		     iyneg = iy
+                   endif
             endif
             do 65 igsp =1, ngsp
 	       if(isngonxy(ix,iy,igsp) .eq. 1) then
@@ -315,7 +322,14 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
             if(isflxvar .eq. 0) ntemp = nnorm
 	    if(istionxy(ix,iy) .eq. 1) then
                ti(ix,iy)=yl(idxti(ix,iy))*ennorm/(1.5*ntemp)
-               ti(ix,iy) = max(ti(ix,iy), temin*ev)
+               #ti(ix,iy) = max(ti(ix,iy), temin*ev)
+               pwricapfac(ix,iy)=
+     .	     (1-atibg+atibg*exp(-btibg*tibg/ti(ix,iy)))
+             if (ti(ix,iy) < temin*ev) then
+		     inegt = 1
+  		     ixneg = ix
+		     iyneg = iy
+                   endif
             endif
 	    if(isphionxy(ix,iy) .eq. 1)
      .                           phi(ix,iy) = yl(idxphi(ix,iy))*temp0
@@ -324,7 +338,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 
       if (inegni .gt. 0 .and. itrap_negni.eq.1) then
          call remark("***  ni is negative - calculation stopped")
-         
+
 	  write(*,*) 'At  ix =', ixneg, ' iy =', iyneg, ' ifld =', ifldneg
 	  write(*,*) 'ni=',ni(ixneg,iyneg,ifldneg)
 	  iterm=-100
@@ -339,11 +353,12 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
       endif
 cc Since Te and Ti have temin eV floors, this not used
       if (inegt .gt. 0 .and. itrap_negt.eq.1) then
-         call remark("***  Te or Ti is negative - calculation stopped")
+         call remark("***  Te or Ti < temin - calculation stopped")
 	 write(*,*) 'At  ix =', ixneg, ' iy =', iyneg
 	 write(*,*) 'te=',te(ixneg,iyneg)
+	 write(*,*) 'ti=',ti(ixneg,iyneg)
 	  iterm=-100
-         call xerrab("")					
+         call xerrab("")
       endif
 
 C the message passing is done twice here to get nm for up - very inefficient
@@ -777,7 +792,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
       do 30 iy = max(js-1,0), min(ny,je)
          inc = isign(max(1,iabs(ie-ixm1(ie,js))),ie-ixm1(ie,js))
 	 do 29 ix = ixm1(is,js), min(nx,ie), inc
-            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+            gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
      .                     ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
             gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
             gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
@@ -785,7 +800,7 @@ c Tom:  add comments here to explain the indices used on do 30 and 29
             gpry(ix,iy) = gpry(ix,iy) + gpey(ix,iy)
    29    continue
          ix = ixp1(ie,iy)
-         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) - 
+         gpey(ix,iy) = (ney1(ix,iy)*tey1(ix,iy) -
      .                  ney0(ix,iy)*tey0(ix,iy)) * gyf(ix,iy)
          gtey(ix,iy) = (tey1(ix,iy) - tey0(ix,iy)) * gyf(ix,iy)
          gtiy(ix,iy) = (tiy1(ix,iy) - tiy0(ix,iy)) * gyf(ix,iy)
