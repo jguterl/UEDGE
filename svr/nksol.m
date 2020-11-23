@@ -3214,7 +3214,7 @@ c-----------------------------------------------------------------------
       real rlx, adjf1
       integer ivar
       dimension savf(n),u(*),unew(n),p(n),su(n),sf(n),icnstr(n)
-      real pt1,pt1trl,pt99,one,two,alpha
+      real pt1,pt1trl,pt99,one,two,alpha,acond,mcond,bcond
       logical mxtkn
 c-----------------------------------------------------------------------
 c     nks001 common block.
@@ -3289,8 +3289,11 @@ c-----------------------------------------------------------------------
       call sswap(n, u, 1, unew, 1)
       fnrmp = vnormnk(n,savf,sf)
       f1nrmp = fnrmp*fnrmp/two
-      if (iprint .gt. 1) write(iunit,125) rl,f1nrm,f1nrmp
- 125  format(' lambda, f1, f1new ',3d20.8)
+      acond=f1nrmp/adjf1 - f1nrm + alpha*slpi*rl
+      bcond=f1nrmp/adjf1 - f1nrm + beta*slpi*rl
+      mcond=rldiff-rlmin
+      if (iprint .gt. 1) write(iunit,125) rl,f1nrm,f1nrmp,acond,bcond,mcond
+ 125  format(' lambda, f1, f1new acon, bcond mincond',6d30.16)
       if (f1nrmp/adjf1 .gt. f1nrm + alpha*slpi*rl) go to 200
 c alpha-condition satisfied.  now check for beta-condition.
         if (f1nrmp/adjf1 .lt. f1nrm + beta*slpi*rl) then
