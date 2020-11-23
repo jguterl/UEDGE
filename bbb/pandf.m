@@ -2589,9 +2589,9 @@ c ... Call routine to evaluate gas energy fluxes
                elseif (methnx .eq. 3) then   # upwind differencing
 
                   if( uu(ix,iy,ifld) .ge. 0.) then
-                     t2 = ni(ix,iy,ifld)
+                     t2 = nicap(ix,iy,ifld)
                   else
-                     t2 = ni(ix2,iy,ifld)
+                     t2 = nicap(ix2,iy,ifld)
                   endif
 
                elseif (methnx .eq. 6) then   # log central differencing
@@ -2661,9 +2661,9 @@ c     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
                      endif
                      else
                      if( vy(ix,iy,ifld) .ge. 0.) then
-                        t2 = niy0(ix,iy,ifld)
+                        t2 = nicap(ix,iy,ifld)
                      else
-                        t2 = niy1(ix,iy,ifld)
+                        t2 = nicap(ix,iy+1,ifld)
                      endif
                      endif
 
