@@ -2655,15 +2655,15 @@ c     .                 (rbfbt(ix,iy) + rbfbt(ix2,iy))*v2cb(ix,iy,ifld)
                   elseif (methny .eq. 3) then   # upwind differencing
                      if (FixUpwindfniy.gt.0) then
                      if( vy(ix,iy,ifld) .ge. 0.) then
-                        t2 = ni(ix,iy,ifld)
-                     else
-                        t2 = ni(ix,iy+1,ifld)
-                     endif
-                     else
-                     if( vy(ix,iy,ifld) .ge. 0.) then
                         t2 = nicap(ix,iy,ifld)
                      else
                         t2 = nicap(ix,iy+1,ifld)
+                     endif
+                     else
+                     if( vy(ix,iy,ifld) .ge. 0.) then
+                        t2 = niy0(ix,iy,ifld)
+                     else
+                        t2 = niy1(ix,iy,ifld)
                      endif
                      endif
 
