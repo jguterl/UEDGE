@@ -196,7 +196,7 @@ end subroutine jac_calc_parallel
     use Bcond,only:isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
     use OMPJacSettings,only:iidebugprint,ivdebugprint,OMPTimingJacRow
-    use Jacobian_csc,only:yldot_pert
+    !use Jacobian_csc,only:yldot_pert
     use Jacaux,only:ExtendedJacPhi
     use omp_lib
 
@@ -212,7 +212,7 @@ end subroutine jac_calc_parallel
     real,intent(out)::TimeJacRow(neq)
     ! ... Work-array argument:
     real,intent(inout) :: wk(neq)     ! work space available to this subroutine
-
+    real :: yl_check(neq)     ! work space available to this subroutine
     ! ... Functions:
     logical ::tstguardc
     real(kind=4) gettime
@@ -335,7 +335,7 @@ end subroutine jac_calc_parallel
             endif storage
 
             check: if (istopjac.gt.0 .and. ii.eq.irstop .and. iv.eq.icstop) then
-                !               yldot_pert(ii) = wk(ii)      ! for diagnostic only
+                !               yl_check(ii) = wk(ii)      ! for diagnostic only
                 if (istopjac == 2) then
                     yl(iv) = yold
                     call pandf1 (xc, yc, iv, neq, t, yl, wk)
@@ -359,7 +359,7 @@ end subroutine jac_calc_parallel
         !...  If this is the last variable before jumping to new cell, reset pandf
 
         reset: if( isjacreset.ge.1) then
-            yldot_pert(1:neq)=wk(1:neq)
+            yl_check(1:neq)=wk(1:neq)
             ! 18   continue
             !...  If this is the last variable before jumping to new cell, reset pandf
             !JG this call to pandf1 can be safely ignored with ijacreset=0 (and save some time...)
@@ -368,11 +368,11 @@ end subroutine jac_calc_parallel
             endif
 
             do ii=1,neq
-                if (yldot_pert(ii).ne.wk(ii)) then
-                    write(*,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call to pandf1 at ii=', ii,yldot_pert(ii),wk(ii)
+                if (yl_check(ii).ne.wk(ii)) then
+                    write(*,'(a,i5,e20.12,e20.12)') ' *** wk modified on second call to pandf1 at ii=', ii,yl_check(ii),wk(ii)
                     call xerrab('*** Stop ***')
                 endif
-                if (isnan(yldot_pert(ii))) then
+                if (isnan(yl_check(ii))) then
                     write(*,*) 'NaN at ii=',ii
                     call xerrab('*** Nan in wk array in jac_calc ***')
                 endif
