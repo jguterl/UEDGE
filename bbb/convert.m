@@ -505,11 +505,11 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                 fxmy(ix,iy,k)*log(nis(ixm1(ix,iy+1-k),iy+1-k,l)) +
      .                 fxpy(ix,iy,k)*log(nis(ixp1(ix,iy+1-k),iy+1-k,l)) )
       interppri(ix,iy,k,l) = exp (
-     .                 fxm (ix,iy,k)*log(pri(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                 fx0 (ix,iy,k)*log(pri(ix             ,iy+k  ,l)) +
-     .                 fxp (ix,iy,k)*log(pri(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                 fxmy(ix,iy,k)*log(pri(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                 fxpy(ix,iy,k)*log(pri(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                 fxm (ix,iy,k)*logpri(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                 fx0 (ix,iy,k)*logpri(ix             ,iy+k  ,l) +
+     .                 fxp (ix,iy,k)*logpri(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                 fxmy(ix,iy,k)*logpri(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                 fxpy(ix,iy,k)*logpri(ixp1(ix,iy+1-k),iy+1-k,l) )
       interpng(ix,iy,k,l) = exp (
      .                  fxm (ix,iy,k)*logng(ixm1(ix,iy+k)  ,iy+k  ,l) +
      .                  fx0 (ix,iy,k)*logng(ix             ,iy+k  ,l) +
@@ -557,6 +557,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
          do 12 iy = js, je
             do 11 ix = is, ie
                pri(ix,iy,ifld) = ni(ix,iy,ifld) * ti(ix,iy)
+               logpri(ix,iy,ifld)=logni(ix,iy,ifld) + logti(ix,iy)
                if (zi(ifld).ne.0.) then
                   pr(ix,iy) = pr(ix,iy) + pri(ix,iy,ifld)
                   zeff(ix,iy)=zeff(ix,iy)+zi(ifld)**2*ni(ix,iy,ifld)
