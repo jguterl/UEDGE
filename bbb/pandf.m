@@ -71,12 +71,13 @@ c    yldot is the RHS of ODE solver or RHS=0 for Newton solver (NKSOL)
       real dndym1,dndy0,dndyp1,d2ndy20,d2ndy2p1,d3ndy3
       real dtdym1,dtdy0,dtdyp1,d2tdy20,d2tdy2p1,d3tdy3,nhi_nha
       integer idum, idumaray(1)
-      real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg, ueb
+      real(Size4) sec4, gettime, tsimpfe, tsimp, tsnpg
+      real ueb
       integer impflag
       # former Aux module variables
       integer ix,iy,igsp,iv,iv1,iv2,iv3,ix1,ix2,ix3,ix4,ix5,ix6
       real tv,t0,t1,t2,a
-      real length
+      real length,log10teev
       real capfac
 cnxg      data igs/1/
 
@@ -611,15 +612,15 @@ c ,,, Add diffusion propto betap**iexpbp and (B0/B)**inbdif (as for isbohmcalc=3
 c ... Compute log_lambda
       do iy = j1, j6
         do ix = i1, i6
-          teev = te(ix,iy)/ev
+          log10teev = logte(ix,iy)/log_10-log10ev
           if (islnlamcon == 1) then
             loglambda(ix,iy) = lnlam  # set to constant
-          elseif (teev < 50.) then    # Braginskii formula, teev<50
+          elseif (te(ix,iy)/ev < 50.) then    # Braginskii formula, teev<50
             loglambda(ix,iy) = 23.4-1.15*log10(1.e-6*ne(ix,iy))+
-     .                              3.45*log10(teev)
+     .                              3.45*log10teev
           else                        #teev > 50
             loglambda(ix,iy) = 25.3-1.15*log10(1.e-6*ne(ix,iy))+
-     .              2.33167537087122D+00*log10(teev)
+     .              2.33167537087122D+00*log10teev
           endif
           ctaui(ix,iy,1) = 2.1e13*sqrt(mi(1)/mp)/ loglambda(ix,iy)
           ctaue(ix,iy,1) = 3.5e11/loglambda(ix,iy) #both for zi=1
@@ -886,42 +887,21 @@ c ...         Compute v2 for v2x_gradx_P eng terms; cf2dd+cf2bf=1 or 0
      .                                 v2dd(ix,iy,ifld) +
      .                         cf2ef * v2ce(ix,iy,ifld) )
          if (isnonog.eq.1 .and. iy.le.ny) then
-c            grdnv = ( 1/( fym (ix,iy,1)/ni(ix2,iy1,ifld) +
-c     .                    fy0 (ix,iy,1)/ni(ix2,iy ,ifld) +
-c     .                    fyp (ix,iy,1)/ni(ix2,iy2,ifld) +
-c     .                    fymx(ix,iy,1)/ni(ix ,iy1,ifld) +
-c     .                    fypx(ix,iy,1)/ni(ix, iy2,ifld) ) -
-c     .                1/( fym (ix,iy,0)/ni(ix ,iy1,ifld) +
-c     .                    fy0 (ix,iy,0)/ni(ix ,iy ,ifld) +
-c     .                    fyp (ix,iy,0)/ni(ix ,iy2,ifld) +
-c     .                    fymx(ix,iy,0)/ni(ix4,iy1,ifld) +
-c     .                    fypx(ix,iy,0)/ni(ix6,iy2,ifld) ) )
-c     .                                                 * gxfn(ix,iy)
-cc            grdnv = ( exp( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
-cc     .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
-cc     .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
-cc     .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
-cc     .                     fypx(ix,iy,1)*log(ni(ix, iy2,ifld)) )
-cc     .               -exp( fym (ix,iy,0)*log(ni(ix ,iy1,ifld)) +
-cc     .                     fy0 (ix,iy,0)*log(ni(ix ,iy ,ifld)) +
-cc     .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
-cc     .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
-cc     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
-cc     .                                                      gxfn(ix,iy)
-            grdnv = (    ( fym (ix,iy,1)*log(ni(ix2,iy1,ifld)) +
-     .                     fy0 (ix,iy,1)*log(ni(ix2,iy ,ifld)) +
-     .                     fyp (ix,iy,1)*log(ni(ix2,iy2,ifld)) +
-     .                     fymx(ix,iy,1)*log(ni(ix ,iy1,ifld)) +
-     .                     fypx(ix,iy,1)*log(ni(ix, iy2,ifld)) )
-     .                  -( fym (ix,iy,0)*log(ni(ix ,iy1,ifld)) +
-     .                     fy0 (ix,iy,0)*log(ni(ix ,iy ,ifld)) +
-     .                     fyp (ix,iy,0)*log(ni(ix ,iy2,ifld)) +
-     .                     fymx(ix,iy,0)*log(ni(ix4,iy1,ifld)) +
-     .                     fypx(ix,iy,0)*log(ni(ix6,iy2,ifld)) ) ) *
+
+            grdnv = (    ( fym (ix,iy,1)*logni(ix2,iy1,ifld) +
+     .                     fy0 (ix,iy,1)*logni(ix2,iy ,ifld) +
+     .                     fyp (ix,iy,1)*logni(ix2,iy2,ifld) +
+     .                     fymx(ix,iy,1)*logni(ix ,iy1,ifld) +
+     .                     fypx(ix,iy,1)*logni(ix, iy2,ifld) )
+     .                  -( fym (ix,iy,0)*logni(ix ,iy1,ifld) +
+     .                     fy0 (ix,iy,0)*logni(ix ,iy ,ifld) +
+     .                     fyp (ix,iy,0)*logni(ix ,iy2,ifld) +
+     .                     fymx(ix,iy,0)*logni(ix4,iy1,ifld) +
+     .                     fypx(ix,iy,0)*logni(ix6,iy2,ifld) ) ) *
      .                                                      gxfn(ix,iy)
             vytan(ix,iy,ifld)=(fcdif*difni(ifld) + dif_use(ix,iy,ifld)) *
      .                                      (grdnv/cos(angfx(ix,iy)) -
-     .                       (log(ni(ix2,iy,ifld)) - log(ni(ix,iy,ifld)))
+     .                       (logni(ix2,iy,ifld) - logni(ix,iy,ifld))
      .                                                 * gxf(ix,iy) )
             if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
               vytan(ix,iy,ifld) = 0.
@@ -2597,7 +2577,7 @@ c ... Call routine to evaluate gas energy fluxes
 
                elseif (methnx .eq. 6) then   # log central differencing
                   t2 = exp(0.5*
-     .                ( log(ni(ix,iy,ifld)) + log(ni(ix2,iy,ifld)) ))
+     .                ( logni(ix,iy,ifld) + logni(ix2,iy,ifld) ))
 
                else   # interp. ave or harmonic ave depending on wind*grad
 
@@ -3690,23 +3670,23 @@ c...  First do the Te equation
                ix4 = ixp1(ix,iy1)
                ix5 = ixm1(ix,iy+1)
                ix6 = ixp1(ix,iy+1)
-                 grdnv=(    ( fym (ix,iy,1)*log(te(ix2,iy1 )) +
-     .                        fy0 (ix,iy,1)*log(te(ix2,iy  )) +
-     .                        fyp (ix,iy,1)*log(te(ix2,iy+1)) +
-     .                        fymx(ix,iy,1)*log(te(ix ,iy1 )) +
-     .                        fypx(ix,iy,1)*log(te(ix ,iy+1)) )
-     .                     -( fym (ix,iy,0)*log(te(ix ,iy1 )) +
-     .                        fy0 (ix,iy,0)*log(te(ix ,iy  )) +
-     .                        fyp (ix,iy,0)*log(te(ix ,iy+1)) +
-     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +
-     .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) *
+                 grdnv=(    ( fym (ix,iy,1)*logte(ix2,iy1 ) +
+     .                        fy0 (ix,iy,1)*logte(ix2,iy  ) +
+     .                        fyp (ix,iy,1)*logte(ix2,iy+1) +
+     .                        fymx(ix,iy,1)*logte(ix ,iy1 ) +
+     .                        fypx(ix,iy,1)*logte(ix ,iy+1) )
+     .                     -( fym (ix,iy,0)*logte(ix ,iy1 ) +
+     .                        fy0 (ix,iy,0)*logte(ix ,iy  ) +
+     .                        fyp (ix,iy,0)*logte(ix ,iy+1) +
+     .                        fymx(ix,iy,0)*logte(ix4,iy1 ) +
+     .                        fypx(ix,iy,0)*logte(ix6,iy+1) ) ) *
      .                                                   gxfn(ix,iy)
                feexy(ix,iy) = exp( 0.5*
-     .                         (log(te(ix2,iy)) + log(te(ix,iy))) )*
+     .                         (logte(ix2,iy) + logte(ix,iy)) )*
      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
      .                                       (ne(ix2,iy)+ne(ix,iy))*
      .                                     (grdnv/cos(angfx(ix,iy)) -
-     .                         (log(te(ix2,iy)) - log(te(ix,iy)))*
+     .                         (logte(ix2,iy) - logte(ix,iy))*
      .                                         gxf(ix,iy))*sx(ix,iy)
 
 c...  Now do the Ti equation.
@@ -3718,25 +3698,25 @@ c --- only true if we dont flux limit.  Thus, we use 4-pt average of hcyn.
 c --- Note: this four-point average results in not getting the full Jac. for
 c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
 
-                 grdnv =(    ( fym (ix,iy,1)*log(ti(ix2,iy1 )) +
-     .                         fy0 (ix,iy,1)*log(ti(ix2,iy  )) +
-     .                         fyp (ix,iy,1)*log(ti(ix2,iy+1)) +
-     .                         fymx(ix,iy,1)*log(ti(ix ,iy1 )) +
-     .                         fypx(ix,iy,1)*log(ti(ix ,iy+1)) )
-     .                      -( fym (ix,iy,0)*log(ti(ix ,iy1 )) +
-     .                         fy0 (ix,iy,0)*log(ti(ix ,iy  )) +
-     .                         fyp (ix,iy,0)*log(ti(ix ,iy+1)) +
-     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +
-     .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) *
+                 grdnv =(    ( fym (ix,iy,1)*logti(ix2,iy1 ) +
+     .                         fy0 (ix,iy,1)*logti(ix2,iy  ) +
+     .                         fyp (ix,iy,1)*logti(ix2,iy+1) +
+     .                         fymx(ix,iy,1)*logti(ix ,iy1 ) +
+     .                         fypx(ix,iy,1)*logti(ix ,iy+1) )
+     .                      -( fym (ix,iy,0)*logti(ix ,iy1 ) +
+     .                         fy0 (ix,iy,0)*logti(ix ,iy  ) +
+     .                         fyp (ix,iy,0)*logti(ix ,iy+1) +
+     .                         fymx(ix,iy,0)*logti(ix4,iy1 ) +
+     .                         fypx(ix,iy,0)*logti(ix6,iy+1) ) ) *
      .                                                   gxfn(ix,iy)
                feixy(ix,iy) = exp( 0.5*
-     .                       (log(ti(ix2,iy)) + log(ti(ix,iy))) )*
+     .                       (logti(ix2,iy) + logti(ix,iy)) )*
      .                           ( (fcdif*kyi+kyi_use(ix,iy))*0.5*
      .                                     (nit(ix2,iy)+nit(ix,iy))
      .                   + cfneut*cfneutsor_ei*0.25*(hcyn(ix ,iy)+hcyn(ix ,iy1)
      .                              +hcyn(ix2,iy)+hcyn(ix4,iy1)) ) *
      .                                 (  grdnv/cos(angfx(ix,iy))
-     .                         - (log(ti(ix2,iy)) - log(ti(ix,iy)))*
+     .                         - (logti(ix2,iy) - logti(ix,iy))*
      .                                        gxf(ix,iy) )*sx(ix,iy)
 c...  Flux limit with flalftxt even though hcys have parallel FL built in
                t0 = max(ti(ix,iy),temin*ev)

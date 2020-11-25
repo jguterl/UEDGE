@@ -259,11 +259,16 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                  endif
                  if (zi(ifld).eq.0 .and. ineudif.eq.3) then
                    ni(ix,iy,ifld) = exp(yl(idxn(ix,iy,ifld)))
+
                  endif
+                 logni(ix,iy,ifld)=log(abs(ni(ix,iy,ifld)))
                endif
+
                ne(ix,iy) = ne(ix,iy) + zi(ifld)*ni(ix,iy,ifld)
+
                if (isupgon(1).eq.1 .and. zi(ifld).eq.0) then
                   ng(ix,iy,1) = ni(ix,iy,ifld)
+                  logng(ix,iy,1)=log(abs(ng(ix,iy,1)))
                   ngcap(ix,iy,1)=ni(ix,iy,ifld)*
      .	     (1-angbg+angbg*exp(-bngbg*ngbackg(1)/ng(ix,iy,1)))
                   if (ineudif .eq. 3) lng(ix,iy,1)=log(ng(ix,iy,1))
@@ -284,6 +289,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
             if(isflxvar .eq. 0) ntemp = nnorm
 	    if(isteonxy(ix,iy) .eq. 1) then
                te(ix,iy)=yl(idxte(ix,iy))*ennorm/(1.5*ntemp)
+               logte(ix,iy)=log(abs(te(ix,iy)))
                #te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
                pwrecapfac(ix,iy)=
      .	     (1-atebg+atebg*exp(-btebg*tebg*ev/te(ix,iy)))
@@ -297,8 +303,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 	       if(isngonxy(ix,iy,igsp) .eq. 1) then
                  if(ineudif .ne. 3) then
                    ng(ix,iy,igsp) = yl(idxg(ix,iy,igsp))*n0g(igsp)
-                   ngcap(ix,iy,igsp)=ng(ix,iy,igsp)*
-     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(igsp)/ng(ix,iy,igsp)))
+
                    if (ng(ix,iy,igsp) < 0) then
 		     inegng = 1
   		     ixneg = ix
@@ -309,6 +314,9 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
                    lng(ix,iy,igsp) = yl(idxg(ix,iy,igsp))
                    ng(ix,iy,igsp) = exp(lng(ix,iy,igsp))
                  endif
+                 ngcap(ix,iy,igsp)=ng(ix,iy,igsp)*
+     .	     (1-angbg+angbg*exp(-bngbg*ngbackg(igsp)/ng(ix,iy,igsp)))
+                 logng(ix,iy,igsp)=log(abs(ng(ix,iy,igsp)))
                endif
 	       if(istgonxy(ix,iy,igsp) .eq. 1) then
                  ntemp = ng(ix,iy,igsp)
@@ -316,6 +324,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 		 tg(ix,iy,igsp) = yl(idxtg(ix,iy,igsp))*ennorm/
      .                                                  (1.5*ntemp)
                  tg(ix,iy,igsp) = max(tg(ix,iy,igsp), temin*ev)
+                 logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
                endif
  65         continue
             ntemp = nit(ix,iy) + cngtgx(1)*ng(ix,iy,1)
@@ -323,6 +332,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 	    if(istionxy(ix,iy) .eq. 1) then
                ti(ix,iy)=yl(idxti(ix,iy))*ennorm/(1.5*ntemp)
                #ti(ix,iy) = max(ti(ix,iy), temin*ev)
+               logti(ix,iy)=log(abs(ti(ix,iy)))
                pwricapfac(ix,iy)=
      .	     (1-atibg+atibg*exp(-btibg*tibg*ev/ti(ix,iy)))
              if (ti(ix,iy) < temin*ev) then
@@ -330,6 +340,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
   		     ixneg = ix
 		     iyneg = iy
                    endif
+
             endif
 	    if(isphionxy(ix,iy) .eq. 1)
      .                           phi(ix,iy) = yl(idxphi(ix,iy))*temp0
@@ -481,11 +492,11 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                    fxmy(ix,iy,k)*phis(ixm1(ix,iy+1-k),iy+1-k) +
      .                    fxpy(ix,iy,k)*phis(ixp1(ix,iy+1-k),iy+1-k)
       interpni(ix,iy,k,l) = exp (
-     .                  fxm (ix,iy,k)*log(ni(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fx0 (ix,iy,k)*log(ni(ix             ,iy+k  ,l)) +
-     .                  fxp (ix,iy,k)*log(ni(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fxmy(ix,iy,k)*log(ni(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                  fxpy(ix,iy,k)*log(ni(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                  fxm (ix,iy,k)*logni(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fx0 (ix,iy,k)*logni(ix             ,iy+k  ,l) +
+     .                  fxp (ix,iy,k)*logni(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fxmy(ix,iy,k)*logni(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                  fxpy(ix,iy,k)*logni(ixp1(ix,iy+1-k),iy+1-k,l) )
       interpnis(ix,iy,k,l) = exp (
      .                 fxm (ix,iy,k)*log(nis(ixm1(ix,iy+k)  ,iy+k  ,l)) +
      .                 fx0 (ix,iy,k)*log(nis(ix             ,iy+k  ,l)) +
@@ -493,23 +504,23 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                 fxmy(ix,iy,k)*log(nis(ixm1(ix,iy+1-k),iy+1-k,l)) +
      .                 fxpy(ix,iy,k)*log(nis(ixp1(ix,iy+1-k),iy+1-k,l)) )
       interppri(ix,iy,k,l) = exp (
-     .                 fxm (ix,iy,k)*log(pri(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                 fx0 (ix,iy,k)*log(pri(ix             ,iy+k  ,l)) +
-     .                 fxp (ix,iy,k)*log(pri(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                 fxmy(ix,iy,k)*log(pri(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                 fxpy(ix,iy,k)*log(pri(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                 fxm (ix,iy,k)*logpri(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                 fx0 (ix,iy,k)*logpri(ix             ,iy+k  ,l) +
+     .                 fxp (ix,iy,k)*logpri(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                 fxmy(ix,iy,k)*logpri(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                 fxpy(ix,iy,k)*logpri(ixp1(ix,iy+1-k),iy+1-k,l) )
       interpng(ix,iy,k,l) = exp (
-     .                  fxm (ix,iy,k)*log(ng(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fx0 (ix,iy,k)*log(ng(ix             ,iy+k  ,l)) +
-     .                  fxp (ix,iy,k)*log(ng(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fxmy(ix,iy,k)*log(ng(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                  fxpy(ix,iy,k)*log(ng(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                  fxm (ix,iy,k)*logng(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fx0 (ix,iy,k)*logng(ix             ,iy+k  ,l) +
+     .                  fxp (ix,iy,k)*logng(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fxmy(ix,iy,k)*logng(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                  fxpy(ix,iy,k)*logng(ixp1(ix,iy+1-k),iy+1-k,l) )
       interppg(ix,iy,k,l) = exp (
-     .                  fxm (ix,iy,k)*log(pg(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fx0 (ix,iy,k)*log(pg(ix             ,iy+k  ,l)) +
-     .                  fxp (ix,iy,k)*log(pg(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fxmy(ix,iy,k)*log(pg(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                  fxpy(ix,iy,k)*log(pg(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                  fxm (ix,iy,k)*logpg(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fx0 (ix,iy,k)*logpg(ix             ,iy+k  ,l) +
+     .                  fxp (ix,iy,k)*logpg(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fxmy(ix,iy,k)*logpg(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                  fxpy(ix,iy,k)*logpg(ixp1(ix,iy+1-k),iy+1-k,l) )
 
       id = 1
       if(ixl .lt. 0 .or. yinc .ge. 6) then
@@ -545,6 +556,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
          do 12 iy = js, je
             do 11 ix = is, ie
                pri(ix,iy,ifld) = ni(ix,iy,ifld) * ti(ix,iy)
+               logpri(ix,iy,ifld)=logni(ix,iy,ifld) + logti(ix,iy)
                if (zi(ifld).ne.0.) then
                   pr(ix,iy) = pr(ix,iy) + pri(ix,iy,ifld)
                   zeff(ix,iy)=zeff(ix,iy)+zi(ifld)**2*ni(ix,iy,ifld)
@@ -580,6 +592,7 @@ ccc         enddo
      .                       (1-istgcon(igsp))*rtg2ti(igsp)*ti(ix,iy) +
      .                          istgcon(igsp)*tgas(igsp)*ev
 	       pg(ix,iy,igsp) = ng(ix,iy,igsp)*tg(ix,iy,igsp)
+	       logpg(ix,iy,igsp) = logng(ix,iy,igsp)+logtg(ix,iy,igsp)
            enddo
    15    continue
  16   continue

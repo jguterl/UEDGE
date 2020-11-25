@@ -1158,7 +1158,8 @@ qe              real            /1.6022e-19/            #Elementary charge
 mu0             real            /1.25663706e-6/         #Vac. magnetic perm.
 eps0            real            /8.8542e-12/            #Vac. dielectric perm.
 rt8opi          real            /1.595769121606e0/      #sqrt(8/pi)
-
+log_10          real            /2.302585092994046/     #log(10)
+log10ev          real            /-18.795283272599516/     #log10(ev)
 ***** Comtra restart:
 #Variables that contain the transport parameters.
 parvis(1:nispmx)  real          /nispmx*1./     #factor times parallel visc.
@@ -1462,6 +1463,7 @@ mg(1:ngsp)         _real [kg] /1.67e-27/ #gas species mass, calc. fr minu
 facmg(1:nispmx)        real /nispmx*1./  #scale factor for mg to recov old case
 znucl(1:nisp)              _integer [ ]   #tot. nucl. charge, calc. from znuclin
 ni(0:nx+1,0:ny+1,1:nisp)   _real  [m^-3]   +threadprivate #ion density in primary cell (ix,iy)
+logni(0:nx+1,0:ny+1,1:nisp)   _real  [m^-3]   +threadprivate #log ion density in primary cell (ix,iy)
 lni(0:nx+1,0:ny+1,1:nisp)  _real  [m^-3]  #log(ion dens) in prim. cell (ix,iy)
 nm(0:nx+1,0:ny+1,1:nisp)   _real [kg*m^-3] +threadprivate #mass density [nm(,,1) is sum, exclud.
                                           #gas, if nusp=1, isimpon=5] in cell
@@ -1506,12 +1508,16 @@ vycf(0:nx+1,0:ny+1)	   _real  [m/s]    +threadprivate #radial vel from class. vi
 vycr(0:nx+1,0:ny+1)	   _real  [m/s]    +threadprivate #radial vel from class. thermal force
 te(0:nx+1,0:ny+1)          _real  [J]	   +threadprivate #electron temperature in primary cell
 ti(0:nx+1,0:ny+1)          _real  [J]	   +threadprivate #ion temperature in primary cell
+logte(0:nx+1,0:ny+1)          _real  [J]	   +threadprivate #log electron temperature in primary cell
+logti(0:nx+1,0:ny+1)          _real  [J]	   +threadprivate #log ion temperature in primary cell
 ng(0:nx+1,0:ny+1,1:ngsp)   _real  [m^-3]   +threadprivate #gas density in primary cell (ix,iy)
+logng(0:nx+1,0:ny+1,1:ngsp)   _real  [m^-3]   +threadprivate #log gas density in primary cell (ix,iy)
 lng(0:nx+1,0:ny+1,1:ngsp)  _real  [m^-3]   +threadprivate #log(gas dens) in prim. cell (ix,iy)
 uug(0:nx+1,0:ny+1,1:ngsp)  _real  [m/s]    +threadprivate #ratio gas-flux/density at x-face;
                                           #if orthog mesh, poloidal gas velocity
 vyg(0:nx+1,0:ny+1,1:ngsp)  _real  [m/s]    +threadprivate #radial gas velocity
 tg(0:nx+1,0:ny+1,1:ngsp)   _real  [J]	   +threadprivate #gas temperature in primary cell
+logtg(0:nx+1,0:ny+1,1:ngsp)   _real  [J]	   +threadprivate #gas temperature in primary cell
 istgcon(ngspmx)       real /ngspmx*0/ #=0, set tg(,,i)=rtg2ti*ti; if >0, set
                                       #tg=(1-istgcon)*rtg2ti*ti+istgcon*tgas*ev
 tev(0:nx+1,0:ny+1)         _real  [J]	   +threadprivate #ion temperature at vertex of cell
@@ -1540,6 +1546,7 @@ ngy1(0:nx+1,0:ny+1,1:ngsp) _real  [m^-3]   +threadprivate #gas density above y-f
 pgy0(0:nx+1,0:ny+1,1:ngsp) _real  [J/m^3]  +threadprivate #gas pressure below y-face center
 pgy1(0:nx+1,0:ny+1,1:ngsp) _real  [J/m^3]  +threadprivate #gas pressure above y-face center
 pg(0:nx+1,0:ny+1,1:ngsp)   _real  [J/m^3]  +threadprivate #gas pressure at cell center
+logpg(0:nx+1,0:ny+1,1:ngsp)   _real  [J/m^3]  +threadprivate #log gas pressure at cell center
 phiy0(0:nx+1,0:ny+1)       _real  [V]      +threadprivate #potential below y-face center
 phiy1(0:nx+1,0:ny+1)       _real  [V]      +threadprivate #potential above y-face center
 phiy0s(0:nx+1,0:ny+1)      _real  [V]      +threadprivate #old potential below y-face center
@@ -1548,6 +1555,7 @@ pr(0:nx+1,0:ny+1)          _real  [J/m^3]  +threadprivate #total pressure at cen
 prev(0:nx+1,0:ny+1)        _real  [J/m^3]  +threadprivate #elec pressure at vertex of cell
 prtv(0:nx+1,0:ny+1)        _real  [J/m^3]  +threadprivate #total pressure at vertex of cell
 pri(0:nx+1,0:ny+1,1:nisp)  _real  [J/m^3]  +threadprivate #ion plasma pressure
+logpri(0:nx+1,0:ny+1,1:nisp)  _real  [J/m^3]  +threadprivate #log ion plasma pressure
 priv(0:nx+1,0:ny+1,1:nisp) _real  [J/m^3]  +threadprivate #ion pressure at vertex of cells
 priy0(0:nx+1,0:ny+1,1:nisp) _real [J/m^3]  +threadprivate #ion pressure below y-face center
 priy1(0:nx+1,0:ny+1,1:nisp) _real [J/m^3]  +threadprivate #ion pressure above y-face center
@@ -2906,7 +2914,8 @@ ix2g(0:nx+1,0:ny+1)          _integer  #ix index for sec. interm. (ix,iy) pt.
 iy2g(0:nx+1,0:ny+1)          _integer  #iy index for sec. interm. (ixo,iy) pt.
 ixv2g(0:nx+1,0:ny+1)         _integer  #ixv index for sec. interm.(ixvo,iy) pt.
 iyv2g(0:nx+1,0:ny+1)         _integer  #iyv index for sec.interm.(ixvo,iy) pt.
-nis(0:nxold+1,0:nyold+1,1:nisp) _real [m^-3] +restart
+nis(0:nxold+1,0:nyold+1,1:nisp) _real [m^-3] +restart #ion dens at last success. calc
+lognis(0:nxold+1,0:nyold+1,1:nisp) _real [m^-3] +restart #log ion dens at last success. calc
                                              #ion dens at last success. calc
 tes(0:nxold+1,0:nyold+1)        _real [J]    #elec. temp at last success. calc
 tis(0:nxold+1,0:nyold+1)        _real [J]    #ion temp at last success. calc
