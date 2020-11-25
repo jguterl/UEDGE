@@ -3670,23 +3670,23 @@ c...  First do the Te equation
                ix4 = ixp1(ix,iy1)
                ix5 = ixm1(ix,iy+1)
                ix6 = ixp1(ix,iy+1)
-                 grdnv=(    ( fym (ix,iy,1)*log(te(ix2,iy1 )) +
-     .                        fy0 (ix,iy,1)*log(te(ix2,iy  )) +
-     .                        fyp (ix,iy,1)*log(te(ix2,iy+1)) +
-     .                        fymx(ix,iy,1)*log(te(ix ,iy1 )) +
-     .                        fypx(ix,iy,1)*log(te(ix ,iy+1)) )
-     .                     -( fym (ix,iy,0)*log(te(ix ,iy1 )) +
-     .                        fy0 (ix,iy,0)*log(te(ix ,iy  )) +
-     .                        fyp (ix,iy,0)*log(te(ix ,iy+1)) +
-     .                        fymx(ix,iy,0)*log(te(ix4,iy1 )) +
-     .                        fypx(ix,iy,0)*log(te(ix6,iy+1)) ) ) *
+                 grdnv=(    ( fym (ix,iy,1)*logte(ix2,iy1 ) +
+     .                        fy0 (ix,iy,1)*logte(ix2,iy  ) +
+     .                        fyp (ix,iy,1)*logte(ix2,iy+1) +
+     .                        fymx(ix,iy,1)*logte(ix ,iy1 ) +
+     .                        fypx(ix,iy,1)*logte(ix ,iy+1) )
+     .                     -( fym (ix,iy,0)*logte(ix ,iy1 ) +
+     .                        fy0 (ix,iy,0)*logte(ix ,iy  ) +
+     .                        fyp (ix,iy,0)*logte(ix ,iy+1) +
+     .                        fymx(ix,iy,0)*logte(ix4,iy1 ) +
+     .                        fypx(ix,iy,0)*logte(ix6,iy+1) ) ) *
      .                                                   gxfn(ix,iy)
                feexy(ix,iy) = exp( 0.5*
-     .                         (log(te(ix2,iy)) + log(te(ix,iy))) )*
+     .                         (logte(ix2,iy) + logte(ix,iy)) )*
      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
      .                                       (ne(ix2,iy)+ne(ix,iy))*
      .                                     (grdnv/cos(angfx(ix,iy)) -
-     .                         (log(te(ix2,iy)) - log(te(ix,iy)))*
+     .                         (logte(ix2,iy) - logte(ix,iy))*
      .                                         gxf(ix,iy))*sx(ix,iy)
 
 c...  Now do the Ti equation.
@@ -3698,25 +3698,25 @@ c --- only true if we dont flux limit.  Thus, we use 4-pt average of hcyn.
 c --- Note: this four-point average results in not getting the full Jac. for
 c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
 
-                 grdnv =(    ( fym (ix,iy,1)*log(ti(ix2,iy1 )) +
-     .                         fy0 (ix,iy,1)*log(ti(ix2,iy  )) +
-     .                         fyp (ix,iy,1)*log(ti(ix2,iy+1)) +
-     .                         fymx(ix,iy,1)*log(ti(ix ,iy1 )) +
-     .                         fypx(ix,iy,1)*log(ti(ix ,iy+1)) )
-     .                      -( fym (ix,iy,0)*log(ti(ix ,iy1 )) +
-     .                         fy0 (ix,iy,0)*log(ti(ix ,iy  )) +
-     .                         fyp (ix,iy,0)*log(ti(ix ,iy+1)) +
-     .                         fymx(ix,iy,0)*log(ti(ix4,iy1 )) +
-     .                         fypx(ix,iy,0)*log(ti(ix6,iy+1)) ) ) *
+                 grdnv =(    ( fym (ix,iy,1)*logti(ix2,iy1 ) +
+     .                         fy0 (ix,iy,1)*logti(ix2,iy  ) +
+     .                         fyp (ix,iy,1)*logti(ix2,iy+1) +
+     .                         fymx(ix,iy,1)*logti(ix ,iy1 ) +
+     .                         fypx(ix,iy,1)*logti(ix ,iy+1) )
+     .                      -( fym (ix,iy,0)*logti(ix ,iy1 ) +
+     .                         fy0 (ix,iy,0)*logti(ix ,iy  ) +
+     .                         fyp (ix,iy,0)*logti(ix ,iy+1) +
+     .                         fymx(ix,iy,0)*logti(ix4,iy1 ) +
+     .                         fypx(ix,iy,0)*logti(ix6,iy+1) ) ) *
      .                                                   gxfn(ix,iy)
                feixy(ix,iy) = exp( 0.5*
-     .                       (log(ti(ix2,iy)) + log(ti(ix,iy))) )*
+     .                       (logti(ix2,iy) + logti(ix,iy)) )*
      .                           ( (fcdif*kyi+kyi_use(ix,iy))*0.5*
      .                                     (nit(ix2,iy)+nit(ix,iy))
      .                   + cfneut*cfneutsor_ei*0.25*(hcyn(ix ,iy)+hcyn(ix ,iy1)
      .                              +hcyn(ix2,iy)+hcyn(ix4,iy1)) ) *
      .                                 (  grdnv/cos(angfx(ix,iy))
-     .                         - (log(ti(ix2,iy)) - log(ti(ix,iy)))*
+     .                         - (logti(ix2,iy) - logti(ix,iy))*
      .                                        gxf(ix,iy) )*sx(ix,iy)
 c...  Flux limit with flalftxt even though hcys have parallel FL built in
                t0 = max(ti(ix,iy),temin*ev)

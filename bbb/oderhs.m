@@ -2785,16 +2785,16 @@ c...  Addition for nonorthogonal mesh
                ix5 = ixm1(ix,iy+1)
                ix6 = ixp1(ix,iy+1)
                if (methgx .eq. 6) then  # log interpolation
-               grdnv =( exp(fym (ix,iy,1)*log(ng(ix2,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,1)*log(ng(ix2,iy  ,igsp)) +
-     .                      fyp (ix,iy,1)*log(ng(ix2,iy+1,igsp)) +
-     .                      fymx(ix,iy,1)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fypx(ix,iy,1)*log(ng(ix, iy+1,igsp)))
-     .                - exp(fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
-     .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) *
+               grdnv =( exp(fym (ix,iy,1)*logng(ix2,iy1 ,igsp) +
+     .                      fy0 (ix,iy,1)*logng(ix2,iy  ,igsp) +
+     .                      fyp (ix,iy,1)*logng(ix2,iy+1,igsp) +
+     .                      fymx(ix,iy,1)*logng(ix ,iy1 ,igsp) +
+     .                      fypx(ix,iy,1)*logng(ix, iy+1,igsp))
+     .                - exp(fym (ix,iy,0)*logng(ix ,iy1 ,igsp) +
+     .                      fy0 (ix,iy,0)*logng(ix ,iy  ,igsp) +
+     .                      fyp (ix,iy,0)*logng(ix ,iy+1,igsp) +
+     .                      fymx(ix,iy,0)*logng(ix4,iy1 ,igsp) +
+     .                      fypx(ix,iy,0)*logng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
