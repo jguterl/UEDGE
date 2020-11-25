@@ -88,8 +88,6 @@ c           # fill dead guard cells with adjacent values
          endif
          call s2copy (nx+2, ny+2, ni(0,0,ifld), 1, nx+2,
      .            nis(0,0,ifld), 1, nx+2)
-         call s2copy (nx+2, ny+2, logni(0,0,ifld), 1, nx+2,
-     .            lognis(0,0,ifld), 1, nx+2)
   705 continue
       do 706 ifld = 1, nusp
          if (nyomitmx >= nysol(1)+nyout(1)) then
