@@ -324,8 +324,9 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 		 tg(ix,iy,igsp) = yl(idxtg(ix,iy,igsp))*ennorm/
      .                                                  (1.5*ntemp)
                  tg(ix,iy,igsp) = max(tg(ix,iy,igsp), temin*ev)
-                 logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
+
                endif
+               logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
  65         continue
             ntemp = nit(ix,iy) + cngtgx(1)*ng(ix,iy,1)
             if(isflxvar .eq. 0) ntemp = nnorm
