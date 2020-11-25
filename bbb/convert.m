@@ -324,9 +324,9 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 		 tg(ix,iy,igsp) = yl(idxtg(ix,iy,igsp))*ennorm/
      .                                                  (1.5*ntemp)
                  tg(ix,iy,igsp) = max(tg(ix,iy,igsp), temin*ev)
-
+                 logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
                endif
-               logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
+
  65         continue
             ntemp = nit(ix,iy) + cngtgx(1)*ng(ix,iy,1)
             if(isflxvar .eq. 0) ntemp = nnorm
@@ -517,11 +517,11 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                  fxmy(ix,iy,k)*logng(ixm1(ix,iy+1-k),iy+1-k,l) +
      .                  fxpy(ix,iy,k)*logng(ixp1(ix,iy+1-k),iy+1-k,l) )
       interppg(ix,iy,k,l) = exp (
-     .                  fxm (ix,iy,k)*log(pg(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fx0 (ix,iy,k)*log(pg(ix             ,iy+k  ,l)) +
-     .                  fxp (ix,iy,k)*log(pg(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fxmy(ix,iy,k)*log(pg(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                  fxpy(ix,iy,k)*log(pg(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                  fxm (ix,iy,k)*logpg(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fx0 (ix,iy,k)*logpg(ix             ,iy+k  ,l) +
+     .                  fxp (ix,iy,k)*logpg(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fxmy(ix,iy,k)*logpg(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                  fxpy(ix,iy,k)*logpg(ixp1(ix,iy+1-k),iy+1-k,l) )
 
       id = 1
       if(ixl .lt. 0 .or. yinc .ge. 6) then
@@ -557,7 +557,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
          do 12 iy = js, je
             do 11 ix = is, ie
                pri(ix,iy,ifld) = ni(ix,iy,ifld) * ti(ix,iy)
-               logpri(ix,iy,ifld)=logni(ix,iy,ifld) + logti(ix,iy)
+               logpri(ix,iy,ifld)=log(pri(ix,iy,ifld))
                if (zi(ifld).ne.0.) then
                   pr(ix,iy) = pr(ix,iy) + pri(ix,iy,ifld)
                   zeff(ix,iy)=zeff(ix,iy)+zi(ifld)**2*ni(ix,iy,ifld)
@@ -589,10 +589,15 @@ ccc         enddo
             zeff(ix,iy) = zeff(ix,iy) / ne(ix,iy)
             znot(ix,iy) = ne(ix,iy)*zeff(ix,iy)/ni(ix,iy,1) - 1
             do igsp = 1, ngsp
-               if(istgcon(igsp) > -1.e-20) tg(ix,iy,igsp) =
+               if(istgcon(igsp) > -1.e-20) then
+               tg(ix,iy,igsp) =
      .                       (1-istgcon(igsp))*rtg2ti(igsp)*ti(ix,iy) +
      .                          istgcon(igsp)*tgas(igsp)*ev
-	       pg(ix,iy,igsp) = ng(ix,iy,igsp)*tg(ix,iy,igsp)
+               logtg(ix,iy,igsp)=log(tg(ix,iy,igsp))
+               endif
+           pg(ix,iy,igsp) = ng(ix,iy,igsp)*tg(ix,iy,igsp)
+c           logpg(ix,iy,igsp) = logng(ix,iy,igsp)+logtg(ix,iy,igsp)
+           logpg(ix,iy,igsp) = log(pg(ix,iy,igsp))
            enddo
    15    continue
  16   continue

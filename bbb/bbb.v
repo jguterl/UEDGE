@@ -1517,7 +1517,7 @@ uug(0:nx+1,0:ny+1,1:ngsp)  _real  [m/s]    +threadprivate #ratio gas-flux/densit
                                           #if orthog mesh, poloidal gas velocity
 vyg(0:nx+1,0:ny+1,1:ngsp)  _real  [m/s]    +threadprivate #radial gas velocity
 tg(0:nx+1,0:ny+1,1:ngsp)   _real  [J]	   +threadprivate #gas temperature in primary cell
-logtg(0:nx+1,0:ny+1,1:ngsp)   _real  [J]	   +threadprivate #gas temperature in primary cell
+logtg(0:nx+1,0:ny+1,1:ngsp)   _real  [J]	   +threadprivate #log gas temperature in primary cell
 istgcon(ngspmx)       real /ngspmx*0/ #=0, set tg(,,i)=rtg2ti*ti; if >0, set
                                       #tg=(1-istgcon)*rtg2ti*ti+istgcon*tgas*ev
 tev(0:nx+1,0:ny+1)         _real  [J]	   +threadprivate #ion temperature at vertex of cell

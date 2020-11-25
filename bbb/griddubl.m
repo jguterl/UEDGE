@@ -162,7 +162,7 @@ c...  local variables
 c.... note: ix2 is already defined in Aux, but we can use it since it is
 c.... meant to be a work variable, i.e., its value can change
 
-
+      write(*,*) ">>>>>>>>>>> REFPLA"
 c.... This is for doubling the grid in both x and y
          do 704 iy = 1, nyold-1
             iy2 = 2*iy
@@ -744,6 +744,8 @@ c...  the cut at nxc
          do igsp = 1, ngsp
             tg(ix2,iy,igsp) = tg(ix2m,iy,igsp)
             tg(ix2p,iy,igsp) = tg(ix2p+1,iy,igsp)
+            logtg(ix2,iy,igsp) = log(tg(ix2m,iy,igsp))
+            logtg(ix2p,iy,igsp) = log(tg(ix2p+1,iy,igsp))
          enddo
  910  continue
 

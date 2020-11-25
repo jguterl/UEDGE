@@ -2,6 +2,535 @@ c!include "bbb.h"
 c!include "../com/com.h"
 c!include "../mppl.h"
 c!include "../sptodp.h"
+c-----------------------------------------------------------------------
+      subroutine fast_fd2tra (nx, ny, flox, floy, difx, dify, phi,logphi,
+     .                   trax, tray, pos, meth)
+
+*//documentation//
+*
+*
+*  1. purpose
+*
+*     FD2TRA computes the two-dimensional field of flow of some
+*     quantity that is transported by convection and conduction.
+*
+*
+*  2. specification
+*
+*     subroutine fd2tra (nx, ny, flox, floy, difx, dify, phi,
+*    .                   trax, tray, pos, meth)
+*
+*     integer nx, ny, pos, meth
+*     (0:*) 'real' flox, floy, difx, dify, phi, trax, tray
+*
+*
+*  3. description
+*
+*     This routine is part of the COCONUT package, ref. /1/.
+*     This is a modification of the original B2 routine by Bas Braams
+*
+*
+*  4. references
+*
+*
+*  5. arguments
+*
+*
+*  6. error indicators
+*
+*     If an error in the inputs is detected the routine will abort
+*     through a call to subroutine xerrab.
+*
+*
+*  7. auxiliary routines
+*
+*     none
+*
+*
+*=======================================================================
+*//declarations//
+
+      implicit none
+
+*  -- input arguments --
+      integer nx, ny, pos, meth
+      real flox(0:nx+1,0:ny+1), floy(0:nx+1,0:ny+1)
+      real difx(0:nx+1,0:ny+1), dify(0:nx+1,0:ny+1)
+      real phi(0:nx+1,0:ny+1),logphi(0:nx+1,0:ny+1)
+
+*  -- common blocks --
+      Use(Selec)   # i1,i4,i5,i8,j1,j4,j5,j8,ixp1
+      Use(Noggeo)  # fxm,fx0,fxp,fxmy,fxpy
+      Use(Share)   # isnonog,cutlo
+      Use(PandfTiming)
+      real tick,tock
+      external tick tock
+
+
+*  -- output arguments --
+      real trax(0:nx+1,0:ny+1), tray(0:nx+1,0:ny+1)
+
+*  -- local scalars --
+      integer ix, iy, ix1, ix2, posx, posy, methx, methy
+      real f, p1, p2, tpv, py0, py1
+
+*  -- procedures --
+      real upwind
+      upwind(f, p1, p2) = max(f, 0.0e0) * p1 + min(f, 0.0e0) * p2
+
+c..   note: dim(a,b) = max((a-b),0)
+*=======================================================================
+*//computation//
+*=======================================================================
+
+      if (TimingPandfOn.gt.0) Timefd2tra=tick()
+*  ---------------------------------------------------------------------
+*  -- auxiliaries --
+*  ---------------------------------------------------------------------
+      posx   = mod (pos, 10)
+      posy   = pos / 10
+      methx  = mod (meth, 10)
+      methy  = meth / 10
+
+*  ---------------------------------------------------------------------
+*  compute the parallel transport.
+*  ---------------------------------------------------------------------
+
+*  -- simulate a CASE statement --
+      goto (1, 10, 20, 30, 40, 50, 60, 70), abs(methx) + 1
+*  -- if code drops through this goto, improper value of methx
+        call xerrab('*** methx has improper value in fd2tra ***')
+
+*  --------------------------------------------------------------------
+*  -- /meth/ = 0 --
+*  Assume flo = 0 and use central differencing.
+    1 continue
+      do 3 iy = j4, j8
+         do 2 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = -difx(ix2,iy)*
+     .                          (phi(ix1,iy)-phi(ix,iy))
+    2    continue
+    3 continue
+      goto 100
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 1 --
+*  Assume dif = 0 and use upwind differencing.
+   10 continue
+      do 14 iy = j4, j8
+         do 12 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy),phi(ix1,iy))
+   12    continue
+   14 continue
+      goto 100
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 2 --
+*  Regular central differencing.
+   20 continue
+      do 23 iy = j4, j8
+         do 22 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = flox(ix2,iy) *
+     .                        (phi(ix1,iy)+phi(ix,iy))/2. -
+     .                       difx(ix2,iy)*(phi(ix1,iy)-phi(ix,iy))
+   22    continue
+   23 continue
+      goto 100
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 3 --
+*  Regular upwind differencing.
+   30 continue
+      do 33 iy = j4, j8
+         do 32 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy), phi(ix1,iy)) -
+     .                       difx(ix2,iy)*(phi(ix1,iy)-phi(ix,iy))
+   32    continue
+   33 continue
+      goto 100
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 4 --
+*  Simple hybrid scheme
+   40 continue
+      do 43 iy = j4, j8
+         do 42 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            tpv = dim(difx(ix2,iy), abs(flox(ix2,iy))/2.)
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy), phi(ix1,iy)) -
+     .                         tpv * (phi(ix1,iy)-phi(ix,iy))
+   42    continue
+   43 continue
+      goto 100
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 5 --
+*  Fifth power scheme.
+   50 continue
+      do 53 iy = j4, j8
+         do 52 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            tpv = difx(ix2,iy) * (1 - abs(flox(ix2,iy))/
+     .        max(10.*difx(ix2,iy),abs(flox(ix2,iy)),cutlo))**5
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy), phi(ix1,iy)) -
+     .                         tpv * (phi(ix1,iy)-phi(ix,iy))
+   52    continue
+   53 continue
+      goto 100
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 6 --
+*  Regular upwind differencing. Can be used for methg=66 in nonorthogonal diff.
+   60 continue
+      do 63 iy = j4, j8
+         do 62 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy), phi(ix1,iy)) -
+     .                       difx(ix2,iy)*(phi(ix1,iy)-phi(ix,iy))
+   62    continue
+   63 continue
+      goto 100
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 7 --
+*  Regular upwind differencing. Can be used for methg=77 in nonorthogonal diff.
+   70 continue
+      do 73 iy = j4, j8
+         do 72 ix = i1, i5
+            ix1 = ixp1(ix,iy)
+            ix2= ix*(1 - posx) + ix1*posx
+            trax(ix2,iy) = upwind(flox(ix2,iy),
+     .                                phi(ix,iy), phi(ix1,iy)) -
+     .                       difx(ix2,iy)*(phi(ix1,iy)-phi(ix,iy))
+   72    continue
+   73 continue
+      goto 100
+
+*=======================================================================
+  100 continue
+      if (isnonog .eq. 1) goto 200
+*=======================================================================
+
+*  ------------------------------------------------------------------
+*  Compute the radial transport for orthogonal grid (isnonog=0)
+*  ------------------------------------------------------------------
+
+*  -- simulate a CASE statement --
+      goto (101, 110, 120, 130, 140, 150), abs(methy) + 1
+*  -- if code drops through this goto, improper value of methy
+        call xerrab('*** methy has improper value in fd2tra ***')
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 0 --
+*  Assume flo = 0 and use central differencing.
+  101 continue
+      do 103 iy = j1, j5-posy
+         do 102 ix = i4, i8
+            tray(ix,iy+posy) = -dify(ix,iy+posy)*
+     .                          (phi(ix,iy+1)-phi(ix,iy))
+  102    continue
+  103 continue
+      return
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 1 --
+*  Assume dif = 0 and use upwind differencing.
+  110 continue
+      do 114 iy = j1, j5-posy
+         do 112 ix = i4, i8
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
+     .                                phi(ix,iy),phi(ix,iy+1))
+  112    continue
+  114 continue
+      return
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 2 --
+*  Regular central differencing.
+  120 continue
+      do 123 iy = j1, j5-posy
+         do 122 ix = i4, i8
+            tray(ix,iy+posy) = floy(ix,iy+posy) *
+     .                        (phi(ix,iy+1)+phi(ix,iy))/2. -
+     .                       dify(ix,iy+posy)*(phi(ix,iy+1)-phi(ix,iy))
+  122    continue
+  123 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 3 --
+*  Regular upwind differencing.
+  130 continue
+      do 133 iy = j1, j5-posy
+         do 132 ix = i4, i8
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
+     .                                phi(ix,iy), phi(ix,iy+1)) -
+     .                       dify(ix,iy+posy)*(phi(ix,iy+1)-phi(ix,iy))
+  132    continue
+  133 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 4 --
+*  Simple hybrid scheme.
+  140 continue
+      do 143 iy = j1, j5-posy
+         do 142 ix = i4, i8
+            tpv = dim(dify(ix,iy+posy), abs(floy(ix,iy+posy))/2.)
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
+     .                                phi(ix,iy), phi(ix,iy+1)) -
+     .                         tpv * (phi(ix,iy+1)-phi(ix,iy))
+  142    continue
+  143 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 5 --
+*  Fifth power scheme.
+  150 continue
+      do 153 iy = j1, j5-posy
+         do 152 ix = i4, i8
+            tpv = dify(ix,iy+posy) * (1 - abs(floy(ix,iy+posy))/
+     .        max(10.*dify(ix,iy+posy),abs(floy(ix,iy+posy)),cutlo))**5
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy),
+     .                                phi(ix,iy), phi(ix,iy+1)) -
+     .                         tpv * (phi(ix,iy+1)-phi(ix,iy))
+  152    continue
+  153 continue
+      return
+
+*====================================================================
+  200 continue
+*====================================================================
+*  ------------------------------------------------------------------
+*  Compute the radial transport for nonorthogonal grid; isnonog=1
+*  ------------------------------------------------------------------
+
+*  -- simulate a CASE statement --
+      goto (201, 210, 220, 230, 240, 250, 260, 270, 280), abs(methy) + 1
+*  -- if code drops through this goto, improper value of methy
+        call xerrab('** methy(isnonog=1) has improper value in fd2tra **')
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 0 --
+*  Assume flo = 0 and use central differencing.
+  201 continue
+      do 203 iy = j1, j5-posy
+         do 202 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tray(ix,iy+posy) = -dify(ix,iy+posy) * (py1-py0)
+  202    continue
+  203 continue
+      return
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 1 --
+*  Assume dif = 0 and use upwind differencing.
+  210 continue
+      do 214 iy = j1, j5-posy
+         do 212 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1)
+  212    continue
+  214 continue
+      return
+
+*  ---------------------------------------------------------------------
+*  -- /meth/ = 2 --
+*  Regular central differencing.
+  220 continue
+      do 223 iy = j1, j5-posy
+         do 222 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tray(ix,iy+posy) = floy(ix,iy+posy) * (py1+py0)/2. -
+     .                              dify(ix,iy+posy)*(py1-py0)
+  222    continue
+  223 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 3 --
+*  Regular upwind differencing.
+  230 continue
+      do 233 iy = j1, j5-posy
+         do 232 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                 dify(ix,iy+posy)*(py1-py0)
+  232    continue
+  233 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 4 --
+*  Simple hybrid scheme.
+  240 continue
+      do 243 iy = j1, j5-posy
+         do 242 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tpv = dim(dify(ix,iy+posy), abs(floy(ix,iy+posy))/2.)
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                              tpv * (py1-py0)
+  242    continue
+  243 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 5 --
+*  Fifth power scheme.
+  250 continue
+      do 253 iy = j1, j5-posy
+         do 252 ix = i4, i8
+            py0 = fxm (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fx0 (ix,iy,0)*phi(ix           ,iy  ) +
+     .            fxp (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  ) +
+     .            fxmy(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fxpy(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1)
+            py1 = fxm (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1) +
+     .            fx0 (ix,iy,1)*phi(ix           ,iy+1) +
+     .            fxp (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1) +
+     .            fxmy(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  ) +
+     .            fxpy(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  )
+            tpv = dify(ix,iy+posy) * (1 - abs(floy(ix,iy+posy))/
+     .        max(10.*dify(ix,iy+posy),abs(floy(ix,iy+posy)),cutlo))**5
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                              tpv * (py1-py0)
+  252    continue
+  253 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 6 --
+*  Regular upwind differencing with log(phi) interpolation
+  260 continue
+      do 263 iy = j1, j5-posy
+         do 262 ix = i4, i8
+            py0 = exp( fxm (ix,iy,0)*logphi(ixm1(ix,iy)  ,iy  ) +
+     .                 fx0 (ix,iy,0)*logphi(ix           ,iy  ) +
+     .                 fxp (ix,iy,0)*logphi(ixp1(ix,iy)  ,iy  ) +
+     .                 fxmy(ix,iy,0)*logphi(ixm1(ix,iy+1),iy+1) +
+     .                 fxpy(ix,iy,0)*logphi(ixp1(ix,iy+1),iy+1) )
+            py1 = exp( fxm (ix,iy,1)*logphi(ixm1(ix,iy+1),iy+1) +
+     .                 fx0 (ix,iy,1)*logphi(ix           ,iy+1) +
+     .                 fxp (ix,iy,1)*logphi(ixp1(ix,iy+1),iy+1) +
+     .                 fxmy(ix,iy,1)*logphi(ixm1(ix,iy)  ,iy  ) +
+     .                 fxpy(ix,iy,1)*logphi(ixp1(ix,iy)  ,iy  ) )
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                 dify(ix,iy+posy)*(py1-py0)
+  262    continue
+  263 continue
+      return
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 7 --
+*  Regular upwind differencing with inverse (1/phi) interpolation
+  270 continue
+      do 273 iy = j1, j5-posy
+         do 272 ix = i4, i8
+            py0 = 1/( fxm (ix,iy,0)/phi(ixm1(ix,iy)  ,iy  ) +
+     .                fx0 (ix,iy,0)/phi(ix           ,iy  ) +
+     .                fxp (ix,iy,0)/phi(ixp1(ix,iy)  ,iy  ) +
+     .                fxmy(ix,iy,0)/phi(ixm1(ix,iy+1),iy+1) +
+     .                fxpy(ix,iy,0)/phi(ixp1(ix,iy+1),iy+1) )
+            py1 = 1/( fxm (ix,iy,1)/phi(ixm1(ix,iy+1),iy+1) +
+     .                fx0 (ix,iy,1)/phi(ix           ,iy+1) +
+     .                fxp (ix,iy,1)/phi(ixp1(ix,iy+1),iy+1) +
+     .                fxmy(ix,iy,1)/phi(ixm1(ix,iy)  ,iy  ) +
+     .                fxpy(ix,iy,1)/phi(ixp1(ix,iy)  ,iy  ) )
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                 dify(ix,iy+posy)*(py1-py0)
+  272    continue
+  273 continue
+
+*  ------------------------------------------------------------------
+*  -- /meth/ = 8 --
+*  Regular upwind differencing, on an approximate staggered stencil
+*  (for velocities)
+  280 continue
+      do 283 iy = j1, j5-posy
+         do 282 ix = i4, i8
+            ix1=ixp1(ix,iy)
+            py0= (
+     .            fxmv (ix,iy,0)*phi(ixm1(ix,iy)  ,iy  )+
+     .            fx0v (ix,iy,0)*phi(ix           ,iy  )+
+     .            fxpv (ix,iy,0)*phi(ixp1(ix,iy)  ,iy  )+
+     .            fxmyv(ix,iy,0)*phi(ixm1(ix,iy+1),iy+1)+
+     .            fxpyv(ix,iy,0)*phi(ixp1(ix,iy+1),iy+1) )
+            py1= (
+     .            fxmv (ix,iy,1)*phi(ixm1(ix,iy+1),iy+1)+
+     .            fx0v (ix,iy,1)*phi(ix           ,iy+1)+
+     .            fxpv (ix,iy,1)*phi(ixp1(ix,iy+1),iy+1)+
+     .            fxmyv(ix,iy,1)*phi(ixm1(ix,iy)  ,iy  )+
+     .            fxpyv(ix,iy,1)*phi(ixp1(ix,iy)  ,iy  ) )
+            tray(ix,iy+posy) = upwind(floy(ix,iy+posy), py0, py1) -
+     .                                 dify(ix,iy+posy)*(py1-py0)
+  282    continue
+  283 continue
+      if (TimingPandfOn.gt.0) TotTimefd2tra=TotTimefd2tra+tock(Timefd2tra)
+      return
+      end
+c**  End of subroutine fd2tra ******************
 
 c-----------------------------------------------------------------------
       subroutine fd2tra (nx, ny, flox, floy, difx, dify, phi,
@@ -1121,22 +1650,22 @@ c.... First the flux in the x-direction
             endif
             vygtan(ix,iy,igsp) = 0.  # vygtan is grad(T) rad vel on x-face
             if (isnonog .eq. 1 .and. iy .le. ny) then
-                  grdnv =(    ( fym (ix,iy,1)*log(tg(ix2,iy1,igsp)) +
-     .                          fy0 (ix,iy,1)*log(tg(ix2,iy ,igsp)) +
-     .                          fyp (ix,iy,1)*log(tg(ix2,iy2,igsp)) +
-     .                          fymx(ix,iy,1)*log(tg(ix ,iy1,igsp)) +
-     .                          fypx(ix,iy,1)*log(tg(ix, iy2,igsp)) )
-     .                       -( fym (ix,iy,0)*log(tg(ix ,iy1,igsp)) +
-     .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
-     .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) +
-     .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
+                  grdnv =(    ( fym (ix,iy,1)*logtg(ix2,iy1,igsp) +
+     .                          fy0 (ix,iy,1)*logtg(ix2,iy ,igsp) +
+     .                          fyp (ix,iy,1)*logtg(ix2,iy2,igsp) +
+     .                          fymx(ix,iy,1)*logtg(ix ,iy1,igsp) +
+     .                          fypx(ix,iy,1)*logtg(ix, iy2,igsp) )
+     .                       -( fym (ix,iy,0)*logtg(ix ,iy1,igsp) +
+     .                          fy0 (ix,iy,0)*logtg(ix ,iy ,igsp) +
+     .                          fyp (ix,iy,0)*logtg(ix ,iy2,igsp) +
+     .                          fymx(ix,iy,0)*logtg(ix4,iy1,igsp) +
+     .                          fypx(ix,iy,0)*logtg(ix6,iy2,igsp) ) )*
      .                                                      gxfn(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
-     .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
+     .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                      ( cngfx(igsp) / (mg(igsp)*0.5*(nu1+nu2)) ) *
      .                                     ( grdnv/cos(angfx(ix,iy)) -
-     .                       (log(tg(ix2,iy,igsp)) - log(tg(ix,iy,igsp)))
+     .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
              if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
                vygtan(ix,iy,igsp) = 0.
@@ -1216,16 +1745,16 @@ c.... Now the flux in the y-direction
      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
               elseif (isintlog .eq. 1) then
-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
-     .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
-     .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
-     .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) )
+                ty0=exp(fxm (ix,iy,0)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fx0 (ix,iy,0)*logtg(ix           ,iy  ,igsp) +
+     .                  fxp (ix,iy,0)*logtg(ixp1(ix,iy)  ,iy  ,igsp) +
+     .                  fxmy(ix,iy,0)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fxpy(ix,iy,0)*logtg(ixp1(ix,iy+1),iy+1,igsp) )
+                ty1=exp(fxm (ix,iy,1)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fx0 (ix,iy,1)*logtg(ix           ,iy+1,igsp) +
+     .                  fxp (ix,iy,1)*logtg(ixp1(ix,iy+1),iy+1,igsp) +
+     .                  fxmy(ix,iy,1)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fxpy(ix,iy,1)*logtg(ixp1(ix,iy)  ,iy  ,igsp) )
               endif
               qtgf = cngfy(igsp) * fgtdy(iy)* sy(ix,iy) *
      .                           ave(gy(ix,iy)/nu1, gy(ix,iy+1)/nu2) *
@@ -1291,16 +1820,16 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                 (ix==ixrb(jx).and.ixmxbcl==1) ) isxyfl = .false.
                enddo
                if (methgx .eq. 6) then  # log interpolation
-               grdnv =(   ( fym (ix,iy,1)*log(ng(ix2,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,1)*log(ng(ix2,iy  ,igsp)) +
-     .                      fyp (ix,iy,1)*log(ng(ix2,iy+1,igsp)) +
-     .                      fymx(ix,iy,1)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fypx(ix,iy,1)*log(ng(ix, iy+1,igsp)) )
-     .                   -( fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
-     .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )*
+               grdnv =(   ( fym (ix,iy,1)*logng(ix2,iy1 ,igsp) +
+     .                      fy0 (ix,iy,1)*logng(ix2,iy  ,igsp) +
+     .                      fyp (ix,iy,1)*logng(ix2,iy+1,igsp) +
+     .                      fymx(ix,iy,1)*logng(ix ,iy1 ,igsp) +
+     .                      fypx(ix,iy,1)*logng(ix, iy+1,igsp) )
+     .                   -( fym (ix,iy,0)*logng(ix ,iy1 ,igsp) +
+     .                      fy0 (ix,iy,0)*logng(ix ,iy  ,igsp) +
+     .                      fyp (ix,iy,0)*logng(ix ,iy+1,igsp) +
+     .                      fymx(ix,iy,0)*logng(ix4,iy1 ,igsp) +
+     .                      fypx(ix,iy,0)*logng(ix6,iy+1,igsp) ) )*
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
@@ -1333,9 +1862,9 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                           0.5*(nuiz(ix,iy,igsp)+nuiz(ix2,iy,igsp))
               if (methgx .eq. 6) then
                fngxy(ix,iy,igsp) =  exp( 0.5*
-     .                     (log(ng(ix2,iy,igsp))+log(ng(ix,iy,igsp))) )*
+     .                     (logng(ix2,iy,igsp)+logng(ix,iy,igsp)) )*
      .                               difgx2*(grdnv/cos(angfx(ix,iy)) -
-     .                     (log(ng(ix2,iy,igsp)) - log(ng(ix,iy,igsp)))*
+     .                     (logng(ix2,iy,igsp) - logng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               else
                fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
@@ -1616,22 +2145,22 @@ c ..Timing;initialize
             vygtan(ix,iy,igsp) = 0.  # vygtan is grad(T) rad vel on x-face
                                      # vygtan) only from thermal force
             if (isnonog .eq. 1 .and. iy .le. ny) then
-                  grdnv =(    ( fym (ix,iy,1)*log(tg(ix2,iy1,igsp)) +
-     .                          fy0 (ix,iy,1)*log(tg(ix2,iy ,igsp)) +
-     .                          fyp (ix,iy,1)*log(tg(ix2,iy2,igsp)) +
-     .                          fymx(ix,iy,1)*log(tg(ix ,iy1,igsp)) +
-     .                          fypx(ix,iy,1)*log(tg(ix, iy2,igsp)) )
-     .                       -( fym (ix,iy,0)*log(tg(ix ,iy1,igsp)) +
-     .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
-     .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) +
-     .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
+                  grdnv =(    ( fym (ix,iy,1)*logtg(ix2,iy1,igsp) +
+     .                          fy0 (ix,iy,1)*logtg(ix2,iy ,igsp) +
+     .                          fyp (ix,iy,1)*logtg(ix2,iy2,igsp) +
+     .                          fymx(ix,iy,1)*logtg(ix ,iy1,igsp) +
+     .                          fypx(ix,iy,1)*logtg(ix, iy2,igsp) )
+     .                       -( fym (ix,iy,0)*logtg(ix ,iy1,igsp) +
+     .                          fy0 (ix,iy,0)*logtg(ix ,iy ,igsp) +
+     .                          fyp (ix,iy,0)*logtg(ix ,iy2,igsp) +
+     .                          fymx(ix,iy,0)*logtg(ix4,iy1,igsp) +
+     .                          fypx(ix,iy,0)*logtg(ix6,iy2,igsp) ) )*
      .                                                      gxfn(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
-     .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
+     .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                      ( alftng / (mg(igsp)*0.5*(nu1+nu2)) ) *
      .                                     ( grdnv/cos(angfx(ix,iy)) -
-     .                       (log(tg(ix2,iy,igsp)) - log(tg(ix,iy,igsp)))
+     .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
              if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
                vygtan(ix,iy,igsp) = 0.
@@ -1735,16 +2264,16 @@ c ..Timing; initiate time for y-direction calc
      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
               elseif (isintlog .eq. 1) then
-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
-     .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
-     .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
-     .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) )
+                ty0=exp(fxm (ix,iy,0)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fx0 (ix,iy,0)*logtg(ix           ,iy  ,igsp) +
+     .                  fxp (ix,iy,0)*logtg(ixp1(ix,iy)  ,iy  ,igsp) +
+     .                  fxmy(ix,iy,0)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fxpy(ix,iy,0)*logtg(ixp1(ix,iy+1),iy+1,igsp) )
+                ty1=exp(fxm (ix,iy,1)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fx0 (ix,iy,1)*logtg(ix           ,iy+1,igsp) +
+     .                  fxp (ix,iy,1)*logtg(ixp1(ix,iy+1),iy+1,igsp) +
+     .                  fxmy(ix,iy,1)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fxpy(ix,iy,1)*logtg(ixp1(ix,iy)  ,iy  ,igsp) )
               endif
               qtgf = alftng * fgtdy(iy)* sy(ix,iy) *
      .                           ave(gy(ix,iy)/nu1, gy(ix,iy+1)/nu2) *
@@ -1794,8 +2323,8 @@ c ..Timing; add increment if timing is on
 c ..Timing
       if(istimingon==1) tsngfd2 = gettime(sec4)
 
-      call fd2tra (nx,ny,floxg,floyg,conxg,conyg,
-     .             pg(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
+      call fast_fd2tra (nx,ny,floxg,floyg,conxg,conyg,
+     .             pg(0,0,igsp),logpg(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
 c ..Timing
       if(istimingon==1) ttngfd2=ttngfd2+(gettime(sec4)-tsngfd2)
 
@@ -1826,16 +2355,16 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .               (ix==ixrb(jx).and.ixmxbcl==1) ) isxyfl = .false.
                enddo
                if (methgx .eq. 6) then  # log interpolation
-               grdnv =(   ( fym (ix,iy,1)*log(pg(ix2,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,1)*log(pg(ix2,iy  ,igsp)) +
-     .                      fyp (ix,iy,1)*log(pg(ix2,iy+1,igsp)) +
-     .                      fymx(ix,iy,1)*log(pg(ix ,iy1 ,igsp)) +
-     .                      fypx(ix,iy,1)*log(pg(ix, iy+1,igsp)) )
-     .                   -( fym (ix,iy,0)*log(pg(ix ,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,0)*log(pg(ix ,iy  ,igsp)) +
-     .                      fyp (ix,iy,0)*log(pg(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(pg(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(pg(ix6,iy+1,igsp)) ) )*
+               grdnv =(   ( fym (ix,iy,1)*logpg(ix2,iy1 ,igsp) +
+     .                      fy0 (ix,iy,1)*logpg(ix2,iy  ,igsp) +
+     .                      fyp (ix,iy,1)*logpg(ix2,iy+1,igsp) +
+     .                      fymx(ix,iy,1)*logpg(ix ,iy1 ,igsp) +
+     .                      fypx(ix,iy,1)*logpg(ix, iy+1,igsp) )
+     .                   -( fym (ix,iy,0)*logpg(ix ,iy1 ,igsp) +
+     .                      fy0 (ix,iy,0)*logpg(ix ,iy  ,igsp) +
+     .                      fyp (ix,iy,0)*logpg(ix ,iy+1,igsp) +
+     .                      fymx(ix,iy,0)*logpg(ix4,iy1 ,igsp) +
+     .                      fypx(ix,iy,0)*logpg(ix6,iy+1,igsp) ) )*
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/pg(ix2,iy1 ,igsp) +
@@ -1868,9 +2397,9 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                           0.5*(nuiz(ix,iy,igsp)+nuiz(ix2,iy,igsp))
               if (methgx .eq. 6) then
                fngxy(ix,iy,igsp) =  exp( 0.5*
-     .                     (log(pg(ix2,iy,igsp))+log(pg(ix,iy,igsp))) )*
+     .                     (logpg(ix2,iy,igsp)+logpg(ix,iy,igsp)) )*
      .                               difgx2*(grdnv/cos(angfx(ix,iy)) -
-     .                     (log(pg(ix2,iy,igsp)) - log(pg(ix,iy,igsp)))*
+     .                     (logpg(ix2,iy,igsp) - logpg(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               else
                fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
@@ -2182,23 +2711,23 @@ c.... First the flux in the x-direction
             endif
             vygtan(ix,iy,igsp) = 0.  # vygtan is grad(T) rad vel on x-face
             if (isnonog .eq. 1 .and. iy .le. ny) then
-                  grdnv =(    ( fym (ix,iy,1)*log(tg(ix2,iy1,igsp)) +
-     .                          fy0 (ix,iy,1)*log(tg(ix2,iy ,igsp)) +
-     .                          fyp (ix,iy,1)*log(tg(ix2,iy2,igsp)) +
-     .                          fymx(ix,iy,1)*log(tg(ix ,iy1,igsp)) +
-     .                          fypx(ix,iy,1)*log(tg(ix, iy2,igsp)) )
-     .                       -( fym (ix,iy,0)*log(tg(ix ,iy1,igsp)) +
-     .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
-     .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) +
-     .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
+                  grdnv =(    ( fym (ix,iy,1)*logtg(ix2,iy1,igsp) +
+     .                          fy0 (ix,iy,1)*logtg(ix2,iy ,igsp) +
+     .                          fyp (ix,iy,1)*logtg(ix2,iy2,igsp) +
+     .                          fymx(ix,iy,1)*logtg(ix ,iy1,igsp) +
+     .                          fypx(ix,iy,1)*logtg(ix, iy2,igsp) )
+     .                       -( fym (ix,iy,0)*logtg(ix ,iy1,igsp) +
+     .                          fy0 (ix,iy,0)*logtg(ix ,iy ,igsp) +
+     .                          fyp (ix,iy,0)*logtg(ix ,iy2,igsp) +
+     .                          fymx(ix,iy,0)*logtg(ix4,iy1,igsp) +
+     .                          fypx(ix,iy,0)*logtg(ix6,iy2,igsp) ) )*
      .                                                      gxfn(ix,iy)
                vygtan(ix,iy,igsp) = exp( 0.5*
-     .                     (log(tg(ix2,iy,igsp))+log(tg(ix,iy,igsp))) )*
+     .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                                  ( cngfx(igsp) / (mg(igsp)*0.5*
      .                         (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))) ) *
      .                             ( grdnv/cos(angfx(ix,iy)) -
-     .                       (log(tg(ix2,iy,igsp)) - log(tg(ix,iy,igsp)))
+     .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
                if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
                   vygtan(ix,iy,igsp) = 0.
@@ -2272,16 +2801,16 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
               elseif (isintlog .eq. 1) then
-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
-     .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
-     .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
-     .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp )) )
+                ty0=exp(fxm (ix,iy,0)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fx0 (ix,iy,0)*logtg(ix           ,iy  ,igsp) +
+     .                  fxp (ix,iy,0)*logtg(ixp1(ix,iy)  ,iy  ,igsp) +
+     .                  fxmy(ix,iy,0)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fxpy(ix,iy,0)*logtg(ixp1(ix,iy+1),iy+1,igsp) )
+                ty1=exp(fxm (ix,iy,1)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fx0 (ix,iy,1)*logtg(ix           ,iy+1,igsp) +
+     .                  fxp (ix,iy,1)*logtg(ixp1(ix,iy+1),iy+1,igsp) +
+     .                  fxmy(ix,iy,1)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fxpy(ix,iy,1)*logtg(ixp1(ix,iy)  ,iy  ,igsp ) )
               endif
               qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) *
      .                      ave( gy(ix,iy)/nuix(ix,iy,igsp) ,
@@ -2593,16 +3122,16 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
      .                     fymx(ix,iy,0)*tg(ix4,iy1,igsp) -
      .                     fypx(ix,iy,0)*tg(ix6,iy2,igsp) )*gxfn(ix,iy)
                elseif (isintlog .eq. 1) then
-                  grdnv =( exp( fym (ix,iy,1)*log(tg(ix2,iy1,igsp)) +
-     .                          fy0 (ix,iy,1)*log(tg(ix2,iy ,igsp)) +
-     .                          fyp (ix,iy,1)*log(tg(ix2,iy2,igsp)) +
-     .                          fymx(ix,iy,1)*log(tg(ix ,iy1,igsp)) +
-     .                          fypx(ix,iy,1)*log(tg(ix, iy2,igsp)) )
-     .                    -exp( fym (ix,iy,0)*log(tg(ix ,iy1,igsp)) +
-     .                          fy0 (ix,iy,0)*log(tg(ix ,iy ,igsp)) +
-     .                          fyp (ix,iy,0)*log(tg(ix ,iy2,igsp)) +
-     .                          fymx(ix,iy,0)*log(tg(ix4,iy1,igsp)) +
-     .                          fypx(ix,iy,0)*log(tg(ix6,iy2,igsp)) ) )*
+                  grdnv =( exp( fym (ix,iy,1)*logtg(ix2,iy1,igsp) +
+     .                          fy0 (ix,iy,1)*logtg(ix2,iy ,igsp) +
+     .                          fyp (ix,iy,1)*logtg(ix2,iy2,igsp) +
+     .                          fymx(ix,iy,1)*logtg(ix ,iy1,igsp) +
+     .                          fypx(ix,iy,1)*logtg(ix, iy2,igsp) )
+     .                    -exp( fym (ix,iy,0)*logtg(ix ,iy1,igsp) +
+     .                          fy0 (ix,iy,0)*logtg(ix ,iy ,igsp) +
+     .                          fyp (ix,iy,0)*logtg(ix ,iy2,igsp) +
+     .                          fymx(ix,iy,0)*logtg(ix4,iy1,igsp) +
+     .                          fypx(ix,iy,0)*logtg(ix6,iy2,igsp) ) )*
      .                                                      gxfn(ix,iy)
                endif
                vygtan(ix,iy,igsp) = ( cngfx(igsp) / (mg(igsp)*0.5*
@@ -2687,16 +3216,16 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix,iy+1,igsp)) )
      .                fxmy(ix,iy,1)*tg(ixm1(ix,iy)  ,iy  ,igsp) +
      .                fxpy(ix,iy,1)*tg(ixp1(ix,iy)  ,iy  ,igsp)
               elseif (isintlog .eq. 1) then
-                ty0=exp(fxm (ix,iy,0)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fx0 (ix,iy,0)*log(tg(ix           ,iy  ,igsp)) +
-     .                  fxp (ix,iy,0)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxmy(ix,iy,0)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fxpy(ix,iy,0)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) )
-                ty1=exp(fxm (ix,iy,1)*log(tg(ixm1(ix,iy+1),iy+1,igsp)) +
-     .                  fx0 (ix,iy,1)*log(tg(ix           ,iy+1,igsp)) +
-     .                  fxp (ix,iy,1)*log(tg(ixp1(ix,iy+1),iy+1,igsp)) +
-     .                  fxmy(ix,iy,1)*log(tg(ixm1(ix,iy)  ,iy  ,igsp)) +
-     .                  fxpy(ix,iy,1)*log(tg(ixp1(ix,iy)  ,iy  ,igsp)) )
+                ty0=exp(fxm (ix,iy,0)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fx0 (ix,iy,0)*logtg(ix           ,iy  ,igsp) +
+     .                  fxp (ix,iy,0)*logtg(ixp1(ix,iy)  ,iy  ,igsp) +
+     .                  fxmy(ix,iy,0)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fxpy(ix,iy,0)*logtg(ixp1(ix,iy+1),iy+1,igsp) )
+                ty1=exp(fxm (ix,iy,1)*logtg(ixm1(ix,iy+1),iy+1,igsp) +
+     .                  fx0 (ix,iy,1)*logtg(ix           ,iy+1,igsp) +
+     .                  fxp (ix,iy,1)*logtg(ixp1(ix,iy+1),iy+1,igsp) +
+     .                  fxmy(ix,iy,1)*logtg(ixm1(ix,iy)  ,iy  ,igsp) +
+     .                  fxpy(ix,iy,1)*logtg(ixp1(ix,iy)  ,iy  ,igsp) )
               endif
               qtgf = cngfy(igsp) * fgtdy(iy) * sy(ix,iy) *
      .                      ave( gy(ix,iy)/nuix(ix,iy,igsp) ,
@@ -2735,8 +3264,8 @@ c...  now add the convective velocity for the charge-exchange species
 *  compute the neutral particle flow
 *  --------------------------------------------------------------------
 
-      call fd2tra (nx,ny,floxg,floyg,conxg,conyg,
-     .             ng(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
+      call fast_fd2tra (nx,ny,floxg,floyg,conxg,conyg,
+     .             ng(0,0,igsp),logng(0,0,igsp),fngx(0,0,igsp),fngy(0,0,igsp),0,methg)
 
 c ... Calculate the neutral flow velocity from v = flux/ng
       do 8903 iy = j1, j5
@@ -2785,16 +3314,16 @@ c...  Addition for nonorthogonal mesh
                ix5 = ixm1(ix,iy+1)
                ix6 = ixp1(ix,iy+1)
                if (methgx .eq. 6) then  # log interpolation
-               grdnv =( exp(fym (ix,iy,1)*log(ng(ix2,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,1)*log(ng(ix2,iy  ,igsp)) +
-     .                      fyp (ix,iy,1)*log(ng(ix2,iy+1,igsp)) +
-     .                      fymx(ix,iy,1)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fypx(ix,iy,1)*log(ng(ix, iy+1,igsp)))
-     .                - exp(fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
-     .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp))) ) *
+               grdnv =( exp(fym (ix,iy,1)*logng(ix2,iy1 ,igsp) +
+     .                      fy0 (ix,iy,1)*logng(ix2,iy  ,igsp) +
+     .                      fyp (ix,iy,1)*logng(ix2,iy+1,igsp) +
+     .                      fymx(ix,iy,1)*logng(ix ,iy1 ,igsp) +
+     .                      fypx(ix,iy,1)*logng(ix, iy+1,igsp))
+     .                - exp(fym (ix,iy,0)*logng(ix ,iy1 ,igsp) +
+     .                      fy0 (ix,iy,0)*logng(ix ,iy  ,igsp) +
+     .                      fyp (ix,iy,0)*logng(ix ,iy+1,igsp) +
+     .                      fymx(ix,iy,0)*logng(ix4,iy1 ,igsp) +
+     .                      fypx(ix,iy,0)*logng(ix6,iy+1,igsp)) ) *
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
@@ -3093,9 +3622,9 @@ c... flux-limit occurs in building hcxg - do not flux-limit 2nd time
 *  -- Combine conduction/convection to compute thermal energy flow --
       do igsp = 1,ngsp
         if(istgon(igsp) == 1) then
-          call fd2tra (nx,ny,floxge(0,0,igsp),floyge(0,0,igsp),
+          call fast_fd2tra (nx,ny,floxge(0,0,igsp),floyge(0,0,igsp),
      .                 conxge(0,0,igsp),conyge(0,0,igsp),tg(0,0,igsp),
-     .                 fegx(0,0,igsp),fegy(0,0,igsp),0,methi)
+     .                 logtg(0,0,igsp),fegx(0,0,igsp),fegy(0,0,igsp),0,methi)
         endif
       enddo
 

@@ -460,7 +460,7 @@ cc      call gallot("Rccoef",0)
       call gchange("Outpwall",0)
       call gchange("Timary",0)
       call gchange("Compla",0)
-      call gchange("CapFloor",0)			   
+      call gchange("CapFloor",0)
       call gchange("Interprettrans",0)
       call gchange("Comflo",0)
       call gchange("Cfric",0)
@@ -1325,6 +1325,7 @@ c...  This is redundant with above if ngsp=1, but done to set nginit
      .                            + exp(-(xcs(nx+1)-xcs(ix))/xgscal) )
      .                      + ngbackg(igsp)
 	       tg(ix,iy,igsp) = tscal*ttbeg
+	       logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
                nginit(ix,iy) = ng(ix,iy,1)
  143           continue
  144        continue
@@ -1504,7 +1505,13 @@ c.... If the grid does not change, but restart from saved variables
           do ifld = 1, nisp
              do iy = 0, ny+1
                 do ix = 0, nx+1
+                if (ni(ix,iy,ifld) <= 0.) then
+                      call remark('*** Error: ni <= 0 ***')
+                      write (*,*) 'Error at ix=', ix,'  iy=',iy
+                      call xerrab("")
+                   endif
                    ni(ix,iy,ifld) = nis(ix,iy,ifld)
+                   logni(ix,iy,ifld) = log(ni(ix,iy,ifld))
                    up(ix,iy,ifld) = ups(ix,iy,ifld)
                    if (nis(ix,iy,ifld) <= 0.) then
                       call remark('*** Error: nis <= 0 ***')
@@ -1518,16 +1525,37 @@ c.... If the grid does not change, but restart from saved variables
              do ix = 0, nx+1
                 do igsp = 1, ngsp
                    ng(ix,iy,igsp) = ngs(ix,iy,igsp)
+
                    if (ngs(ix,iy,igsp) <= 0.) then
                       call remark('*** Error: ngs <= 0 ***')
                       write (*,*) 'Error at ix=', ix,'  iy=',iy
                       call xerrab("")
                    endif
+                   logng(ix,iy,igsp)=log(abs(ng(ix,iy,igsp)))
                    lng(ix,iy,igsp) = log(ng(ix,iy,igsp))
+                   if (tgs(ix,iy,igsp) <= 0.) then
+                      call remark('*** Error: tgs <= 0 ***')
+                      write (*,*) 'Error at ix=', ix,'  iy=',iy
+                      call xerrab("")
+                   endif
                    tg(ix,iy,igsp) = tgs(ix,iy,igsp)
+                   logtg(ix,iy,igsp)=log(abs(tg(ix,iy,igsp)))
                 enddo
+                if (tes(ix,iy) <= 0.) then
+                      call remark('*** Error: te <= 0 ***')
+                      write (*,*) 'Error at ix=', ix,'  iy=',iy
+                      call xerrab("")
+                   endif
                 te(ix,iy)      = tes(ix,iy)
+                logte(ix,iy)=log(abs(te(ix,iy)))
+                 if (tis(ix,iy) <= 0.) then
+                      call remark('*** Error: ti <= 0 ***')
+                      write (*,*) 'Error at ix=', ix,'  iy=',iy
+                      call xerrab("")
+                   endif
+
                 ti(ix,iy)      = tis(ix,iy)
+                logti(ix,iy)=log(abs(ti(ix,iy)))
                 phi(ix,iy) = phis(ix,iy)
                 if (isimpon .eq. 2 .or. isimpon .eq. 7) then
                   if (afracs(1,1)+afracs(nx,ny).gt.1.e-20) then
@@ -1668,6 +1696,13 @@ c...  Reset gas density to minimum if too small or negative
          do igsp = 1, ngsp
            do  iy = 0, ny+1
              do ix = 0, nx+1
+             if (tg(ix,iy,igsp) <= 0) then
+             call remark('****** ERROR: tg <= 0 ******')
+              write(*,*) 'begins at ix,iy,igsp = ',ix,iy,igsp
+              call xerrab("")
+              endif
+               logtg(ix,iy,igsp)=log(tg(ix,iy,igsp))
+
                if(isngonxy(ix,iy,igsp)==1) then
                   ng(ix,iy,igsp) = max(ng(ix,iy,igsp),
      .                                 1.0e-01*ngbackg(igsp))
@@ -6512,6 +6547,7 @@ c ...    If a parallel run, send and gather data to PE0 first
                   call comp_vertex_vals  # gen plasma/neut values at rm,zm(,,4)
                endif
             endif
+
          write(6,*) "Interpolants created; mype =", mype
          endif
 
@@ -6735,7 +6771,7 @@ c ... Resize arrays and copy data to appropriate arrays
       nym = ny
       call gallot("RZ_grid_info",0)
       call gchange("Compla",0)
-      call gchange("CapFloor",0)		 
+      call gchange("CapFloor",0)
       call gchange("Imprad",0)
       call gchange("Comgeo",0)
       nxold = nx
