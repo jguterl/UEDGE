@@ -511,11 +511,11 @@ c                               # interpolate 2-D array with a 5-point stencil
      .                 fxmy(ix,iy,k)*log(pri(ixm1(ix,iy+1-k),iy+1-k,l)) +
      .                 fxpy(ix,iy,k)*log(pri(ixp1(ix,iy+1-k),iy+1-k,l)) )
       interpng(ix,iy,k,l) = exp (
-     .                  fxm (ix,iy,k)*log(ng(ixm1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fx0 (ix,iy,k)*log(ng(ix             ,iy+k  ,l)) +
-     .                  fxp (ix,iy,k)*log(ng(ixp1(ix,iy+k)  ,iy+k  ,l)) +
-     .                  fxmy(ix,iy,k)*log(ng(ixm1(ix,iy+1-k),iy+1-k,l)) +
-     .                  fxpy(ix,iy,k)*log(ng(ixp1(ix,iy+1-k),iy+1-k,l)) )
+     .                  fxm (ix,iy,k)*logng(ixm1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fx0 (ix,iy,k)*logng(ix             ,iy+k  ,l) +
+     .                  fxp (ix,iy,k)*logng(ixp1(ix,iy+k)  ,iy+k  ,l) +
+     .                  fxmy(ix,iy,k)*logng(ixm1(ix,iy+1-k),iy+1-k,l) +
+     .                  fxpy(ix,iy,k)*logng(ixp1(ix,iy+1-k),iy+1-k,l) )
       interppg(ix,iy,k,l) = exp (
      .                  fxm (ix,iy,k)*log(pg(ixm1(ix,iy+k)  ,iy+k  ,l)) +
      .                  fx0 (ix,iy,k)*log(pg(ix             ,iy+k  ,l)) +

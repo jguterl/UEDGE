@@ -1291,16 +1291,16 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                 (ix==ixrb(jx).and.ixmxbcl==1) ) isxyfl = .false.
                enddo
                if (methgx .eq. 6) then  # log interpolation
-               grdnv =(   ( fym (ix,iy,1)*log(ng(ix2,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,1)*log(ng(ix2,iy  ,igsp)) +
-     .                      fyp (ix,iy,1)*log(ng(ix2,iy+1,igsp)) +
-     .                      fymx(ix,iy,1)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fypx(ix,iy,1)*log(ng(ix, iy+1,igsp)) )
-     .                   -( fym (ix,iy,0)*log(ng(ix ,iy1 ,igsp)) +
-     .                      fy0 (ix,iy,0)*log(ng(ix ,iy  ,igsp)) +
-     .                      fyp (ix,iy,0)*log(ng(ix ,iy+1,igsp)) +
-     .                      fymx(ix,iy,0)*log(ng(ix4,iy1 ,igsp)) +
-     .                      fypx(ix,iy,0)*log(ng(ix6,iy+1,igsp)) ) )*
+               grdnv =(   ( fym (ix,iy,1)*logng(ix2,iy1 ,igsp) +
+     .                      fy0 (ix,iy,1)*logng(ix2,iy  ,igsp) +
+     .                      fyp (ix,iy,1)*logng(ix2,iy+1,igsp) +
+     .                      fymx(ix,iy,1)*logng(ix ,iy1 ,igsp) +
+     .                      fypx(ix,iy,1)*logng(ix, iy+1,igsp) )
+     .                   -( fym (ix,iy,0)*logng(ix ,iy1 ,igsp) +
+     .                      fy0 (ix,iy,0)*logng(ix ,iy  ,igsp) +
+     .                      fyp (ix,iy,0)*logng(ix ,iy+1,igsp) +
+     .                      fymx(ix,iy,0)*logng(ix4,iy1 ,igsp) +
+     .                      fypx(ix,iy,0)*logng(ix6,iy+1,igsp) ) )*
      .                                                  gxfn(ix,iy)
                elseif (methgx .eq. 7) then  # inverse interpolation
                grdnv =( 1/(fym (ix,iy,1)/ng(ix2,iy1 ,igsp) +
@@ -1333,9 +1333,9 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                           0.5*(nuiz(ix,iy,igsp)+nuiz(ix2,iy,igsp))
               if (methgx .eq. 6) then
                fngxy(ix,iy,igsp) =  exp( 0.5*
-     .                     (log(ng(ix2,iy,igsp))+log(ng(ix,iy,igsp))) )*
+     .                     (logng(ix2,iy,igsp)+logng(ix,iy,igsp)) )*
      .                               difgx2*(grdnv/cos(angfx(ix,iy)) -
-     .                     (log(ng(ix2,iy,igsp)) - log(ng(ix,iy,igsp)))*
+     .                     (logng(ix2,iy,igsp) - logng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               else
                fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -

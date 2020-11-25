@@ -460,7 +460,7 @@ cc      call gallot("Rccoef",0)
       call gchange("Outpwall",0)
       call gchange("Timary",0)
       call gchange("Compla",0)
-      call gchange("CapFloor",0)			   
+      call gchange("CapFloor",0)
       call gchange("Interprettrans",0)
       call gchange("Comflo",0)
       call gchange("Cfric",0)
@@ -6512,6 +6512,7 @@ c ...    If a parallel run, send and gather data to PE0 first
                   call comp_vertex_vals  # gen plasma/neut values at rm,zm(,,4)
                endif
             endif
+
          write(6,*) "Interpolants created; mype =", mype
          endif
 
@@ -6735,7 +6736,7 @@ c ... Resize arrays and copy data to appropriate arrays
       nym = ny
       call gallot("RZ_grid_info",0)
       call gchange("Compla",0)
-      call gchange("CapFloor",0)		 
+      call gchange("CapFloor",0)
       call gchange("Imprad",0)
       call gchange("Comgeo",0)
       nxold = nx
