@@ -471,6 +471,87 @@ end subroutine OMPSplitIndex
 
 
 !!!! >>>>>> Routine for pandf1 parallelization <<<<<<<<<<<<<
+
+subroutine OMPSplitIndexxyPandf(ieqmin,ieqmax,Nthreads,yic,yinc,iv,neq,ypad)
+    Use Indexes,only: igyl
+    use OMPPandf1Settings,only: OMPPandf1Padyinc
+    implicit none
+    integer,intent(in) ::ieqmin,ieqmax,Nthreads,neq
+    integer,intent(out)::ic(Nthreads),inc(Nthreads),ivthread(1:neq)
+    integer :: ihigh(Nthreads),ilow(Nthreads),ixthread(ieqmin:ieqmax)
+    integer:: Nsize(Nthreads),Msize,R,i,imax,iv,imin,iend,istart
+    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
+    ! If less than two chunks then just split in two
+    if (Nchunks.gt.ny+2) then
+    dychunk(i)=1
+    else
+    do i=1,Nchunks
+        dychunk=ceiling(real((ny+2)/Nchunks))
+    enddo
+    endif
+    if (Nchunks <2 ) then
+
+    endif
+    ! special unsplitted First and last poloidal rows at iy=0,iy=-1
+    xidx(1)=-1
+    yidx(1)=1
+    for iy=0+ypad+1,ny+1-ypad-1
+
+        ypad
+
+        do i=1,Nchunks
+            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nthreads))
+        enddo
+
+        do i=1,Nthreads
+            if (Nsize(i)<1) call xerrab('Nsize<1')
+        enddo
+        if (Nthreads.ge.4) then
+        istart=2
+        iend=Nthreads-1
+        else
+        istart=1
+        iend=Nthreads
+        endif
+imin=istart
+        do while (ieqmax-ieqmin+1.gt.sum(Nsize))
+                Nsize(imin)=Nsize(imin)+1
+                if (imin.ge.iend) then
+                    imin=istart
+                else
+                    imin=imin+1
+                endif
+        enddo
+
+        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+           write(*,*) Nsize,sum(Nsize)
+           call xerrab('OMPPandf1:Nsize .ne. ieqmax-ieqmin+1')
+       endif
+        ilow(1)=ieqmin
+        ihigh(1)=ieqmin+Nsize(1)-1
+        do i=2,Nthreads
+            ilow(i)=ihigh(i-1)+1
+            ihigh(i)=ilow(i)+Nsize(i)-1
+
+        enddo
+        if (ihigh(Nthreads).ne.ieqmax) call xerrab('ihigh(Nthreads)!=ieqmax')
+
+        ic=ilow+int((ihigh-ilow)/2)
+        do i=1,Nthreads
+           !write(*,*) max(ihigh(i)-ic(i),ic(i)-ilow(i)),OMPPandf1Padyinc
+           inc(i)=max(ihigh(i)-ic(i),ic(i)-ilow(i))+OMPPandf1Padyinc
+        enddo
+        do iv=1,neq
+            do i=1,Nthreads
+                if (igyl(iv,2).le.ihigh(i) .and. igyl(iv,2).ge.ilow(i)) then
+                    ivthread(iv)=i
+                endif
+            enddo
+        enddo
+
+end subroutine OMPSplitIndexyPandf
+
+
 subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nthreads,ic,inc,ivthread,neq)
     Use Indexes,only: igyl
     use OMPPandf1Settings,only: OMPPandf1Padyinc
@@ -595,9 +676,7 @@ endif
      OMPPandf1FirstRun=0
     endif
 
-    if (EffNthreadsPandf1.ne.min(Nthreads,min(NthreadsPandf1,ny))) then
-    EffNthreadsPandf1=min(Nthreads,min(NthreadsPandf1,ny))
-    call OMPSplitIndexyPandf(0,ny+1,EffNthreadsPandf1,OMPic,OMPyinc,OMPivthread,neq)
+    call OMPSplitIndexyPandf(0,ny+1,NchunksPandf1,OMPic,OMPyinc,OMPivthread,neq)
     endif
     if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
      write(*,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',EffNthreadsPandf1,'for ny=',ny
@@ -608,7 +687,7 @@ endif
     call OmpCopyPointerup
     !$omp parallel do default(shared) if(OMPPandf1RunPara.gt.0) &
     !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy)
-    loopthread: do ichunk=1,EffNthreadsPandf1 !ichunk from 1 to Nthread, tid from 0 to Nthread-1
+    loopthread: do ichunk=1,NchunksPandf1 !ichunk from 1 to Nthread, tid from 0 to Nthread-1
         tid=omp_get_thread_num()
         if (OMPPandf1Debug.gt.0) write(*,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ichunk:',ichunk
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal wichunk private/shared attributes
