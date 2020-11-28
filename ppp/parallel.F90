@@ -49,7 +49,8 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
 
     Use ParallelSettings,only:OMPParallelJac,MPIParallelJac
-    Use OMPJacSettings,only:iidebugprint,ivdebugprint,DebugJac,ForceSerialCheck,CheckJac,DumpFullJac, DumpJac
+    Use ParallelSettings,only:CheckJac
+    Use ParallelDebug,only: iidebugprint,ivdebugprint,DebugJac,ForceSerialCheck,DumpFullJac,DumpJac
     Use Cdv,only:exmain_aborted
     implicit none
     ! ... Input arguments:
@@ -173,8 +174,8 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
 end subroutine jac_calc_parallel
 !-------------------------------------------------------------------------------------------------
-    subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ith,nnz,nnzmxperthread,nthreads&
-,TimeJacRow)
+subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ichunk,nnz,&
+                            nnzmxperchunk,TimeJacRow)
 
     ! ... Calculate Jacobian matrix (derivatives with respect to each
     ! ... Calculate Jacobian matrix (derivatives with respect to each
@@ -195,18 +196,19 @@ end subroutine jac_calc_parallel
     use Model_choice,only:iondenseqn
     use Bcond,only:isextrnpf,isextrtpf,isextrngc,isextrnw,isextrtw
     use Time_dep_nwt,only:nufak,dtreal,ylodt,dtuse,dtphi
-    use OMPJacSettings,only:iidebugprint,ivdebugprint,OMPTimingJacRow
+    use OMPJacSettings,only:OMPTimingJacRow
+    use ParallelDebug, only: iidebugprint,ivdebugprint
     !use Jacobian_csc,only:yldot_pert
     use Jacaux,only:ExtendedJacPhi
     use omp_lib
 
     implicit none
-    integer,intent(in):: ith,nnzmxperthread,nthreads,ivmin,ivmax,neq
+    integer,intent(in):: ichunk,nnzmxperchunk,ivmin,ivmax,neq
     integer,intent(inout)::nnz
     real,intent(in):: t           ! physical time
     real,intent(inout) ::yl(*)       ! dependent variables
-    integer,intent(inout)::iJacCol(nnzmxperthread),iJacRow(neq)
-    real,intent(inout):: rJacElem(nnzmxperthread)
+    integer,intent(inout)::iJacCol(nnzmxperchunk),iJacRow(neq)
+    real,intent(inout):: rJacElem(nnzmxperchunk)
     real,intent(in) ::yldot00(neq+2) ! right-hand sides evaluated at yl
     integer,intent(in):: ml, mu   ! lower and upper bandwidths
     real,intent(out)::TimeJacRow(neq)
@@ -323,12 +325,9 @@ end subroutine jac_calc_parallel
             endif debug
 
             storage: if (abs(jacelem*sfscal(iv)) .gt. jaccliplim) then
-                if (nnz .gt. nnzmxperthread) then
-                   write(*,*) 'nnz=',nnz,'nnzmxperthread=',nnzmxperthread
-                   write(*,*) jacelem,sfscal(iv)
-                   write(*,'(a,i3,a,i7,i7,i7, E20.12,E20.12,E20.12,E20.12,E20.12,E20.12)') '#', tid,&
-                    ' : ',iv,nnz,ii,jacelem,wk(ii),yldot00(ii),sfscal(iv),jaccliplim,nufak
-                    write(*,*) 'ith',ith,'*** jac_calc -- More storage needed for Jacobian. Increase lenpfac or omplenpfac.'
+                if (nnz .gt. nnzmxperchunk) then
+                   write(*,*) 'nnz=',nnz,'nnzmxperchunk=',nnzmxperchunk
+                    write(*,*) 'chunk',ichunk,'*** jac_calc -- More storage needed for Jacobian. Increase omplenpfac.'
                     call xerrab("")
                 endif
                 !              if (rdoff.ne.0.e0) jacelem=jacelem*(1.0e0+ranf()*rdoff)

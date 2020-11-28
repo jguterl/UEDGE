@@ -1780,8 +1780,6 @@ subroutine jac_write(filename,neq, jac, jaccol, jacrow)
 
 subroutine EvalDumpJac(FileName,neq,yl,yldot00)
 
-    Use ParallelSettings,only:OMPParallelJac,MPIParallelJac
-    Use OMPJacSettings,only:iidebugprint,ivdebugprint,DebugJac,ForceSerialCheck,CheckJac,DumpFullJac, DumpJac
     Use Cdv,only:exmain_aborted
     implicit none
     ! ... Input arguments:
