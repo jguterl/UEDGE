@@ -14,7 +14,6 @@ OMPneq  integer # number of equation (=neq)
 OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
-Nchunks          integer /-1/ # Number of chunks to be used to calculate the Jacobian. If Nchunks.lt.0, Nchunks=Nthreads elif Nchunks=0, Nchunks=neq
 OMPCopyDebug integer /0/ #Print debug info for omp constructs
 
 ***** HybridSettings:
@@ -65,6 +64,7 @@ OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if O
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
 OMPJacStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
 OMPTimingJacRow    integer /0/ # Profile execution time of calculatation of each row of the jacobian
+OMPJacNchunks     integer /0/# Number of chunks to be used to calculate the Jacobian. If Nchunks.lt.0, Nchunks=Nthreads elif Nchunks=0, Nchunks=neq 
 DebugJac          integer /0/
 CheckJac          integer /0/      # [0/1]: Turn on on-the-fly comparison of parallel vs serial evaluation of Jacobian.
                                   # If differences between para and serial Jacobians, dump both Jacs in serialjac.dat and paralleljac.dat with routine jac_write in current working folder. See UEDGEToolBox docs for analysis tools.
@@ -73,6 +73,7 @@ DumpFullJac  integer /0/      # [0/1]: Turn on dumping of full serial jacobian f
 ForceSerialCheck  integer /0/      # [0/1]: Force two sequential serial evaluations of the Jacobian to verify that Jacobian evaluation is reproducible (fail when e.g. variables are not properly initialized in pandf).
 OMPLoopNchunk     integer /1/
 ***** OMPJacobian:
+Nchunks          integer /1/ 
 OMPivmin(Nchunks)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPivmax(Nchunks)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
 OMPLoadWeight(1:Nchunks)  _real  # weight for load distribution of jacobian calculation among threads

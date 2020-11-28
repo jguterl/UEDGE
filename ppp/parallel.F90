@@ -324,7 +324,10 @@ end subroutine jac_calc_parallel
 
             storage: if (abs(jacelem*sfscal(iv)) .gt. jaccliplim) then
                 if (nnz .gt. nnzmxperthread) then
-                    write(*,*) 'nnz=',nnz,'nnzmxperthread=',nnzmxperthread
+                   write(*,*) 'nnz=',nnz,'nnzmxperthread=',nnzmxperthread
+                   write(*,*) jacelem,sfscal(iv)
+                   write(*,'(a,i3,a,i7,i7,i7, E20.12,E20.12,E20.12,E20.12,E20.12,E20.12)') '#', tid,&
+                    ' : ',iv,nnz,ii,jacelem,wk(ii),yldot00(ii),sfscal(iv),jaccliplim,nufak
                     write(*,*) 'ith',ith,'*** jac_calc -- More storage needed for Jacobian. Increase lenpfac or omplenpfac.'
                     call xerrab("")
                 endif
