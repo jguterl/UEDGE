@@ -38,14 +38,13 @@ subroutine InitOMP()
         if (OMPJacVerbose.gt.0) write(*,'(a,a,i3)') OMPJacStamp,' Number of threads for omp calculations:',Nthreads
     endif
     !$omp END parallel
-    if (Nchunks.eq.0) then
+    if (OMPJacNchucks.eq.0) then
     Nchunks=neq
-    elseif (Nchunks.lt.0) then
-    Nchunks=Nthreads
-    endif
-
-
-
+    elseif (OMPJacNchucks.lt.0) then
+       Nchunks=Nthreads
+    else
+       Nchunks=OMPJacNchucks
+     endif
 
 
     if (Nthreads.gt.1) then
@@ -61,7 +60,8 @@ subroutine InitOMP()
             nnzmxperchunk=ceiling(real(nnzmx)/real(Nchunks))*omplenpfac !nnzmx=neq*lenfac
         endif
     endif
-    write(*,*) OMPJacStamp,' Nthreads:', Nthreads, 'Nchunks:',Nchunks, 'nnzmxperchunk:',nnzmxperchunk
+
+    write(*,*) OMPJacStamp,' Nthreads:', Nthreads, 'Nchunks:',Nchunks, 'nnzmxperchunk:',nnzmxperchunk,'neq:',neq
     ompneq=neq
     call gchange('OMPJacobian',0)
     if (OMPParallelPandf1.gt.0) then
@@ -84,7 +84,7 @@ subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
 
     use OMPJacobian,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPTimeJacRow
     use OMPJacSettings,only:OMPJacDebug,OMPJacVerbose,OMPJacStamp,OMPTimingJacRow
-    use OMPSettings,only:Nchunks
+    use OMPSettings,only:NchunksJac
     integer,intent(in):: neq
     integer,intent(in):: nnzmx          ! maximum number of nonzeros in Jacobian
     real,intent(out)   :: rcsc(nnzmx)     ! nonzero Jacobian elements
