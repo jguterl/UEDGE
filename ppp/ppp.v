@@ -14,6 +14,7 @@ OMPneq  integer # number of equation (=neq)
 OMPCopyArray integer /1/ # For Debug purpose: turn on/off(0/1) copy of threadprivate arrays before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 OMPCopyScalar integer /1/ # For Debug purpose: turn on/off copy(0/1) of threadprivate scalar before jacobian calculation (WARNING:could cause numerical inacurarry if turned on)
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
+Nchunks          integer /-1/ # Number of chunks to be used to calculate the Jacobian. If Nchunks.lt.0, Nchunks=Nthreads elif Nchunks=0, Nchunks=neq
 OMPCopyDebug integer /0/ #Print debug info for omp constructs
 
 ***** HybridSettings:
@@ -29,7 +30,7 @@ ComSize integer /1/ # Size of the common world
 MPIDebug integer /0/ #Print debug info for omp constructs
 MPIVerbose integer /1/ #Print info for omp jacobian calculation
 MPIWriteJacobian     integer /0/ # Write jacobian in an ascii text file
-MPIlenpfac       integer /1/ # Factor to increase nnzmxperthread
+MPIlenpfac       integer /1/ # Factor to increase nnzmxperchunk
 nnzmxperproc   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
 MPIneq  integer # number of equation (=neq)
 Nprocs          integer /64/ # Number of threads to be used to calculate the Jacobian
@@ -56,8 +57,8 @@ OMPJacVerbose integer /1/ #Print info for omp jacobian calculation
 iidebugprint      integer /-1/ # index ii of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. iv is determined by ivdebugprint
 ivdebugprint      integer /-1/ # index iv of jacobian dyldot(ii)/yl(iv) at which threadprivate variables are printed after calculation of the jacobian element. ii is determined by iidebugprint
 WriteJacobian     integer /0/ # Write jacobian in an ascii text file
-OMPlenpfac       integer /1/ # Factor to increase nnzmxperthread
-nnzmxperthread   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
+OMPlenpfac       integer /1/ # Factor to increase nnzmxperchunk
+nnzmxperchunk   integer # Maximum number of jacobian elements which can be stored per thread. Can be increased with omplenpfac
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
@@ -70,18 +71,19 @@ CheckJac          integer /0/      # [0/1]: Turn on on-the-fly comparison of par
 DumpJac           integer /0/      # [0/1]: Turn on dumping of data for the diverging element of serial and parallel jacobian (only available when CheckJac is on). See UEDGEToolBox docs for analysis tools.
 DumpFullJac  integer /0/      # [0/1]: Turn on dumping of full serial jacobian for analysis of bandwidth (dumping in file ). See UEDGEToolBox docs docs for analysis tools.
 ForceSerialCheck  integer /0/      # [0/1]: Force two sequential serial evaluations of the Jacobian to verify that Jacobian evaluation is reproducible (fail when e.g. variables are not properly initialized in pandf).
-
+OMPLoopNchunk     integer /1/
 ***** OMPJacobian:
-OMPivmin(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-OMPivmax(Nthreads)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
-OMPLoadWeight(1:Nthreads)  _real  # weight for load distribution of jacobian calculation among threads
-OMPTimeLocalJac(1:Nthreads)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
-iJacRow(OMPneq,Nthreads) _integer  #
+OMPivmin(Nchunks)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPivmax(Nchunks)   _integer # jacobian rows with ivmin(ithread)<=iv<=ivmax(ithread) are calculated on thread ithread
+OMPLoadWeight(1:Nchunks)  _real  # weight for load distribution of jacobian calculation among threads
+OMPTimeLocalJac(1:Nchunks)  _real  # runtime for jac calculation on each threads. Used to optimize load distribution of jacobian calculation among threads when AutoBalance=1
+iJacRow(OMPneq) _integer  #
 OMPTimeJacRow(OMPneq) _real  #
-iJacCol(nnzmxperthread,Nthreads) _integer #
-rJacElem(nnzmxperthread,Nthreads) _real #
-nnz(Nthreads) _integer
-nnzcum(Nthreads) _integer
+iJacCol(nnzmxperchunk,Nchunks) _integer #
+rJacElem(nnzmxperchunk,Nchunks) _real #
+nnz(Nchunks) _integer
+nnzcum(Nchunks) _integer
+
 
 **** OMPPandf1Settings:
 OMPPandf1Stamp character*20 /"*OMPPandf1* "/ # Stamp for hybrid output (not an user input)
@@ -96,6 +98,7 @@ OMPTimeParallelPandf1 real /0.0/
 OMPTimeSerialPandf1 real /0.0/
 OMPPandf1RunPara integer /1/
 OMPPandf1FirstRun integer /1/
+
 
 **** OMPPandf1:
 OMPic(1:Nthreads) _integer
