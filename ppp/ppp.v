@@ -32,7 +32,7 @@ OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (ove
 OMPAutoBalance integer /1/ # Automatic load balancing for OMP thread tasks (if OMPLoadWeight=)
 OMPBalanceStrength real /1.0/ # Strenght s of the load balance (Loadweight=Loadweight*(t_thread/<t_thread>)**s)
 OMPTimingJacRow    integer /0/ # Profile execution time of calculatation of each row of the jacobian
-OMPLoopNchunk     integer /1/
+OMPLoopJacNchunk     integer /1/
 OMPJacStamp       character*20 /"*OMPJac* "/ # Stamp for hybrid output (not an user input)
 
 ***** OMPJac:
@@ -62,13 +62,17 @@ OMPTimeParallelPandf1 real /0.0/
 OMPTimeSerialPandf1 real /0.0/
 OMPPandf1RunPara integer /1/
 OMPPandf1FirstRun integer /1/
+OMPLoopPandf1Nchunk     integer /1/
+OMPPandf1Nchunks         integer /0/
+
 
 **** OMPPandf1:
-OMPic(1:Nthreads) _integer
-OMPyinc(1:Nthreads) _integer
+Pandf1Nchunks           integer /1/
+OMPic(1:Pandf1Nchunks) _integer
+OMPyinc(1:Pandf1Nchunks) _integer
 OMPivthread(1:neq) _integer
-OMPTimeLocalPandf1(1:Nthreads) _real #
-OMPTimeCollectPandf1(1:Nthreads) _real #
+OMPTimeLocalPandf1(1:Pandf1Nchunks) _real #
+OMPTimeCollectPandf1(1:Pandf1Nchunks) _real #
 
 ***** HybridSettings:
 HybridOMPMPI    integer /0/        # Flag for HybridOMPMPI. Automatically turn on with OMPParallelJac and PMIParallelJac
