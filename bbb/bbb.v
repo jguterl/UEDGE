@@ -1937,8 +1937,8 @@ w0(0:nx+1,0:ny+1)       _real +threadprivate
 w1(0:nx+1,0:ny+1)       _real +threadprivate
 w2(0:nx+1,0:ny+1)       _real +threadprivate
 w3(0:nx+1,0:ny+1)       _real +threadprivate
-wvh(0:nx+1,0:ny+1,1:2)  _real	 +threadprivate #species dependent viscous heating
-
+wvh(0:nx+1,0:ny+1,1:2)  _real	 +threadprivate #species dependent viscous heating                  							       
+cvh                     real /1.0/ #scale factor for viscous heating for main ions
 ***** Locflux:
 #Local arrays for the calculation of the fluxes and other quantities.
 flox(0:nx+1,0:ny+1)     _real +threadprivate

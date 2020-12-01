@@ -332,7 +332,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
             if(isflxvar .eq. 0) ntemp = nnorm
 	    if(istionxy(ix,iy) .eq. 1) then
                ti(ix,iy)=yl(idxti(ix,iy))*ennorm/(1.5*ntemp)
-               #ti(ix,iy) = max(ti(ix,iy), temin*ev)
+               ti(ix,iy) = max(ti(ix,iy), temin*ev)
                logti(ix,iy)=log(abs(ti(ix,iy)))
                pwricapfac(ix,iy)=
      .	     (1-atibg+atibg*exp(-btibg*tibg*ev/ti(ix,iy)))

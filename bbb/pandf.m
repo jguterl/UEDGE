@@ -2465,7 +2465,7 @@ ccc In detail, coef1 = qe**4*sqrt(me)*lnlam / ((2*pi)**1.5*eps0**2)
             coef1 = feqp*4.8e-15*loglambda(ix,iy)*sqrt(ev)*ev*mp
             eqp(ix,iy) = coef1 * w3(ix,iy) * ne(ix,iy) / (a*sqrt(a))
 c...       reduce eqp when (te-ti)/(te+ti) << 1
-            eqp(ix,iy) = eqp(ix,iy) * (a-ti(ix,iy))**2 / ( cutlo +
+            eqp(ix,iy) =eqp(ix,iy) * (a-ti(ix,iy))**2 / ( cutlo +
      .                (a-ti(ix,iy))**2 + (alfeqp*(a+ti(ix,iy)))**2 )
    73    continue
    74 continue
@@ -4298,7 +4298,7 @@ c******************************************************************
           else
           capfac=1
           endif
-            resei(ix,iy) = resei(ix,iy) + wvh(ix,iy,ifld)*vol(ix,iy)*capfac
+            resei(ix,iy) = resei(ix,iy) + cvh*wvh(ix,iy,ifld)*vol(ix,iy)*capfac
   155       continue   # loop over up species ifld
   156    continue
  157  continue
