@@ -290,7 +290,7 @@ c... Added the following for OMPPandf1rhs call (added by .J.Guterl)
 	    if(isteonxy(ix,iy) .eq. 1) then
                te(ix,iy)=yl(idxte(ix,iy))*ennorm/(1.5*ntemp)
                logte(ix,iy)=log(abs(te(ix,iy)))
-               #te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
+               te(ix,iy) = max(te(ix,iy), temin*ev)  #NEW Feb4,2018
                pwrecapfac(ix,iy)=
      .	     (1-atebg+atebg*exp(-btebg*tebg*ev/te(ix,iy)))
             if (te(ix,iy) < temin*ev) then
