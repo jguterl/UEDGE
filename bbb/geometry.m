@@ -863,6 +863,11 @@ c ... Jump to here for domain decomposition
             gxfn(ix,0) = gxfn(ix,1)
          enddo
       endif
+      do ix=0,nx+1
+      do iy=0,ny+1
+      cosangfx(ix,iy)=cos(angfx(ix,iy))
+      enddo
+      enddo
 
 *----------------------------------------------------------------------
 *  -- Define density cell data --
@@ -1387,7 +1392,7 @@ c...  Also reset gyf, so we need the gy calc. after call to nonorthg
             gyf(ixpt2(jx)+ij,iysptrx2(jx)) = 2*gy(ixpt2(jx)+ij,iysptrx2(jx)) *
      .                                gy(ixpt2(jx)+ij,iysptrx2(jx)+1) / (
      .               gy(ixpt2(jx)+ij,iysptrx2(jx)) + gy(ixpt2(jx)+ij,iysptrx2(jx)+1) )
-            enddo # end loop on jx 
+            enddo # end loop on jx
           enddo # end loop on ij
         enddo # end loop on ik
 
@@ -2126,8 +2131,8 @@ c...  matter except possibly gyf(0,0) for half-space problem & iflcore=1
          gyf(0,iy) = gyf(1,iy)
          gyf(nx+1,iy) = gyf(nx,iy)
       enddo
-							     
-c...  Approx. gyf in midplane guard cells for geometry=dnbot, only for 
+
+c...  Approx. gyf in midplane guard cells for geometry=dnbot, only for
 c...  corner boundary condition
       if ((isudsym==1.or.(geometry.eq.'dnXtarget')) .and. nxc.gt.0) then
          do iy = 0, ny

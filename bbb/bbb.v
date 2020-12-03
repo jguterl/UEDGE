@@ -944,10 +944,9 @@ ixs1        integer +threadprivate
 ixf6        integer +threadprivate
 iys1        integer +threadprivate
 iyf6        integer +threadprivate
-xlinc       integer         /2/
-xrinc       integer         /1/
+xlinc       integer         /2/ +threadprivate
+xrinc       integer         /1/ +threadprivate
 yinc        integer         /2/ +threadprivate
-xinc        integer         /2/ +threadprivate
 isjaccorall integer         /1/ #if=1 uses all ix cells for iy=0 Jac
 ixm1(0:nx+1,0:ny+1)       _integer
 ixp1(0:nx+1,0:ny+1)       _integer
@@ -3669,7 +3668,9 @@ atau(0:nx+1,0:ny+1)	_real	/1./	[sec] +restart
                                # lifetime of impurity
 tau1(0:nx+1,0:ny+1)	_real	# time to escape to inboard divertor plate
 tau2(0:nx+1,0:ny+1)	_real	# time to escape to outboard divertor plate
-
+mcrates_kionz(ne:real,te:real,Ei:real,z:integer,nz:integer,zn:integer) real function #
+mcrates_krecz(ne:real,te:real,Ei:real,z:integer,nz:integer,zn:integer) real function #
+mcrates_kcxrz(ne:real,te:real,Ei:real,z:integer,nz:integer,zn:integer) real function #
 ***** Impurity_source_flux:
 # Arrays for impurity-source fluxes calculated from api variables
 fnzysi(0:nx+1,nzspt)	_real	# profiles along inner wall
@@ -3930,3 +3931,6 @@ btibg   		          real     /10./
 
 **** FixNum:
 FixUpwindfniy integer /1/
+
+**** Debug:
+VerboseDebug integer /0/

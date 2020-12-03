@@ -11,37 +11,52 @@ subroutine InitParallel
     implicit none
 
 
-    if ((OMPParallelJac==1 .or. OMPParallelPandf1.gt.0) .and. MPIParallelJac==0) then
-    if (ParallelWARNING.gt.0) then
-    write(*,*) "<<< WARNING >>> : You are using openmp routines to evaluate the Jacobian or/and pandf1."
-    write(*,*) "<<< WARNING >>> : Read first the documentation about how to use these options."
-    write(*,*) "<<< WARNING >>> : If this is your first run with this configuration, you should verify whether&
-    the parallel evaluation of pandf1 and jacobian are correct by setting ppp.CheckJac=1 and ppp.OMPCheckPandf1=1.&
-     If not error is thrown, turn these settings off (=0)."
-    write(*,*) "<<< WARNING >>> : You can turn off this warning by setting ppp.ParallelWarning=0."
+    if (OMPParallelJac==1 .and. MPIParallelJac==0) then
+        if (ParallelWARNING.gt.0) then
+            write(*,*) "<<< WARNING >>> : You are using openmp routines to evaluate the Jacobian or/and pandf1."
+            write(*,*) "<<< WARNING >>> : Read first the documentation about how to use these options."
+            write(*,*) "<<< WARNING >>> : If this is your first run with this configuration, you should verify whether&
+            the parallel evaluation of pandf1 and jacobian are correct by setting ppp.CheckJac=1 and ppp.OMPCheckPandf1=1.&
+             If not error is thrown, turn these settings off (=0)."
+            write(*,*) "<<< WARNING >>> : You can turn off this warning by setting ppp.ParallelWarning=0."
 
-    endif
-        call InitOMP
-        if (OMPParallelJac.gt.0) ParallelJac=1
-        if (OMPParallelPandf1.gt.0) ParallelPandf1=1
-        if (OMPParallelJac==0 .and. OMPParallelPandf1.gt.0) then
-        call xerrab('Cannot run omp parallel evaluation of pandf1 without running jacobian omp evaluation.')
         endif
+
+        if (OMPParallelJac.gt.0) then
+            call InitOMPJac
+            ParallelJac=1
+        else
+            ParallelJac=0
+        endif
+
     elseif (OMPParallelJac==0 .and. MPIParallelJac==1) then
-        write(*,'(a)') 'Parallelization of Jacobian evaluation with MPI not available yet'
+
+        call xerrab('Parallelization of Jacobian evaluation with MPI not available for users')
         call InitMPI
         ParallelJac=1
     elseif (OMPParallelJac==1 .and. MPIParallelJac==1) then
-        write(*,'(a)') 'Parallelization of Jacobian evaluation with MPI not available yet'
+        call xerrab('Parallelization of Jacobian evaluation with MPI not available for users')
         HybridOMPMPI=1
         call InitMPI() ! MPI first to setup nnzmxperproc used by InitOMP
-        call InitOMP()
+        call InitOMPJac()
         ParallelJac=1
     else
         write(*,'(a)') '*OMPJac* Jacobian calculation: OMP not enabled'
-        write(*,'(a)') '*MPIJac* Jacobian calculation: MPI not enabled'
+        !write(*,'(a)') '*MPIJac* Jacobian calculation: MPI not enabled'
         ParallelJac=0
+
     endif
+
+    if (OMPParallelPandf1.gt.0) then
+        if (OMPParallelJac==0) then
+            call xerrab('Cannot run omp parallel evaluation of pandf1 without running jacobian omp evaluation.')
+        endif
+        call InitOMPPandf1()
+        ParallelPandf1=1
+    else
+        ParallelPandf1=0
+    endif
+
 
 end subroutine InitParallel
 !-------------------------------------------------------------------------------------------------

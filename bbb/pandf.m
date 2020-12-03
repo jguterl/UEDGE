@@ -900,7 +900,7 @@ c ...         Compute v2 for v2x_gradx_P eng terms; cf2dd+cf2bf=1 or 0
      .                     fypx(ix,iy,0)*logni(ix6,iy2,ifld) ) ) *
      .                                                      gxfn(ix,iy)
             vytan(ix,iy,ifld)=(fcdif*difni(ifld) + dif_use(ix,iy,ifld)) *
-     .                                      (grdnv/cos(angfx(ix,iy)) -
+     .                                      (grdnv/cosangfx(ix,iy) -
      .                       (logni(ix2,iy,ifld) - logni(ix,iy,ifld))
      .                                                 * gxf(ix,iy) )
             if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
@@ -3489,8 +3489,8 @@ cccMER For full double-null configuration, iysptrx is last closed flux surface.
      .                           ( ni(ix,iy,ifld) + ni(ix1,iy,ifld) ) *
      .                           ( rbfbt2(ix,iy) + rbfbt2(ix1,iy) ) *
      .                            temp1
-c             else
-c                 floxibgt(ix,iy,ifld)=0.0
+             else
+                 floxibgt(ix,iy,ifld)=0.0
              endif
              floxi(ix,iy) = floxi(ix,iy) + cfbgt*floxibgt(ix,iy,ifld)
   131      continue
@@ -3685,7 +3685,7 @@ c...  First do the Te equation
      .                         (logte(ix2,iy) + logte(ix,iy)) )*
      .                               (fcdif*kye+kye_use(ix,iy))*0.5*
      .                                       (ne(ix2,iy)+ne(ix,iy))*
-     .                                     (grdnv/cos(angfx(ix,iy)) -
+     .                                     (grdnv/cosangfx(ix,iy) -
      .                         (logte(ix2,iy) - logte(ix,iy))*
      .                                         gxf(ix,iy))*sx(ix,iy)
 
@@ -3715,7 +3715,7 @@ c --- a nonorthogonal mesh because of niy1,0 - see def. of hcyn
      .                                     (nit(ix2,iy)+nit(ix,iy))
      .                   + cfneut*cfneutsor_ei*0.25*(hcyn(ix ,iy)+hcyn(ix ,iy1)
      .                              +hcyn(ix2,iy)+hcyn(ix4,iy1)) ) *
-     .                                 (  grdnv/cos(angfx(ix,iy))
+     .                                 (  grdnv/cosangfx(ix,iy)
      .                         - (logti(ix2,iy) - logti(ix,iy))*
      .                                        gxf(ix,iy) )*sx(ix,iy)
 c...  Flux limit with flalftxt even though hcys have parallel FL built in
