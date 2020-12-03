@@ -1664,7 +1664,7 @@ c.... First the flux in the x-direction
                vygtan(ix,iy,igsp) = exp( 0.5*
      .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                      ( cngfx(igsp) / (mg(igsp)*0.5*(nu1+nu2)) ) *
-     .                                     ( grdnv/cos(angfx(ix,iy)) -
+     .                                     ( grdnv/cosangfx(ix,iy) -
      .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
              if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
@@ -1863,11 +1863,11 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
               if (methgx .eq. 6) then
                fngxy(ix,iy,igsp) =  exp( 0.5*
      .                     (logng(ix2,iy,igsp)+logng(ix,iy,igsp)) )*
-     .                               difgx2*(grdnv/cos(angfx(ix,iy)) -
+     .                               difgx2*(grdnv/cosangfx(ix,iy) -
      .                     (logng(ix2,iy,igsp) - logng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               else
-               fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
+               fngxy(ix,iy,igsp) = difgx2*(grdnv/cosangfx(ix,iy) -
      .                             (ng(ix2,iy,igsp) - ng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               endif
@@ -2159,7 +2159,7 @@ c ..Timing;initialize
                vygtan(ix,iy,igsp) = exp( 0.5*
      .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                      ( alftng / (mg(igsp)*0.5*(nu1+nu2)) ) *
-     .                                     ( grdnv/cos(angfx(ix,iy)) -
+     .                                     ( grdnv/cosangfx(ix,iy) -
      .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
              if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
@@ -2398,11 +2398,11 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
               if (methgx .eq. 6) then
                fngxy(ix,iy,igsp) =  exp( 0.5*
      .                     (logpg(ix2,iy,igsp)+logpg(ix,iy,igsp)) )*
-     .                               difgx2*(grdnv/cos(angfx(ix,iy)) -
+     .                               difgx2*(grdnv/cosangfx(ix,iy) -
      .                     (logpg(ix2,iy,igsp) - logpg(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               else
-               fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
+               fngxy(ix,iy,igsp) = difgx2*(grdnv/cosangfx(ix,iy) -
      .                             (pg(ix2,iy,igsp) - pg(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
               endif
@@ -2726,7 +2726,7 @@ c.... First the flux in the x-direction
      .                     (logtg(ix2,iy,igsp)+logtg(ix,iy,igsp)) )*
      .                                  ( cngfx(igsp) / (mg(igsp)*0.5*
      .                         (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))) ) *
-     .                             ( grdnv/cos(angfx(ix,iy)) -
+     .                             ( grdnv/cosangfx(ix,iy) -
      .                       (logtg(ix2,iy,igsp) - logtg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
                if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
@@ -2888,7 +2888,7 @@ ccc            MER: Set flag to apply xy flux limit except at target plates
      .                         + rld2dxg(igsp)**2*(1/gxf(ix,iy)**2)*
      .                           0.5*(nuiz(ix,iy,igsp)+nuiz(ix2,iy,igsp))
 
-               flngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
+               flngxy(ix,iy,igsp) = difgx2*(grdnv/cosangfx(ix,iy) -
      .                             (lng(ix2,iy,igsp) - lng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
 
@@ -3136,7 +3136,7 @@ c     .                 (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))
                endif
                vygtan(ix,iy,igsp) = ( cngfx(igsp) / (mg(igsp)*0.5*
      .                         (nuix(ix,iy,igsp)+nuix(ix2,iy,igsp))) ) *
-     .                             ( grdnv/cos(angfx(ix,iy)) -
+     .                             ( grdnv/cosangfx(ix,iy) -
      .                             (tg(ix2,iy,igsp) - tg(ix,iy,igsp))
      .                                                 * gxf(ix,iy) )
                if (islimon.eq.1.and. ix.eq.ix_lim.and. iy.ge.iy_lims) then
@@ -3354,7 +3354,7 @@ c...  Addition for nonorthogonal mesh
      .                       tg(ix2,iy,igsp)/nuix(ix2,iy,igsp) )/mg(igsp)
      .                         + rld2dxg(igsp)**2*(1/gxf(ix,iy)**2)*
      .                           0.5*(nuiz(ix,iy,igsp)+nuiz(ix2,iy,igsp))
-               fngxy(ix,iy,igsp) = difgx2*(grdnv/cos(angfx(ix,iy)) -
+               fngxy(ix,iy,igsp) = difgx2*(grdnv/cosangfx(ix,iy) -
      .                             (ng(ix2,iy,igsp) - ng(ix,iy,igsp))*
      .                                 gxf(ix,iy) ) * sx(ix,iy)
  8904       continue
@@ -6179,7 +6179,7 @@ c ... First do the divertor plate surfaces
      .                            rm(ixv+nj,iyv,3)-rm(ix+nj,iy,0) )
               dthgy = abs(theta_ray1-theta_ray2)
               frth = min(dthgy, 2*pi-dthgy)/(2*pi)  # frac.; need angle < pi
-              sxo = sx(ixv,iyv)/(cos(angfx(ixv,iyv)))
+              sxo = sx(ixv,iyv)/(cosangfx(ixv,iyv))
               pwr_pltz(iyv,ip) = pwr_pltz(iyv,ip) +
      .                                 prdu(ix,iy)*vol(ix,iy)*frth/sxo
               pwr_plth(iyv,ip) = pwr_plth(iyv,ip) + (
@@ -6300,8 +6300,8 @@ c  Local variables
         ixi=ixlb(jx)	# ixi=0
         ixo=ixrb(jx)	# ixo=nx
         do iy=1,ny+1
-          sxo(iy,jx) = sx(ixo,iy)/(cos(angfx(ixo,iy)))
-          sxi(iy,jx) = sx(ixi,iy)/(cos(angfx(ixi,iy)))
+          sxo(iy,jx) = sx(ixo,iy)/(cosangfx(ixo,iy))
+          sxi(iy,jx) = sx(ixi,iy)/(cosangfx(ixi,iy))
           do id = 1, nfsp
 	    gdilb(iy,id,jx) = -fnix(ixi,iy,id)/sxi(iy,jx)
 	    gdirb(iy,id,jx) =  fnix(ixo,iy,id)/sxo(iy,jx)

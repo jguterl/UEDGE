@@ -10,6 +10,7 @@ ParallelWarning   integer /1/     # Warning for users who wish to use it
 CheckJac          integer /0/      # [0/1]: Turn on on-the-fly comparison of parallel vs serial evaluation of Jacobian.
                                   # If differences between para and serial Jacobians, dump both Jacs in serialjac.dat and paralleljac.dat with routine jac_write in current working folder. See UEDGEToolBox docs for analysis tools.
 Nthreads          integer /64/ # Number of threads to be used to calculate the Jacobian
+CheckPandf1       integer /1/      # [0/1]: Turn on on-the-fly comparison of parallel vs serial evaluation of pandf1.
 
 ***** ParallelDebug:
 OMPJacDebug       integer /0/ #Print debug info for omp constructs
@@ -46,33 +47,39 @@ iJacRow(neq) _integer  #
 OMPTimeJacRow(neq) _real  #
 iJacCol(nnzmxperchunk,NchunksJac) _integer #
 rJacElem(nnzmxperchunk,NchunksJac) _real #
-nnz(NchunksJac) _integer
-nnzcum(NchunksJac) _integer
+nnz(NchunksJac) _integer #
+nnzcum(NchunksJac) _integer #
 
 **** OMPPandf1Settings:
-OMPPandf1Stamp character*20 /"*OMPPandf1* "/ # Stamp for hybrid output (not an user input)
+OMPPandf1Stamp character*20 /"*OMPPandf1* "/ #
 OMPPandf1Debug integer /0/
 OMPPandf1Verbose integer /0/
-OMPPandf1FlagVerbose integer /0/
-OMPPandf1Check integer /1/
-NthreadsPandf1 integer /8/ # Nthreads for threaded pandf1.
-OMPPandf1yinc integer /3/
-OMPPandf1padyinc integer /2/
 OMPTimeParallelPandf1 real /0.0/
 OMPTimeSerialPandf1 real /0.0/
-OMPPandf1RunPara integer /1/
-OMPPandf1FirstRun integer /1/
-OMPLoopPandf1Nchunk     integer /1/
-OMPPandf1Nchunks         integer /0/
-
+OMPPandf1LoopNchunk     integer /1/
+OMPPandf1Nychunks integer /0/
+OMPPandf1Nxchunks integer /1/
+xpadding integer /2/
+ypadding integer /2/
 
 **** OMPPandf1:
-Pandf1Nchunks           integer /1/
-OMPic(1:Pandf1Nchunks) _integer
-OMPyinc(1:Pandf1Nchunks) _integer
-OMPivthread(1:neq) _integer
-OMPTimeLocalPandf1(1:Pandf1Nchunks) _real #
-OMPTimeCollectPandf1(1:Pandf1Nchunks) _real #
+Nychunks integer /0/
+Nxchunks integer /1/
+NchunksPandf1 integer /1/
+Nychunks_old integer /-1/
+Nxchunks_old integer /-1/
+yincchunk(NchunksPandf1) _integer
+xincchunk(NchunksPandf1) _integer
+ixchunk(NchunksPandf1) _integer
+iychunk(NchunksPandf1) _integer
+Nivchunk(NchunksPandf1) _integer
+ivchunk(NchunksPandf1,neq) _integer
+iymaxchunk(NchunksPandf1)_integer
+ixmaxchunk(NchunksPandf1)_integer
+iyminchunk(NchunksPandf1)_integer
+ixminchunk(NchunksPandf1)_integer
+
+neq_old integer /0/
 
 ***** HybridSettings:
 HybridOMPMPI    integer /0/        # Flag for HybridOMPMPI. Automatically turn on with OMPParallelJac and PMIParallelJac

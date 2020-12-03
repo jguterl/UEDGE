@@ -1,9 +1,9 @@
-subroutine InitOMP()
+subroutine InitOMPJac()
 
     Use OMPJacSettings,only:omplenpfac,OMPJacVerbose,OMPJacNchunks,OMPJacStamp
     use OMPJac,only: nnzmxperchunk,NchunksJac
     Use ParallelSettings,only: OMPParallelPandf1,Nthreads
-    Use OMPPandf1Settings,only: OMPPandf1FlagVerbose,OMPPandf1FirstRun
+    !Use OMPPandf1Settings,only: OMPPandf1FlagVerbose,OMPPandf1FirstRun
     Use MPIJacSettings,only:nnzmxperproc,MPIrank
     Use HybridSettings,only: HybridOMPMPI,Hybridstamp
     Use Jacobian,only:nnzmx
@@ -63,12 +63,47 @@ subroutine InitOMP()
 
     write(*,*) OMPJacStamp,' Nthreads:', Nthreads, 'NchunksJac:',NchunksJac, 'nnzmxperchunk:',nnzmxperchunk,'neq:',neq
     call gchange('OMPJac',0)
-    if (OMPParallelPandf1.gt.0) then
-      OMPPandf1FlagVerbose=1
-      OMPPandf1FirstRun=1
-    endif
+!    if (OMPParallelPandf1.gt.0) then
+!      OMPPandf1FlagVerbose=1
+!      OMPPandf1FirstRun=1
+!    endif
+
 #endif
-end subroutine InitOMP
+end subroutine InitOMPJAC
+
+subroutine InitOMPPandf1
+    use OMPPandf1Settings,only: OMPPandf1Nxchunks,OMPPandf1Nychunks,OMPPandf1Stamp,OMPPandf1Verbose
+    use OMPPandf1, only: NchunksPandf1,Nxchunks,Nychunks
+    use Dim,only:ny
+
+
+
+    if (OMPPandf1Nychunks.lt.0) then
+        call xerrab('Nychunks<0. Nxchunks must be >=0')
+    endif
+
+    if (OMPPandf1Nychunks.eq.0) then
+        Nychunks=ny
+    else
+        Nychunks=OMPPandf1Nychunks
+    endif
+
+    if (OMPPandf1Nxchunks.ne.1) then
+        call xerrab('OMPPandf1Nxchunks!=1. Only Nxchunks=1 is implemented for the moment...')
+    else
+        Nxchunks=1
+    endif
+
+    ! this is a placeholder for further parallelization but we need to implement handling of x-points discon. in ix indexing
+    NchunksPandf1=Nychunks
+
+    call gchange('OMPPandf1',0)
+
+    if (OMPPandf1Verbose.gt.0) then
+        write(*,*) OMPPandf1Stamp, ' NchunksPandf1 = ',NchunksPandf1
+    endif
+
+end subroutine InitOMPPandf1
 !-------------------------------------------------------------------------------------------------
 
 subroutine InitZeroOMP
@@ -309,6 +344,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     use OMPJacSettings,only:OMPJacStamp,OMPJacVerbose,OMPLoopJacNchunk
     use ParallelDebug,only: OMPJacDebug,OMPCopyArray,OMPCopyScalar
     use OMPJac, only:OMPivmin,OMPivmax,OMPTimeLocalJac,OMPTimeJacRow,nnzmxperchunk,NchunksJac
+    use Selec, only: yinc,xlinc,xrinc ! these variables are threadprivate because modify in pandf1 parallel loop. We copy them in ech thread with the copyin clause
     use OmpCopybbb
     use OmpCopycom
     use OmpCopyapi
@@ -374,7 +410,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     !$omp parallel do schedule(dynamic,OMPLoopJacNchunk) default(shared)&
     !$omp& firstprivate(ichunkcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
     !$omp& firstprivate(nnzmxperchunkcopy,NchunksJaccopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
-    !$omp& private(TimeThread)
+    !$omp& private(TimeThread)  copyin(yinc,xlinc,xrinc)
 
     loopthread: do ichunk=1,NchunksJac !ichunk from 1 to Nthread, tid from 0 to Nthread-1
         Timethread = omp_get_wtime()
@@ -474,188 +510,169 @@ end subroutine OMPSplitIndex
 
 !!!! >>>>>> Routine for pandf1 parallelization <<<<<<<<<<<<<
 
-subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nchunks,ic,inc,ivthread,neq)
-    Use Indexes,only: igyl
-    use OMPPandf1Settings,only: OMPPandf1Padyinc
-    implicit none
-    integer,intent(in) ::ieqmin,ieqmax,Nchunks,neq
-    integer,intent(out)::ic(Nchunks),inc(Nchunks),ivthread(1:neq)
-    integer :: ihigh(Nchunks),ilow(Nchunks),ixthread(ieqmin:ieqmax)
-    integer:: Nsize(Nchunks),Msize,R,i,imax,iv,imin,iend,istart,ichunk
-    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
-    i=ieqmin
-    if (ieqmax-ieqmin+1.eq.Nchunks) then
-    do ichunk=1,Nchunks
-    ic(ichunk)=i
-    ilow(ichunk)=i
-    ihigh(ichunk)=i
-    inc(ichunk)=OMPPandf1Padyinc
-    i=i+1
-    enddo
-    inc(1)=inc(1)+1
-    do iv=1,neq
-            do ichunk=1,Nchunks
-                if (igyl(iv,2).le.ihigh(ichunk) .and. igyl(iv,2).ge.ilow(ichunk)) then
-                    ivthread(iv)=ichunk
-                endif
-            enddo
-    enddo
-    return
-    endif
 
-        !        if (OMPLoadWeight.eq.1) then
 
-        !do i=1,Nchunks
-         !   if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
-            !write(*,*) weight(i)
-        !enddo
-
-        ! Normalized weights
-        !weight(1:Nchunks)=weight(1:Nchunks)/sum(weight(1:Nchunks))*real(Nchunks)
-        do i=1,Nchunks
-            !Nsize(i)=int(real((ieqmax-ieqmin+1)/Nchunks)*weight(i))
-            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nchunks))
-        enddo
-
-        do i=1,Nchunks
-            if (Nsize(i)<1) call xerrab('Nsize<1')
-        enddo
-        if (Nchunks.ge.4) then
-        istart=2
-        iend=Nchunks-1
-        else
-        istart=1
-        iend=Nchunks
-        endif
-imin=istart
-        do while (ieqmax-ieqmin+1.gt.sum(Nsize))
-                Nsize(imin)=Nsize(imin)+1
-                if (imin.ge.iend) then
-                    imin=istart
-                else
-                    imin=imin+1
-                endif
-        enddo
-
-        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
-           write(*,*) Nsize,sum(Nsize)
-           call xerrab('OMPPandf1:Nsize .ne. ieqmax-ieqmin+1')
-       endif
-        ilow(1)=ieqmin
-        ihigh(1)=ieqmin+Nsize(1)-1
-        do i=2,Nchunks
-            ilow(i)=ihigh(i-1)+1
-            ihigh(i)=ilow(i)+Nsize(i)-1
-
-        enddo
-        if (ihigh(Nchunks).ne.ieqmax) call xerrab('ihigh(Nchunks)!=ieqmax')
-
-        ic=ilow+int((ihigh-ilow)/2)
-        do i=1,Nchunks
-           !write(*,*) max(ihigh(i)-ic(i),ic(i)-ilow(i)),OMPPandf1Padyinc
-           inc(i)=max(ihigh(i)-ic(i),ic(i)-ilow(i))+OMPPandf1Padyinc
-        enddo
-        do iv=1,neq
-            do i=1,Nchunks
-                if (igyl(iv,2).le.ihigh(i) .and. igyl(iv,2).ge.ilow(i)) then
-                    ivthread(iv)=i
-                endif
-            enddo
-        enddo
-
-end subroutine OMPSplitIndexyPandf
+!subroutine OMPSplitIndexyPandf(ieqmin,ieqmax,Nchunks,ic,inc,ivthread,neq)
+!    Use Indexes,only: igyl
+!    use OMPPandf1Settings,only: OMPPandf1Padyinc
+!    implicit none
+!    integer,intent(in) ::ieqmin,ieqmax,Nchunks,neq
+!    integer,intent(out)::ic(Nchunks),inc(Nchunks),ivthread(1:neq)
+!    integer :: ihigh(Nchunks),ilow(Nchunks),ixthread(ieqmin:ieqmax)
+!    integer:: Nsize(Nchunks),Msize,R,i,imax,iv,imin,iend,istart,ichunk
+!    if (ieqmax-ieqmin+1<2) call xerrab('Number of equations to solve <2')
+!    i=ieqmin
+!    if (ieqmax-ieqmin+1.eq.Nchunks) then
+!    do ichunk=1,Nchunks
+!    ic(ichunk)=i
+!    ilow(ichunk)=i
+!    ihigh(ichunk)=i
+!    inc(ichunk)=OMPPandf1Padyinc
+!    i=i+1
+!    enddo
+!    inc(1)=inc(1)+1
+!    do iv=1,neq
+!            do ichunk=1,Nchunks
+!                if (igyl(iv,2).le.ihigh(ichunk) .and. igyl(iv,2).ge.ilow(ichunk)) then
+!                    ivthread(iv)=ichunk
+!                endif
+!            enddo
+!    enddo
+!
+!
+!    return
+!    endif
+!
+!        !        if (OMPLoadWeight.eq.1) then
+!
+!        !do i=1,Nchunks
+!         !   if (weight(i)<=0) call xerrab('OMPSplitIndex: weight <0')
+!            !write(*,*) weight(i)
+!        !enddo
+!
+!        ! Normalized weights
+!        !weight(1:Nchunks)=weight(1:Nchunks)/sum(weight(1:Nchunks))*real(Nchunks)
+!        do i=1,Nchunks
+!            !Nsize(i)=int(real((ieqmax-ieqmin+1)/Nchunks)*weight(i))
+!            Nsize(i)=int(real((ieqmax-ieqmin+1)/Nchunks))
+!        enddo
+!
+!        do i=1,Nchunks
+!            if (Nsize(i)<1) call xerrab('Nsize<1')
+!        enddo
+!        if (Nchunks.ge.4) then
+!        istart=2
+!        iend=Nchunks-1
+!        else
+!        istart=1
+!        iend=Nchunks
+!        endif
+!imin=istart
+!        do while (ieqmax-ieqmin+1.gt.sum(Nsize))
+!                Nsize(imin)=Nsize(imin)+1
+!                if (imin.ge.iend) then
+!                    imin=istart
+!                else
+!                    imin=imin+1
+!                endif
+!        enddo
+!
+!        if (ieqmax-ieqmin+1.ne.sum(Nsize)) then
+!           write(*,*) Nsize,sum(Nsize)
+!           call xerrab('OMPPandf1:Nsize .ne. ieqmax-ieqmin+1')
+!       endif
+!        ilow(1)=ieqmin
+!        ihigh(1)=ieqmin+Nsize(1)-1
+!        do i=2,Nchunks
+!            ilow(i)=ihigh(i-1)+1
+!            ihigh(i)=ilow(i)+Nsize(i)-1
+!
+!        enddo
+!        if (ihigh(Nchunks).ne.ieqmax) call xerrab('ihigh(Nchunks)!=ieqmax')
+!
+!        ic=ilow+int((ihigh-ilow)/2)
+!        do i=1,Nchunks
+!           !write(*,*) max(ihigh(i)-ic(i),ic(i)-ilow(i)),OMPPandf1Padyinc
+!           inc(i)=max(ihigh(i)-ic(i),ic(i)-ilow(i))+OMPPandf1Padyinc
+!        enddo
+!        do iv=1,neq
+!            do i=1,Nchunks
+!                if (igyl(iv,2).le.ihigh(i) .and. igyl(iv,2).ge.ilow(i)) then
+!                    ivthread(iv)=i
+!                endif
+!            enddo
+!        enddo
+!
+!end subroutine OMPSplitIndexyPandf
 
 #ifdef _OPENMP
 subroutine OMPPandf1Rhs(neq,time,yl,yldot)
 
     use omp_lib
     use OmpCopybbb
-    use ParallelSettings,only: Nthreads
-    use OMPPandf1Settings,only: NthreadsPandf1,OMPPandf1FlagVerbose,OMPPandf1Check,&
-    OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
-    use OMPPandf1,only:OMPic,OMPyinc,OMPivthread,OMPTimeCollectPandf1,OMPTimeLocalPandf1,Pandf1Nchunks
-    use OMPPandf1Settings,only:OMPPandf1RunPara,OMPPandf1FirstRun,OMPLoopPandf1Nchunk,OMPPandf1Nchunks
+    use ParallelSettings,only: Nthreads,CheckPandf1
+    use OMPPandf1Settings,only: OMPTimeParallelPandf1,OMPTimeSerialPandf1,OMPPandf1Stamp,OMPPandf1Verbose,OMPPandf1Debug
+    use OMPPandf1,only:Nivchunk,ivchunk,yincchunk,xincchunk,iychunk,ixchunk,NchunksPandf1
+    use OMPPandf1Settings,only:OMPPandf1loopNchunk
     use Dim,only:ny
-    use Selec, only:yinc,xinc
-Use Grid,only:ijactot
+    use Selec, only:yinc,xrinc,xlinc
+    Use Grid,only:ijactot
 
-    integer yinc_bkp,iv,tid
+    integer yinc_bkp,xrinc_bkp,xlinc_bkp,iv,tid
     integer,intent(in)::neq
     real,intent(in)::yl(*)
     real,intent(out)::yldot(*)
     real,intent(in)::time
     real::yldotcopy(1:neq)
     real yldotsave(1:neq),ylcopy(1:neq+2)
-     character*80 ::FileName
+    character*80 ::FileName
     real time1,time2
     integer::ichunk
     !write(*,*)' ======================================== '
     ylcopy(1:neq+1)=yl(1:neq+1)
 
-
-!
-!
     if (ijactot.gt.0) then
 
 
-    if (OMPPandf1Verbose.gt.0) then
-    write(*,'(a,a,I3,a,I3)') OMPPandf1Stamp,'Pandf1Nchunks',Pandf1Nchunks ,' ny=',ny
-endif
-    if (OMPPandf1Verbose.gt.2) then
-        write(*,*)OMPPandf1Stamp, ' ic(ichunk), linc(ichunk)'
-        do ichunk=1,Pandf1Nchunks
-            write(*,'(a,I3,a,I7,I7)') '  *  ichunk ', ichunk,':',OMPic(ichunk),OMPyinc(ichunk)
-        enddo
-    endif
-
-
-     OMPPandf1FirstRun=0
-
-
-    if (OMPPandf1Nchunks.eq.0) then
-    Pandf1Nchunks=ny+2
-    elseif (OMPPandf1Nchunks.lt.0) then
-    Pandf1Nchunks=Nthreads
-    else
-    Pandf1Nchunks=OMPPandf1Nchunks
-    endif
-
-    call gchange('OMPPandf1',0)
-    call OMPSplitIndexyPandf(0,ny+1,Pandf1Nchunks,OMPic,OMPyinc,OMPivthread,neq)
-
-    if (OMPPandf1Verbose.gt.0.and. OMPPandf1FlagVerbose.eq.1) then
-     write(*,'(a,a,i3,a,i3)') OMPPandf1Stamp,' Number of threads for omp calculations:',Pandf1Nchunks,'for ny=',ny
-     OMPPandf1FlagVerbose=0
-    endif
-    yinc_bkp=yinc
     Time1=omp_get_wtime()
+    call MakeChunksPandf1
     call OmpCopyPointerup
-    !$omp parallel do default(shared) schedule(dynamic,OMPLoopPandf1Nchunk) if(OMPPandf1RunPara.gt.0) &
-    !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy)
-    loopthread: do ichunk=1,Pandf1Nchunks !ichunk from 1 to Nthread, tid from 0 to Nthread-1
-        tid=omp_get_thread_num()
-        if (OMPPandf1Debug.gt.0) write(*,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ichunk:',ichunk
+    !$omp parallel do default(shared) schedule(dynamic,OMPPandf1LoopNchunk) &
+    !$omp& private(iv,tid) firstprivate(ylcopy) private(yldotcopy) copyin(yinc,xlinc,xrinc)
+    loopthread: do ichunk=1,NchunksPandf1 !ichunk from 1 to Nthread, tid from 0 to Nthread-1
+        !tid=omp_get_thread_num()
+        !if (OMPPandf1Debug.gt.0) write(*,*) OMPPandf1Stamp,'Thread id:',tid,' <-> ichunk:',ichunk
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal wichunk private/shared attributes
-        yinc=OMPyinc(ichunk)
-        !xinc=OMPxinc(ichunk)
-        OMPTimeLocalPandf1(ichunk)=omp_get_wtime()
+        yinc_bkp=yinc
+        xlinc_bkp=xlinc
+        xrinc_bkp=xrinc
 
-        call pandf1 (-1,OMPic(ichunk), 0, neq, time, ylcopy, yldotcopy)
-
-        OMPTimeLocalPandf1(ichunk)=omp_get_wtime()-OMPTimeLocalPandf1(ichunk)
-        OMPTimeCollectPandf1(ichunk)=omp_get_wtime()
-        do iv=1,neq
-        if (OMPivthread(iv)==ichunk) then
-        yldot(iv)=yldotcopy(iv)
+        if (iychunk(ichunk).ne.-1) then
+            yinc=yincchunk(ichunk)
         endif
+        if (ixchunk(ichunk).ne.-1) then
+            xrinc=xincchunk(ichunk)
+            xlinc=xincchunk(ichunk)
+        endif
+        !xinc=OMPxinc(ichunk)
+        !OMPTimeLocalPandf1(ichunk)=omp_get_wtime()
+
+        call pandf1 (ixchunk(ichunk),iychunk(ichunk), 0, neq, time, ylcopy, yldotcopy)
+
+        !OMPTimeLocalPandf1(ichunk)=omp_get_wtime()-OMPTimeLocalPandf1(ichunk)
+        !OMPTimeCollectPandf1(ichunk)=omp_get_wtime()
+        do iv=1,Nivchunk(ichunk)
+            yldot(ivchunk(ichunk,iv))=yldotcopy(ivchunk(ichunk,iv))
         enddo
 
 
-        OMPTimeCollectPandf1(ichunk)=omp_get_wtime()-OMPTimeCollectPandf1(ichunk)
-yinc=yinc_bkp
-    if (OMPPandf1Verbose.gt.1) then
-            write(*,*) OMPPandf1Stamp,' Time in thread #', tid,':',OMPTimeLocalPandf1(ichunk),OMPTimeCollectPandf1(ichunk)
-    endif
+        !OMPTimeCollectPandf1(ichunk)=omp_get_wtime()-OMPTimeCollectPandf1(ichunk)
+      yinc=yinc_bkp
+      xlinc=xlinc_bkp
+      xrinc=xrinc_bkp
+    !if (OMPPandf1Verbose.gt.1) then
+            !write(*,*) OMPPandf1Stamp,' Time in thread #', tid,':',OMPTimeLocalPandf1(ichunk),OMPTimeCollectPandf1(ichunk)
+    !endif
     !OMPTimeLocalPandf1(ichunk)=OMPTimeCollectPandf1(ichunk)+OMPTimeLocalPandf1(ichunk)
     enddo loopthread
 !$omp  END PARALLEL DO
@@ -669,7 +686,7 @@ Time1=omp_get_wtime()-Time1
 
 
 
-      if (OMPPandf1Check.gt.0) then
+      if (CheckPandf1.gt.0) then
           Time2=omp_get_wtime()
          call pandf1 (-1, -1, 0, neq, time, ylcopy, yldotsave)
          Time2=omp_get_wtime()-Time2
@@ -683,4 +700,185 @@ Time1=omp_get_wtime()-Time1
        call pandf1 (-1,-1, 0, neq, time, yl, yldot)
 endif
 end subroutine OMPPandf1Rhs
+
+subroutine CreateBin(ieqmin,ieqmax,ichunkmin,ichunkmax,Padding,iCenterBin,iLeftBin,iRightBin,inc)
+    integer,intent(in):: ieqmin, ieqmax,Padding,ichunkmin,ichunkmax
+    integer,intent(out):: iCenterbin(Nchunk),inc(Nchunk),iLeftBin(Nchunk),iRightBin(Nchunk)
+    integer ::N,SizeBin,i,Nchunk
+
+    N=ieqmax-ieqmin+1
+    Nchunk=ichunkmax-ichunkmin+1
+    if (N>Nchunk) then
+        SizeBin=int((N/Nchunk))
+    else
+        SizeBin=1
+    endif
+
+    iLeftBin(ichunkmin)=ieqmin
+    iRightBin(ichunkmin)=iLeftBin(ichunkmin)+SizeBin-1
+    iCenterBin(ichunkmin)=int((iLeftBin(ichunkmin)+iRightBin(ichunkmin))/2)
+    inc(ichunkmin)=max(iCenterBin(ichunkmin)-iLeftBin(ichunkmin),iRightBin(ichunkmin)-iCenterBin(ichunkmin))+padding
+    if (ichunkmax.gt.ichunkmin) then
+    do i=ichunkmin+1,ichunkmax-1
+        iLeftBin(i)=iRightBin(i-1)+1
+        iRightBin(i)=iLeftBin(i)+SizeBin-1
+        iCenterBin(i)=int((iLeftBin(i)+iRightBin(i))/2)
+        inc(i)=max(iCenterBin(i)-iLeftBin(i),iRightBin(i)-iCenterBin(i))+padding
+    enddo
+    iLeftBin(ichunkmax)=iRightBin(ichunkmax-1)+1
+    iRightBin(ichunkmax)=ieqmax
+    iCenterBin(ichunkmax)=int((iLeftBin(ichunkmax)+iRightBin(ichunkmax))/2)
+    inc(ichunkmax)=max(iCenterBin(ichunkmax)-iLeftBin(ichunkmax),iRightBin(ichunkmax)-iCenterBin(ichunkmax))+padding
+    endif
+    return
+end subroutine CreateBin
+
+subroutine MakeChunksPandf1()
+    Use Indexes,only: igyl
+    use OMPPandf1Settings,only: xpadding,ypadding,OMPPandf1Verbose
+    use OMPPandf1, only: NchunksPandf1,yincchunk,xincchunk,iychunk,ixchunk,Nychunks_old,Nxchunks_old,neq_old,ivchunk,&
+    Nivchunk,Nxchunks,Nychunks,iymaxchunk,ixmaxchunk,iyminchunk,ixminchunk
+    use Lsode, only: neq
+    use Dim, only:nx,ny
+    implicit none
+    integer:: remakechunk,i,ii,ichunk,iv,ix,iy
+    integer:: iyCenterBin(Nychunks),iyRightBin(Nychunks),iyLeftBin(Nychunks),incy(Nychunks)
+    integer::ixCenterBin(Nxchunks),ixRightBin(Nxchunks),ixLeftBin(Nxchunks),incx(Nxchunks)
+
+       remakechunk=0
+       if ((Nxchunks.ne.Nxchunks_old).or.(Nychunks.ne.Nychunks_old)) then
+
+
+       if (Nychunks.gt.1) then
+           if (Nychunks.eq.ny) then
+              iyLeftBin(1)=0
+              iyRightBin(1)=1
+              iyCenterBin(1)=1
+              incy(1)=ypadding
+              call CreateBin(2,ny-1,2,Nychunks-1,ypadding,iyCenterBin,iyLeftBin,iyRightBin,incy)
+              iyLeftBin(Nychunks)=ny
+              iyRightBin(Nychunks)=ny+1
+              iyCenterBin(Nychunks)=ny
+              incy(Nychunks)=ypadding
+              write(*,*) '----- Bins in y direction: ', Nychunks, ny+2
+              do iy=1,Nychunks
+                write(*,*) iyCenterBin(iy),iyLeftBin(iy),iyRightBin(iy),incy(iy)
+              enddo
+           else
+
+            call CreateBin(0,ny+1,1,Nychunks,ypadding,iyCenterBin,iyLeftBin,iyRightBin,incy)
+
+            write(*,*) '----- Bins in y direction: ', Nychunks, ny+2
+            do iy=1,Nychunks
+                    write(*,*) iyCenterBin(iy),iyLeftBin(iy),iyRightBin(iy),incy(iy)
+            enddo
+
+           ! now we check the first and last bins to check that ypadding is 3 if iyCenterBin=2
+           if (iyCenterBin(1)==0) then
+                incy(1)=incy(1)+1
+           endif
+
+           if (iyCenterBin(Nychunks)==ny+1) then
+                incy(Nychunks)=incy(Nychunks)+1
+           endif
+           endif
+       else
+           iyCenterBin(1)=-1
+           iyLeftBin(1)=0
+           iyLeftBin(1)=ny+1
+           incy(1)=0 !not used
+       endif
+
+
+       if (Nxchunks.gt.1) then
+           call CreateBin(0,nx+1,1,Nxchunks,xpadding,ixCenterBin,ixLeftBin,ixRightBin,incx)
+       else
+           ixCenterBin(1)=-1
+           ixLeftBin(1)=0
+           ixRightBin(1)=nx+1
+           incx(1)=0 !not used
+       endif
+
+     ichunk=1
+    ! Build NchunksPandf1
+    do iy=1,Nychunks
+    if (iy==1) then
+        iychunk(ichunk)=iyCenterBin(iy)
+        iyminchunk(ichunk)=iyLeftBin(iy)
+        iymaxchunk(ichunk)=iyRightBin(iy)
+        yincchunk(ichunk)=incy(iy)
+        ixchunk(ichunk)=-1
+        ixminchunk(ichunk)=0
+        ixmaxchunk(ichunk)=nx+1
+        xincchunk(ichunk)=0
+        ichunk=ichunk+1
+        cycle
+    endif
+    if (iy==ny+1) then
+        iychunk(ichunk)=iyCenterBin(iy)
+        iyminchunk(ichunk)=iyLeftBin(iy)
+        iymaxchunk(ichunk)=iyRightBin(iy)
+        yincchunk(ichunk)=incy(iy)
+        ixchunk(ichunk)=-1
+        ixminchunk(ichunk)=0
+        ixmaxchunk(ichunk)=nx+1
+        xincchunk(ichunk)=0
+        ichunk=ichunk+1
+        cycle
+    endif
+        do ix=1,Nxchunks
+            iychunk(ichunk)=iyCenterBin(iy)
+            iyminchunk(ichunk)=iyLeftBin(iy)
+            iymaxchunk(ichunk)=iyRightBin(iy)
+            yincchunk(ichunk)=incy(iy)
+            ixchunk(ichunk)=ixCenterBin(ix)
+            ixminchunk(ichunk)=ixLeftBin(ix)
+            ixmaxchunk(ichunk)=ixRightBin(ix)
+            xincchunk(ichunk)=incx(ix)
+            ichunk=ichunk+1
+        enddo
+    enddo
+
+    Nychunks_old=Nychunks
+    Nxchunks_old=Nxchunks
+    remakechunk=1
+
+    endif
+
+    if ((neq.ne.neq_old) .or. remakechunk.gt.0) then
+
+    do i=1,NchunksPandf1
+            ii=1
+            do iv=1,neq
+                if ((igyl(iv,2).le.iymaxchunk(i) .and. igyl(iv,2).ge.iyminchunk(i)) &
+                .and. (igyl(iv,1).le.ixmaxchunk(i) .and. igyl(iv,1).ge.ixminchunk(i))) then
+                    ivchunk(i,ii)=iv
+                    Nivchunk(i)=ii
+                    ii=ii+1
+                endif
+            enddo
+    enddo
+    neq_old=neq
+    if (OMPPandf1Verbose.gt.1) then
+    write(*,"('Nychunks = ',I3,'; Nxchunks = ',I3)") Nychunks,Nxchunks
+    write(*,"('Nchunks:',I3)") NchunksPandf1
+    do i=1,NchunksPandf1
+       write(*,'("ichunk: ",I3," | iyc = [",I3,";",I3,";",I3,"] ; ixc = ",I3, &
+       " || xinc = ", I3,"; yinc = ",I3," | iv = [",I5,";",I5,"]")') &
+       i,iyminchunk(i),iychunk(i),iymaxchunk(i), ixchunk(i),xincchunk(i),yincchunk(i), ivchunk(i,1),ivchunk(i,Nivchunk(i))
+    enddo
+    endif
+    endif
+
+
+end subroutine MakeChunksPandf1
+
+!subroutine PrintChunks
+!use OMPPandf1Settings,only: OMPPandf1Stamp
+!use OMPPandf1, only: NchunksPandf1,yincchunk,xincchunk,iychunk,ixchunk,Nxchunks,Nychunks,iyminchunk,iymaxchunk
+!integer ::i
+!
+!
+!end subroutine PrintChunks
+
 #endif

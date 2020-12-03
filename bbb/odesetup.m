@@ -54,6 +54,7 @@ c-----------------------------------------------------------------------
 cc      Use(Rccoef)
       Use(MCN_dim)             # MCN dimensions
       Use(PNC_data)			   # PNC data storage
+      Use(Debug),only: VerboseDebug
 
 * --  local variables
       integer lda, lenk, ngspon, nispon, nuspon, ntgspon, ifld, isor, id
@@ -65,7 +66,7 @@ cc      Use(Rccoef)
 
 *=======================================================================
 *//computation//
-
+      if (VerboseDebug.gt.0) write(*,*) "--- Start allocate"
       id = 1
       call gallot("Grid",0)
       call gallot("Stat",0)
@@ -365,6 +366,7 @@ c     if necessary.
 
 c...  Init OMP/MPI/Hybrid variables after assignment of nnzmx,
 c...   which is used in InitOMP/InitMPI/InitHybrid (added by  J.Guterl)
+        if (VerboseDebug.gt.0) write(*,*) "--- InitParallel"
         call InitParallel
 
       if (premeth .eq. 'ilut') then
@@ -470,26 +472,32 @@ cc      call gallot("Rccoef",0)
      .      ('kyet must = 0; turb. transport in SOL is disabled.')
          call gallot("Turbulence_diagnostics",0)
       endif
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate potential"
       call gchange("Poten",0)
       call gchange("Lsode",0)   # changed from gallot to switch jpre,.
       call gallot("Constraints",0)
       call gallot("Time_dep_nwt",0)
       call gchange("Ynorm",0) # preserves sfscal values for icntnunk=1
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Selec"
       call gchange("Selec",0) # preserves ixm1 & ixp1 values for newgeo=0
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Indexes"
       call gallot("Indexes",0)
       call gchange("Oldpla",0)
       call gallot("Rhsides",0)
       call gchange("MCN_sources",0)
       call gallot("Save_terms",0)
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Conduc"
       call gchange("Conduc",0)   # preserves nuiz, eeli, etc for icnuiz=2
       call gallot("Locflux",0)
       call gchange("Gradients",0)
       call gallot("Condition_number",0)
       call gchange("Jacobian",0) # preserves Jacobian values for icntnunk=1
       call gchange("Jacobian_csc",0) # preserves Jacobian values for icntnunk=1
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Jacaux"
       call gchange("Jacaux",0) # preserves preconditioner data for icntnunk=1
       call gallot("Newtaux",0)
       call gallot("Wkspace",0)
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Postproc"
       call gallot("Postproc",0)
       if (isimpon .gt. 0) call gchange("Imprad",0)
       if (isimpon .gt. 2) then
@@ -497,10 +505,12 @@ cc      call gallot("Rccoef",0)
          call gchange("Impurity_source",0)
          call gchange("Sources_at_walls",0)
       endif
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Volsrc"
       call gchange("Volsrc",0)
 c preserves preconditioner data for icntnunk=1
-      call gchange("Solver_work_arrays",0)
 
+      call gchange("Solver_work_arrays",0)
+      if (VerboseDebug.gt.0) write(*,*) "--- Allocate Jac_work_arrays"
       call gallot("Jac_work_arrays",0)
       call gallot("Temporary_work_arrays",0)
 
@@ -527,6 +537,7 @@ cc      endif
 c	  Allocate PNC_data group
       call gchange("PNC_data",0)
       iallcall = 1 # indicates allocate called at least once; nis allocated
+      if (VerboseDebug.gt.0) write(*,*) "--- End allocate"
       return
       end
 ******* end of subroutine allocate ****
