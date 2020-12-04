@@ -43,7 +43,7 @@ try:
 except:
     raise SystemExit("Distutils problem")
 
-optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','omp'])
+optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:', ['parallel', 'petsc','omp','nersc'])
 machine = sys.platform
 debug = 0
 fcomp = None
@@ -63,6 +63,8 @@ for o in optlist:
         petsc = 1
     elif o[0] == '--omp':
         OMP = True
+    elif o[0] == '--fcomp':
+        fcomp=o[1]
 
 # OMP add-on        
 #OMPpackages=['bbb','com','api']

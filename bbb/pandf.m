@@ -4298,7 +4298,7 @@ c******************************************************************
           else
           capfac=1
           endif
-            resei(ix,iy) = resei(ix,iy) + wvh(ix,iy,ifld)*vol(ix,iy)*capfac
+            resei(ix,iy) = resei(ix,iy) + cvh*wvh(ix,iy,ifld)*vol(ix,iy)*capfac
   155       continue   # loop over up species ifld
   156    continue
  157  continue
