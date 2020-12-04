@@ -976,7 +976,7 @@ c insufficient storage in iwork
         endif
       if (itermx .eq. 0) itermx = 200
       nbcfmx = 10
-      if (iprint.gt.1) write(*,*)'0) sptol,epsmch', stptol,epsmch  
+      if (iprint.gt.1) write(*,*)'0) sptol,epsmch', stptol,epsmch
       if (stptol .eq. 0.0) stptol = epsmch**(2.0/3.0)
       if (iprint.gt.1) write(*,*)'1) sptol', stptol
       if (stepmx .eq. zero) then
@@ -1317,7 +1317,7 @@ c-----------------------------------------------------------------------
       real u, s, su, one, rlngth, temp, zero
       integer i, n
       dimension u(n), s(n), su(n)
-    
+
 c
       rlngth = zero
       zero=0.0
@@ -1722,7 +1722,7 @@ c----------------------- end of subroutine solpk -----------------------
      *            iwmp, wk, ipflg, iflag, rho)
       implicit none
       integer npsl, iwmp, ipflg, iprint, iunit, iermsg, ier
-      external f, jac, psol
+      external f, jac, psol, tick,tock
       integer n, mmax, iomp, ipvt, miom, iflag
       real u, savf, b, su, sf, x, eps, v, hes, wmp, wk
       dimension  u(*), savf(n), b(n), su(n), sf(n), x(n), v(n,mmax+1),
@@ -2436,6 +2436,9 @@ c-----------------------------------------------------------------------
       dimension savf(n), x(n), u(*), wmp(*), wk(n), iwmp(*)
       real bnrm,eps,prod,rho,snormw,tem
       integer i,iflag,info,igmp,k,mgmr,m
+      real tick, tock
+      external tick,tock
+      use PandfTiming
 c-----------------------------------------------------------------------
 c     nks002 common block.
 c-----------------------------------------------------------------------
@@ -2475,16 +2478,22 @@ c call routine atv to compute vnew = a*v(m).
 c call routine svrorthog to orthogonalize the new vector vnew = v(*,m+1).
 c call routine sheqr to update the factors of hes.
 c-----------------------------------------------------------------------
+        if (TimingPandfOn.gt.0) TimeAtv=tick()
         call atv (n, u, savf, v(1,m), su, sf, x, f, jac, psol,
      *            v(1,m+1), wk, wmp, iwmp, ier, npsl)
+        if (TimingPandfOn.gt.0) TotTimeAtv=TotTimeAtv+tock(TimeAtv)
         if (ier .ne. 0) go to 300
+        if (TimingPandfOn.gt.0) Timesvrorthog=tick()
         call svrorthog (v(1,m+1),v,hes,n,m,mmaxp1,igmp,snormw)
+        if (TimingPandfOn.gt.0) TotTimesvrorthog=TotTimesvrorthog+tock(Timesvrorthog)
         hes(m+1,m) = snormw
         hessv(m+1,m) = snormw
         do 60 i = 1,mgmr
           hessv(i,m) = hes(i,m)
  60       continue
+        if (TimingPandfOn.gt.0) Timesheqr=tick()
         call sheqr(hes,mmaxp1,m,q,info,m)
+        if (TimingPandfOn.gt.0) TotTimesheqr=TotTimesheqr+tock(Timesheqr)
         if (info .eq. m) go to 105
 c-----------------------------------------------------------------------
 c update rho, the estimate of the norm of the residual b - a*xl.
@@ -3296,7 +3305,7 @@ c-----------------------------------------------------------------------
       fnrmp = vnormnk(n,savf,sf)
       f1nrmp = fnrmp*fnrmp/two
       acond=f1nrmp/adjf1 - f1nrm + alpha*slpi*rl
- 
+
       if (iprint .gt. 1) then
        write(iunit,125) rl,f1nrm,f1nrmp,acond,nfe
       endif
@@ -3350,7 +3359,7 @@ c alpha-condition satisfied.  now check for beta-condition.
             call sswap(n, u, 1, unew, 1)
             fnrmp = vnormnk(n,savf,sf)
             f1nrmp = fnrmp*fnrmp/two
-	        
+
             if (f1nrmp/adjf1 .gt.f1nrm + alpha*slpi*rl) then
                 rldiff = rlincr
               elseif (f1nrmp/adjf1 .lt. f1nrm + beta*slpi*rl) then
@@ -3358,7 +3367,7 @@ c alpha-condition satisfied.  now check for beta-condition.
                 rldiff = rldiff - rlincr
                 f1lo = f1nrmp
               endif
-	    
+
 	    if (iprint .gt. 1) then
 	     mcond=rldiff-rlmin
 	     acond=f1nrmp/adjf1 - f1nrm + alpha*slpi*rl

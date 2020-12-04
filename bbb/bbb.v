@@ -3909,7 +3909,12 @@ TotTimeJac real /0.0/
 Timenksol real /0.0/
 TotTimenksol real /0.0/
 Saveold integer /0/
-
+Timesheqr real /0.0/
+TotTimesheqr real /0.0/
+TimeAtv real /0.0/
+TotTimeAtv real /0.0/
+Timesvrorthog real /0.0/
+TotTimesvrorthog real /0.0/
 PrintTimingPandf() subroutine
 PrintTimingExmain() subroutine
 
