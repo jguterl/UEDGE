@@ -709,7 +709,7 @@ c note.. snrm2, scopy, sswap, sdot, saxpy, sscal, and isamax are from
 c the blas collection (basic linear algebra modules).
 c intrinsic fortran routines.. abs, sqrt, min, max, float, sign.
 c-----------------------------------------------------------------------
-
+      use PandfTiming
 cpetsc      Use PETSc_Snes_Param
 
 c local variables
@@ -747,6 +747,7 @@ C during the running of nksol. -----------------------------------------
 C
       character*80 msgjm
       integer nrcv, ierrjm, ijmgetmr
+
 c-pnb
 c-----------------------------------------------------------------------
 c     nks001 common block.
@@ -763,6 +764,9 @@ c-----------------------------------------------------------------------
 c     nks003 common block.
 c-----------------------------------------------------------------------
       real pthrsh
+      real tick, tock
+      external tick,tock
+
       common /nks003/ pthrsh, ipcur, nnipset, incpset
 c
       save
@@ -1046,8 +1050,10 @@ c      epsfac = 0.5e0**(iter)
 c     epsfac = min(1.e-5,0.01e0*fnrm)
       epsfac = epscon1 * min(epscon2, fnrm)
       eps = (epsmch + epsfac)*fnrm
+      TimeModel=tick()
       call model(n,rwork(lwm),lenwm,iwork(liwm),leniwm,u,savf,rwork(lx),
      *            f,jac,su,sf,pset,psol)
+       TotTimeModel=TotTimeModel+tock(TimeModel)
       if (iersl .ne. 0) then
         iterm = iersl
         go to 500
@@ -1069,9 +1075,11 @@ c-----------------------------------------------------------------------
             go to 500
             endif
         else
+          Timelnsrch=tick()
           call lnsrch(n,u,savf,f1nrm,rwork(lx),su,sf,stepmx,stptol,
      *                iret,rwork(lup),f1nrmp,mxtkn,f,jac,icflag,icnstr,
      *                                                       rlx,adjf1)
+           TotTimelnsrch=TotTimelnsrch+tock(Timelnsrch)
           if (nbcf .gt. nbcfmx) then
             iterm = 6
             ierr = 120
@@ -2428,6 +2436,7 @@ c            iflag=-1 means there was a nonrecoverable error in psol.
 c
 c note: the x array is used as work space in routines psol and atv.
 c-----------------------------------------------------------------------
+      use PandfTiming
       real v, hes, hessv, su, sf, q, b, savf, x, u, wk
       real wmp, snrm2
       integer n, iwmp, mmax, mmaxp1
@@ -2438,7 +2447,7 @@ c-----------------------------------------------------------------------
       integer i,iflag,info,igmp,k,mgmr,m
       real tick, tock
       external tick,tock
-      use PandfTiming
+
 c-----------------------------------------------------------------------
 c     nks002 common block.
 c-----------------------------------------------------------------------
@@ -2478,22 +2487,22 @@ c call routine atv to compute vnew = a*v(m).
 c call routine svrorthog to orthogonalize the new vector vnew = v(*,m+1).
 c call routine sheqr to update the factors of hes.
 c-----------------------------------------------------------------------
-        if (TimingPandfOn.gt.0) TimeAtv=tick()
+        TimeAtv=tick()
         call atv (n, u, savf, v(1,m), su, sf, x, f, jac, psol,
      *            v(1,m+1), wk, wmp, iwmp, ier, npsl)
-        if (TimingPandfOn.gt.0) TotTimeAtv=TotTimeAtv+tock(TimeAtv)
+         TotTimeAtv=TotTimeAtv+tock(TimeAtv)
         if (ier .ne. 0) go to 300
-        if (TimingPandfOn.gt.0) Timesvrorthog=tick()
+         Timesvrorthog=tick()
         call svrorthog (v(1,m+1),v,hes,n,m,mmaxp1,igmp,snormw)
-        if (TimingPandfOn.gt.0) TotTimesvrorthog=TotTimesvrorthog+tock(Timesvrorthog)
+        TotTimesvrorthog=TotTimesvrorthog+tock(Timesvrorthog)
         hes(m+1,m) = snormw
         hessv(m+1,m) = snormw
         do 60 i = 1,mgmr
           hessv(i,m) = hes(i,m)
  60       continue
-        if (TimingPandfOn.gt.0) Timesheqr=tick()
+         Timesheqr=tick()
         call sheqr(hes,mmaxp1,m,q,info,m)
-        if (TimingPandfOn.gt.0) TotTimesheqr=TotTimesheqr+tock(Timesheqr)
+         TotTimesheqr=TotTimesheqr+tock(Timesheqr)
         if (info .eq. m) go to 105
 c-----------------------------------------------------------------------
 c update rho, the estimate of the norm of the residual b - a*xl.

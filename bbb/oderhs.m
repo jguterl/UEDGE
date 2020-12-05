@@ -7975,6 +7975,8 @@ c ... Interface for pandf1 rhs calculation for nksol only (added by. J.Guterl)
             write(*,*) '----- Timing Exmain: ----'
             write(*,*) ' - Time in exmain:',TotTimeExmain, '|' ,TimeExmain
             write(*,*) ' - Time in nksol:',TotTimenksol, '(', Timenksol,')','|',Timenksol/TimeExmain
+            write(*,*) ' - Time in lnsrch:',TotTimelnsrch, '(', Timelnsrch,')','|',Timelnsrch/TimeExmain
+            write(*,*) ' - Time in model:',TotTimeModel, '(', TimeModel,')','|',TimeModel/TimeExmain
             write(*,*) ' - Time in atv:',TotTimeatv, '(', Timeatv,')','|',Timeatv/TimeExmain
             write(*,*) ' - Time in svrorthog:',TotTimesvrorthog, '(', Timesvrorthog,')','|',Timesvrorthog/TimeExmain
             write(*,*) ' - Time in sheqr:',TotTimesheqr, '(', Timesheqr,')','|',Timesheqr/TimeExmain

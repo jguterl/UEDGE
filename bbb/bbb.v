@@ -1936,7 +1936,7 @@ w0(0:nx+1,0:ny+1)       _real +threadprivate
 w1(0:nx+1,0:ny+1)       _real +threadprivate
 w2(0:nx+1,0:ny+1)       _real +threadprivate
 w3(0:nx+1,0:ny+1)       _real +threadprivate
-wvh(0:nx+1,0:ny+1,1:2)  _real	 +threadprivate #species dependent viscous heating                  							       
+wvh(0:nx+1,0:ny+1,1:2)  _real	 +threadprivate #species dependent viscous heating
 cvh                     real /1.0/ #scale factor for viscous heating for main ions
 ***** Locflux:
 #Local arrays for the calculation of the fluxes and other quantities.
@@ -3915,6 +3915,10 @@ TimeAtv real /0.0/
 TotTimeAtv real /0.0/
 Timesvrorthog real /0.0/
 TotTimesvrorthog real /0.0/
+TimeModel real /0.0/
+TotTimeModel real /0.0/
+Timelnsrch real /0.0/
+TotTimelnsrch real /0.0/
 PrintTimingPandf() subroutine
 PrintTimingExmain() subroutine
 
