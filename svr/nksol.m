@@ -1074,6 +1074,7 @@ c-----------------------------------------------------------------------
             iterm = iersl
             go to 500
             endif
+	  else		      
           Timelnsrch=tick()
           call lnsrch(n,u,savf,f1nrm,rwork(lx),su,sf,stepmx,stptol,
      *                iret,rwork(lup),f1nrmp,mxtkn,f,jac,icflag,icnstr,
