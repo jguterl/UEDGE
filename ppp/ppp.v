@@ -120,9 +120,9 @@ DebugTime  integer         /0/    # Display execution times of various subroutin
 ShowTime       integer /1/     # Show execution time of routines
 SerialDebug       integer /0/     # Show execution time of routines
 
-OMPTotJacCalc real  /0./ # time to calculate jacobian in jac_calc_omp
-OMPTotTimeCollect real  /0./ # time to collect jacobian elements in jac_calc_omp
-OMPTotTimeBuild real  /0./ # time to calculate elements of jacobian in jac_calc_omp
+#OMPTotJacCalc real  /0./ # time to calculate jacobian in jac_calc_omp
+#OMPTotTimeCollect real  /0./ # time to collect jacobian elements in jac_calc_omp
+#OMPTotTimeBuild real  /0./ # time to calculate elements of jacobian in jac_calc_omp
 
 **** MPITiming:
 MPITotTimeCollect real  /0./ # time to collect jacobian elements in jac_calc_mpi/hybrid

@@ -189,7 +189,7 @@ subroutine jac_calc_parallel(neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
 
 end subroutine jac_calc_parallel
 !-------------------------------------------------------------------------------------------------
-subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJacElem,iJacRow,ichunk,nnz,&
+subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl, yldot00,ml, mu,iJacCol,rJacElem,iJacRow,ichunk,nnz,&
                             nnzmxperchunk,TimeJacRow)
 
     ! ... Calculate Jacobian matrix (derivatives with respect to each
@@ -228,11 +228,10 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
     integer,intent(in):: ml, mu   ! lower and upper bandwidths
     real,intent(out)::TimeJacRow(neq)
     ! ... Work-array argument:
-    real,intent(inout) :: wk(neq)     ! work space available to this subroutine
+    real :: wk(neq)     ! work space available to this subroutine
     real :: yl_check(neq)     ! work space available to this subroutine
     ! ... Functions:
     logical ::tstguardc
-    real(kind=4) gettime
     !     real(kind=4) ranf
 
     ! ... Local variables:
@@ -314,7 +313,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
             !jacelem = (wk/(ii) - yldot0(ii)) / (2*dyl)  ! for 2nd order Jac
 
             !Add diagonal 1/dt for nksol
-            ifdiagonal:if (((svrpkg.eq."nksol") .or. (svrpkg.eq."petsc")) .and. iv.eq.ii) then
+            ifdiagonal:if (iv.eq.ii) then
                 if (iseqalg(iv)*(1-isbcwdt).eq.0) then
                     jacelem = jacelem - 1/dtuse(iv)
                 endif
@@ -326,7 +325,7 @@ subroutine LocalJacBuilder(ivmin,ivmax,neq, t, yl,yldot00, ml, mu, wk,iJacCol,rJ
             endif ifdiagonal
 
             ! ...  Add a pseudo timestep to the diagonal #! if eqn is not algebraic
-            if (svrpkg .ne. "cvode" .and. nufak .gt. 0) then
+            if (nufak .gt. 0) then
                 if (iv.eq.ii .and. yl(neq+1).eq.1) jacelem = jacelem - nufak  !omit .and. iseqalg(iv).eq.0)
             !     .                   jacelem = jacelem - nufak*suscal(iv)/sfscal(iv)
             endif

@@ -115,7 +115,6 @@ call OmpInitZerocom
 end subroutine InitZeroOMP
 #ifdef _OPENMP
 subroutine OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
-
     use OMPJac,only:iJacCol,rJacElem,iJacRow,OMPivmin,OMPivmax,nnz,nnzcum,OMPTimeJacRow,NchunksJac
     use OMPJacSettings,only:OMPJacVerbose,OMPJacStamp,OMPTimingJacRow
     use ParallelDebug,only:OMPJacDebug
@@ -178,7 +177,7 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     !   The Jacobian is stored in compressed sparse row format.
 
     use Timing,only:istimingon,ttjstor,ttotjf,ttimpjf
-    use OMPTiming,only:OMPTotTimeCollect,OMPTotTimeBuild,OMPTotJacCalc
+    use PandfTiming
     use Grid,only:ngrid,ig,ijac,ijactot
     use Jacobian_csc,only:rcsc,jcsc,icsc,yldot_pert,yldot_unpt
     use OMPJac,only:NchunksJac,nnzmxperchunk
@@ -212,9 +211,11 @@ subroutine jac_calc_omp (neq, t, yl, yldot00, ml, mu, wk,nnzmx, jac, ja, ia)
     ! ... Functions
     logical tstguardc
     real(kind=4) gettime
+    real tick,tock
+    external tick,tock
 
     ! ... Local variables:
-    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1,OMPTimeBuild,OMPTimeCollect,OMPTimeJacCalc
+    real(kind=4) sec4, tsjstor, tsimpjf, dtimpjf,time0,time1
     integer:: i,thread,ichunk,iv,TID, OMP_GET_THREAD_NUM
     character(len = 80) ::  filename
     ! Calculate load distribution for threads
@@ -245,13 +246,7 @@ write(*,'(a,I3,a,I7,I7,f6.2,a,f6.2)') '  * ichunk ', ichunk,':',OMPivmin(ichunk)
     endif
 
 
-    !    iJacCol(1:nnzmxperchunk,1:NchunksJac)=0
-    !    rJacElem(1:nnzmxperchunk,1:NchunksJac)=0.0
-    !    iJacRow(1:neq,1:NchunksJac)=0
-    !    if (OMPJacDebug.gt.0) then
-    !        write(*,*) OMPJacStamp,' Jacobian arrays set to zero'
-    !    endif
-    OMPTimeJacCalc= gettime(sec4)
+    OMPTimeJacCalc= tick()
 
     !   Get initial value of system cpu timer.
     if (istimingon .eq. 1) tsjstor = gettime(sec4)
@@ -268,19 +263,17 @@ write(*,'(a,I3,a,I7,I7,f6.2,a,f6.2)') '  * ichunk ', ichunk,':',OMPivmin(ichunk)
     enddo
 
     !   build jacobian ##############################################################
-    OMPTimeBuild=gettime(sec4)
+    OMPTimeBuild=tick()
     nnz(1:NchunksJac)=-1
     call OMPJacBuilder(neq, t, yl,yldot00, ml, mu,wk,iJacCol,rJacElem,iJacRow,nnz)
-    OMPTimeBuild=gettime(sec4)-OMPTimeBuild
-    if (istimingon .eq. 1) OMPTotTimebuild = OMPTimeBuild+OMPTotTimebuild
+    OMPTotTimebuild = OMPTotTimeBuild+tock(OMPTimeBuild)
     if (OMPJacVerbose.gt.0) write(*,*)OMPJacStamp,' Time to build jac:',OMPTimeBuild
     !   end build jacobian ##############################################################
 
     !   collect jacobian ##############################################################
-    OMPTimeCollect=gettime(sec4)
+    OMPTimeCollect=tick()
     call OMPCollectJacobian(neq,nnzmx,rcsc,icsc,jcsc,nnzcumout)
-    OMPTimeCollect=gettime(sec4)-OMPTimeCollect
-    if (istimingon .eq. 1) OMPTotTimeCollect = OMPTimeCollect+OMPTotTimeCollect
+    OMPTotTimeCollect = OMPTotTimeCollect+tock(OMPTimeCollect)
     if (OMPJacVerbose.gt.0) write(*,*)OMPJacStamp,' Time to collect jac:',OMPTimeCollect
     !   end collect jacobian ##############################################################
 
@@ -334,8 +327,8 @@ write(*,'(a,I3,a,I7,I7,f6.2,a,f6.2)') '  * ichunk ', ichunk,':',OMPivmin(ichunk)
 
     if (istimingon .eq. 1) ttjstor = ttjstor + gettime(sec4) - tsjstor
 
-    OMPTimeJacCalc=gettime(sec4)-OMPTimeJacCalc
-    if (istimingon .eq. 1) OMPTotJacCalc = OMPTimeJacCalc+OMPTotJacCalc
+    
+    OMPTotTimeJacCalc = OMPTotTimeJacCalc+tock(OMPTimeJacCalc)
     write(*,'(a,f8.2,a,I3,aI3,a)') 'Time in omp jac_calc:',OMPTimeJacCalc,'[',Nthreads,'|',NchunksJac,']'
     return
 end subroutine jac_calc_omp
@@ -349,6 +342,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     use OmpCopycom
     use OmpCopyapi
     use omp_lib
+    use PandfTiming
 
     implicit none
     integer,intent(inout)::nnz(NchunksJac)
@@ -363,14 +357,15 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     real,intent(out):: rJacElem(nnzmxperchunk,NchunksJac)
     real ::wkcopy(neq)
     real::ylcopy(neq+2)
-
+    real::tick,tock
+    external tick,tock
     integer ::iJacColCopy(nnzmxperchunk),iJacRowCopy(neq)
-    integer ::ivmincopy(NchunksJac),ivmaxcopy(NchunksJac),nnzcopy(NchunksJac)
+    integer ::ivmincopy(NchunksJac),ivmaxcopy(NchunksJac)
     integer ::NchunksJaccopy,nnzmxperchunkcopy
     real :: rJacElemCopy(nnzmxperchunk),TimeJacRowcopy(neq)
-    integer:: ichunk,tid,nnzlocal,ichunkcopy
+    integer:: ichunk,tid,nnzlocal
     DOUBLE PRECISION :: TimeThread
-
+    OMPTimeCopy=tick() 
     if (OMPJacDebug.gt.0)write(*,*) OMPJacStamp,' Copying data....'
     call pandf1 (-1, -1, 0, neq, 0, yl, ylcopy)
     if (OMPCopyArray.gt.0) then
@@ -387,7 +382,7 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
         call OmpCopyScalarapi
     endif
 
-
+    
     !   We cannot use variables in the parallel construct declarations below when these variables are not in the scope of the subroutine
     NchunksJaccopy=NchunksJac
     nnzmxperchunkcopy=nnzmxperchunk
@@ -405,40 +400,40 @@ subroutine OMPJacBuilder(neq, t, yl,yldot00, ml,mu,wk,iJacCol,rJacElem,iJacRow,n
     endif
     tid=-1
     nnzlocal=-10000
-
+    OMPTotTimeCopy=OMPTotTimeCopy+tock(OMPTimeCopy)
+    OMPTimeLocal=tick()
     ! ivmincopy,ivmaxcopy,yldot00, neq an t  could be shared as well as well as
     !$omp parallel do schedule(dynamic,OMPLoopJacNchunk) default(shared)&
-    !$omp& firstprivate(ichunkcopy,ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy,wkcopy,ml,mu,yldot00,t,neq)&
-    !$omp& firstprivate(nnzmxperchunkcopy,NchunksJaccopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
+    !$omp& firstprivate(ivmincopy,ivmaxcopy,tid,nnzlocal,ylcopy)&
+    !$omp& firstprivate(NchunksJaccopy,iJacRowCopy,iJacColCopy,rJacElemCopy,TimeJacRowcopy)&
     !$omp& private(TimeThread)  copyin(yinc,xlinc,xrinc)
 
     loopthread: do ichunk=1,NchunksJac !ichunk from 1 to Nthread, tid from 0 to Nthread-1
         Timethread = omp_get_wtime()
         tid=omp_get_thread_num()
-        ichunkcopy=ichunk
-        if (OMPJacDebug.gt.0) write(*,*) OMPJacStamp,' Thread id:',tid,' <-> ichunk:',ichunkcopy
+        if (OMPJacDebug.gt.0) write(*,*) OMPJacStamp,' Thread id:',tid,' <-> ichunk:',ichunk
         ! we keep all these parameters as it is easier to debug LocalJacBuilder and deal wichunk private/shared attributes
 
-        call LocalJacBuilder(ivmincopy(ichunkcopy),ivmaxcopy(ichunkcopy),neq, t, ylcopy,yldot00,ml,mu,wkcopy,&
-            iJacColcopy,rJacElemcopy,iJacRowcopy,ichunkcopy,nnzlocal,nnzmxperchunkcopy,TimeJacRowcopy)
+        call LocalJacBuilder(ivmincopy(ichunk),ivmaxcopy(ichunk),neq, t, ylcopy,yldot00,ml,mu,&
+            iJacColcopy,rJacElemcopy,iJacRowcopy,ichunk,nnzlocal,nnzmxperchunk,TimeJacRowcopy)
         if (OMPJacDebug.gt.0) write(*,*) OMPJacStamp,',',tid,' nzlocal:',nnzlocal
 
-        !$omp  critical
-        iJacCol(1:nnzlocal,ichunkcopy)=iJacColCopy(1:nnzlocal)
-        rJacElem(1:nnzlocal,ichunkcopy)=rJacElemCopy(1:nnzlocal)
+        !!!!$omp  critical
+        iJacCol(1:nnzlocal,ichunk)=iJacColCopy(1:nnzlocal)
+        rJacElem(1:nnzlocal,ichunk)=rJacElemCopy(1:nnzlocal)
         iJacRow(OMPivmin(ichunk):OMPivmax(ichunk))=iJacRowCopy(OMPivmin(ichunk):OMPivmax(ichunk))
-        OMPTimeJacRow(ivmincopy(ichunkcopy):ivmaxcopy(ichunkcopy))=TimeJacRowcopy(ivmincopy(ichunkcopy):ivmaxcopy(ichunkcopy))
-        nnzcopy(ichunkcopy)=nnzlocal
-        !$omp  end critical
+        OMPTimeJacRow(ivmincopy(ichunk):ivmaxcopy(ichunk))=TimeJacRowcopy(ivmincopy(ichunk):ivmaxcopy(ichunk))
+        nnz(ichunk)=nnzlocal
+        OMPTimeLocalJac(tid)=omp_get_wtime() - Timethread
+        !!!$omp  end critical
 
-        OMPTimeLocalJac(ichunkcopy)=omp_get_wtime() - Timethread
-        if (OMPJacVerbose.gt.1) write(*,*) OMPJacStamp,' Time in thread #', tid,':',OMPTimeLocalJac(ichunkcopy)
+        if (OMPJacVerbose.gt.1) write(*,*) OMPJacStamp,' Time in thread #', tid,':',OMPTimeLocalJac(tid)
         if (OMPJacVerbose.gt.1) write(*,'(a,I3,a)') 'OMP thread ',tid,' exiting...'
     enddo loopthread
     !$omp  END PARALLEL DO
-
-
-    nnz(1:NchunksJac)=nnzcopy(1:NchunksJac) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
+    OMPTotTimeLocal=OMPTotTimeLocal+tock(OMPTimeLocal)
+    
+    !nnz(1:NchunksJac)=nnzcopy(1:NchunksJac) !nnzcopy is not necssary as nnz would be shared anyway in the parallel construct
 
     if (OMPJacDebug.gt.0) then
         write(*,*) OMPJacStamp,' End of parallel loop....'

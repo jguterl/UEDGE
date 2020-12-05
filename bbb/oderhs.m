@@ -7982,4 +7982,11 @@ c ... Interface for pandf1 rhs calculation for nksol only (added by. J.Guterl)
             write(*,*) ' - Time in sheqr:',TotTimesheqr, '(', Timesheqr,')','|',Timesheqr/TimeExmain
             write(*,*) ' - Time in Jac:',   TotTimeJac, '|' ,TimeJac
             write(*,*) ' - Time in Pandf1 rhs',TotTimepandf1rhs, '|' ,Timepandf1rhs
+	    write(*,*) ' --------- OMP -------'
+	    write(*,*) ' - Time in JacCalc:',OMPTotTimeJacCalc, '(', OMPTimeJacCalc,')','|',OMPTimeJacCalc/TimeExmain  
+	    write(*,*) ' - Time in Copy:',OMPTotTimeCopy, '(', OMPTimeCopy,')','|',OMPTimeCopy/TimeExmain
+	    write(*,*) ' - Time in Local:',OMPTotTimeLocal, '(', OMPTimeLocal,')','|',OMPTimeLocal/TimeExmain
+	    write(*,*) ' - Time in Build:',OMPTotTimeBuild, '(', OMPTimeBuild,')','|',OMPTimeBuild/TimeExmain
+	    write(*,*) ' - Time in Collect:',OMPTotTimeCollect, '(', OMPTimeCollect,')','|',OMPTimeCollect/TimeExmain
+            write(*,*) ' - Time in JacCalc:',OMPTotTimeJacCalc, '(', OMPTimeJacCalc,')','|',OMPTimeJacCalc/TimeExmain    
         end subroutine PrintTimingExmain

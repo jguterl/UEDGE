@@ -3874,7 +3874,7 @@ ParallelJac     integer /0/        # [0]: serial jacobian calc [1] parallel jaco
 ParallelPandf1     integer /0/        # [0]: serial pandf1 calc [1] parallel pandf1 calc
 
 **** PandfTiming: # added by J.Guterl
-TimingPandfOn integer /1/
+TimingPandfOn integer /0/
 TimingPandf integer /1/
 TimePandf real /0.0/
 TotTimePandf real /0.0/
@@ -3919,6 +3919,16 @@ TimeModel real /0.0/
 TotTimeModel real /0.0/
 Timelnsrch real /0.0/
 TotTimelnsrch real /0.0/
+OMPTimeCopy real /0.0/
+OMPTotTimeCopy real /0.0/
+OMPTimeLocal real /0.0/
+OMPTotTimeLocal real /0.0/
+OMPTimeBuild real /0.0/
+OMPTimeCollect real /0.0/
+OMPTimeJacCalc real /0.0/
+OMPTotTimeBuild real /0.0/
+OMPTotTimeCollect real /0.0/
+OMPTotTimeJacCalc real /0.0/
 PrintTimingPandf() subroutine
 PrintTimingExmain() subroutine
 
