@@ -1068,7 +1068,8 @@ c-----------------------------------------------------------------------
             iterm = iersl
             go to 500
             endif
-        else
+	    else
+	  
           call lnsrch(n,u,savf,f1nrm,rwork(lx),su,sf,stepmx,stptol,
      *                iret,rwork(lup),f1nrmp,mxtkn,f,jac,icflag,icnstr,
      *                                                       rlx,adjf1)
@@ -1722,7 +1723,7 @@ c----------------------- end of subroutine solpk -----------------------
      *            iwmp, wk, ipflg, iflag, rho)
       implicit none
       integer npsl, iwmp, ipflg, iprint, iunit, iermsg, ier
-      external f, jac, psol, tick,tock
+      external f, jac, psol
       integer n, mmax, iomp, ipvt, miom, iflag
       real u, savf, b, su, sf, x, eps, v, hes, wmp, wk
       dimension  u(*), savf(n), b(n), su(n), sf(n), x(n), v(n,mmax+1),
@@ -2478,22 +2479,23 @@ c call routine atv to compute vnew = a*v(m).
 c call routine svrorthog to orthogonalize the new vector vnew = v(*,m+1).
 c call routine sheqr to update the factors of hes.
 c-----------------------------------------------------------------------
-        if (TimingPandfOn.gt.0) TimeAtv=tick()
+        TimeAtv=tick()
+	   write (*,*) TimingPandfOn,TimeAtv
         call atv (n, u, savf, v(1,m), su, sf, x, f, jac, psol,
      *            v(1,m+1), wk, wmp, iwmp, ier, npsl)
-        if (TimingPandfOn.gt.0) TotTimeAtv=TotTimeAtv+tock(TimeAtv)
+         TotTimeAtv=TotTimeAtv+tock(TimeAtv)
         if (ier .ne. 0) go to 300
-        if (TimingPandfOn.gt.0) Timesvrorthog=tick()
+         Timesvrorthog=tick()
         call svrorthog (v(1,m+1),v,hes,n,m,mmaxp1,igmp,snormw)
-        if (TimingPandfOn.gt.0) TotTimesvrorthog=TotTimesvrorthog+tock(Timesvrorthog)
+        TotTimesvrorthog=TotTimesvrorthog+tock(Timesvrorthog)
         hes(m+1,m) = snormw
         hessv(m+1,m) = snormw
         do 60 i = 1,mgmr
           hessv(i,m) = hes(i,m)
  60       continue
-        if (TimingPandfOn.gt.0) Timesheqr=tick()
+         Timesheqr=tick()
         call sheqr(hes,mmaxp1,m,q,info,m)
-        if (TimingPandfOn.gt.0) TotTimesheqr=TotTimesheqr+tock(Timesheqr)
+         TotTimesheqr=TotTimesheqr+tock(Timesheqr)
         if (info .eq. m) go to 105
 c-----------------------------------------------------------------------
 c update rho, the estimate of the norm of the residual b - a*xl.
