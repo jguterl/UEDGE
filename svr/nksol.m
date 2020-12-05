@@ -1074,7 +1074,6 @@ c-----------------------------------------------------------------------
             iterm = iersl
             go to 500
             endif
-        else
           Timelnsrch=tick()
           call lnsrch(n,u,savf,f1nrm,rwork(lx),su,sf,stepmx,stptol,
      *                iret,rwork(lup),f1nrmp,mxtkn,f,jac,icflag,icnstr,
@@ -1730,7 +1729,7 @@ c----------------------- end of subroutine solpk -----------------------
      *            iwmp, wk, ipflg, iflag, rho)
       implicit none
       integer npsl, iwmp, ipflg, iprint, iunit, iermsg, ier
-      external f, jac, psol, tick,tock
+      external f, jac, psol
       integer n, mmax, iomp, ipvt, miom, iflag
       real u, savf, b, su, sf, x, eps, v, hes, wmp, wk
       dimension  u(*), savf(n), b(n), su(n), sf(n), x(n), v(n,mmax+1),
