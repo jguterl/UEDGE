@@ -26,7 +26,7 @@ OMPCopyScalar     integer /1/ # For Debug purpose: turn on/off copy(0/1) of thre
 
 ***** OMPJacSettings:
 OMPJacNchunks     integer /0/# Number of chunks to be used to calculate the Jacobian. If Nchunks.lt.0, Nchunks=Nthreads elif Nchunks=0, Nchunks=neq
-OMPJacVerbose integer /1/ #Print info for omp jacobian calculation
+OMPJacVerbose integer /0/ #Print info for omp jacobian calculation
 OMPlenpfac       integer /5/ # Factor to increase nnzmxperchunk
 OMPCheckNaN       integer /0/ #Check whether jacobian terms are NaN after jacobian calculation
 OMPLoadBalance integer /0/ # Enable user defined weights for each OMP tasks (overrided by MPIAutoBalance)
